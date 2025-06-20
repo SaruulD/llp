@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="dynamic_state_search" model="ir.ui.view">
+        <field name="name">dynamic.state.search</field>
+        <field name="model">dynamic.state</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="state"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="dynamic_state_form" model="ir.ui.view">
+        <field name="name">dynamic.state.form</field>
+        <field name="model">dynamic.state</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group col="4">
+                        <field name="name"/>
+                        <field name="state"/>
+                        <field name="is_dynamic" invisible="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+
+    <record id="dynamic_state_tree" model="ir.ui.view">
+        <field name="name">dynamic.state.tree</field>
+        <field name="model">dynamic.state</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="state"/>
+                <field name="is_dynamic" invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="dynamic_state_action" model="ir.actions.act_window">
+        <field name="name">Dynamic State</field>
+        <field name="res_model">dynamic.state</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="dynamic_state_tree"/>
+        <field name="domain">[('is_dynamic', '=', True)]</field>
+    </record>
+
+    <menuitem action="dynamic_state_action" id="menu_dynamic_state" name="Dynamic State" parent="root_dynamic_workflow" sequence="34"/>
+</odoo>

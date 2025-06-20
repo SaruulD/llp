@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+	<record id="view_dynamic_workflow_confirm_form_wizard" model="ir.ui.view">
+		<field name="name">dynamic.workflow.confirm.wizard</field>
+		<field name="model">dynamic.workflow.confirm.wizard</field>
+		<field name="arch" type="xml">
+			<form>
+			<group>
+				<field name="comment_required" invisible="1"/>
+				<field name="comment" required="comment_required" placeholder="Enter a comment"/>
+			</group>
+			<footer>
+				<button string="Confirm" type="object" name="action_confirm" class="btn btn-primary o_form_button_save"/>
+				<button string="Cancel" special="cancel" />
+			</footer>
+			</form>
+		</field>
+	</record>	
+	
+</odoo>

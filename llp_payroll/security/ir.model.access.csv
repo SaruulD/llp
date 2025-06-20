@@ -1,0 +1,6 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+
+access_llp_payroll_rule_admin,llp.payroll.rule,model_llp_payroll_rule,llp_payroll.group_payroll_admin,1,1,1,1
+access_llp_payroll_rule_history_admin,llp.payroll.rule,model_llp_payroll_rule_history,llp_payroll.group_payroll_admin,1,1,1,1
+access_llp_payroll_structure_admin,llp.payroll.structure,model_llp_payroll_structure,llp_payroll.group_payroll_admin,1,1,1,1
+access_llp_payroll_structure_line_admin,llp.payroll.structure.line,model_llp_payroll_structure_line,llp_payroll.group_payroll_admin,1,1,1,1

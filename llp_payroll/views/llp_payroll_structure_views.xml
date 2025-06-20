@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Payroll Structure: Search -->
+    <record id="view_llp_payroll_structure_filter" model="ir.ui.view">
+        <field name="name">llp.payroll.structure</field>
+        <field name="model">llp.payroll.structure</field>
+        <field name="arch" type="xml">
+            <search string="Search structure">
+                <field name="name" />
+                <field name="struct_type"/>
+                <group expand="0" string="Group By">
+                    <filter string="name" name="name" domain="[]" context="{'group_by':'name'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Payroll Structure: List View -->
+    <record id="view_llp_payroll_structure_list" model="ir.ui.view">
+        <field name="name">llp.payroll.structure</field>
+        <field name="model">llp.payroll.structure</field>
+        <field name="arch" type="xml">
+            <list string="Payroll structure">
+                <field name="name"/>
+                <field name="struct_type"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_llp_payroll_structure_form" model="ir.ui.view">
+        <field name="name">llp.payroll.structure</field>
+        <field name="model">llp.payroll.structure</field>
+        <field name="arch" type="xml">
+            <form string="Payroll Structure">
+
+                <header>
+                    <button name="action_confirm" visibility="state == 'draft'" string="Confirm" type="object" class="btn-primary"/>
+                    <button name="action_draft" visibility="state == 'done'" string="Draft" type="object" class="btn-secondary"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,done"/>
+                </header>
+
+                <sheet>
+                    <h1>
+                        <label for="name" class="oe_edit_only"/>
+                        <field readonly="state == 'done'" name="name" class="oe_inline" placeholder="name" required="1"/>
+ -                        <label for="struct_type" class="oe_edit_only"/>
+                        <field name="struct_type" readonly="state == 'done'" placeholder="structure" required="1" class="oe_inline"/>
+                    </h1>
+
+                    <notebook>
+                        <page string="Rule lines">
+                            <field name="line_ids" readonly="state == 'done'">
+                                <list string="" editable="bottom">
+                                    <field name="rule_id" required="1" options="{'no_create': True}"/>
+                                    <field name="sequence"/>
+                                    <field name="exp_sequence" options="{'no_create': True}"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids" widget="mail_followers"/>
+                    <field name="message_ids" widget="mail_thread"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+
+    <record id="action_llp_payroll_structure" model="ir.actions.act_window">
+        <field name="name">Payroll Structure</field>
+        <field name="res_model">llp.payroll.structure</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{}</field>
+        <field name="help">List of payroll structure.</field>
+    </record>
+</odoo>
+			

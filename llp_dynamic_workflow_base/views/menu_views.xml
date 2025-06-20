@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="root_dynamic_workflow"
+        groups="llp_dynamic_workflow_base.group_dynamic_workflow" name="Dynamic Workflow"
+         sequence="1" />
+</odoo>
