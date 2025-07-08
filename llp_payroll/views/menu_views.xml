@@ -6,7 +6,7 @@
     <menuitem id="llp_payroll_calculation" groups="llp_payroll.group_payroll_admin" parent="llp_payroll" name="Payroll Calculation" sequence="1" />
     <menuitem id="llp_payroll_payroll" name="Payroll" parent="llp_payroll_calculation" action="action_llp_payroll_rule" sequence="1"/>
     <menuitem id="llp_payroll_debt" name="Debt" parent="llp_payroll_calculation" action="action_llp_payroll_rule" sequence="2"/>
-    <menuitem id="llp_payroll_vacation" name="Vacation" parent="llp_payroll_calculation" action="action_llp_payroll_rule" sequence="3"/>
+    <menuitem id="llp_payroll_vacation" name="Vacation" parent="llp_payroll_calculation" action="action_llp_payroll_employee_vacation" sequence="3"/>
 
     <!-- Тайлан -->
     <menuitem id="llp_payroll_report" groups="llp_payroll.group_payroll_admin" parent="llp_payroll" name="Report" sequence="9" />
@@ -21,5 +21,5 @@
     <menuitem id="llp_payroll_configuration" groups="llp_payroll.group_payroll_admin" parent="llp_payroll" name="Configuration" sequence="99" />
     <menuitem id="llp_payroll_rule" name="Payroll Rules" parent="llp_payroll_configuration" action="action_llp_payroll_rule" sequence="1"/>
     <menuitem id="llp_payroll_structure" name="Payroll Structure" parent="llp_payroll_configuration" action="action_llp_payroll_structure" sequence="2"/>
-    <menuitem id="llp_payroll_account" name="Account Configuration" parent="llp_payroll_configuration" action="action_llp_payroll_rule" sequence="3"/>
+    <menuitem id="llp_payroll_account" name="Account Configuration" parent="llp_payroll_configuration" action="action_llp_payroll_unit" sequence="3"/>
 </odoo>

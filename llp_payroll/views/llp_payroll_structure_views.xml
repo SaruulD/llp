@@ -34,8 +34,8 @@
             <form string="Payroll Structure">
 
                 <header>
-                    <button name="action_confirm" visibility="state == 'draft'" string="Confirm" type="object" class="btn-primary"/>
-                    <button name="action_draft" visibility="state == 'done'" string="Draft" type="object" class="btn-secondary"/>
+                    <button name="action_confirm" invisible="state != 'draft'" string="Confirm" type="object" class="btn-primary"/>
+                    <button name="action_draft" invisible="state != 'done'" string="Draft" type="object" class="btn-secondary"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,done"/>
                 </header>
 
@@ -60,10 +60,7 @@
                     </notebook>
 
                 </sheet>
-                <div class="oe_chatter">
-                    <field name="message_follower_ids" widget="mail_followers"/>
-                    <field name="message_ids" widget="mail_thread"/>
-                </div>
+                <chatter reload_on_follower="True"/>
             </form>
         </field>
     </record>

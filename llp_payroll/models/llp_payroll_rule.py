@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-from odoo import api, fields, models, _
-from odoo.exceptions import UserError
-from odoo.osv import expression
+from odoo import api, fields, models, _ # type: ignore
+from odoo.exceptions import UserError # type: ignore
+from odoo.osv import expression # type: ignore
 
 class LLPPayrollRule(models.Model):
 	_name = 'llp.payroll.rule'
@@ -11,33 +11,41 @@ class LLPPayrollRule(models.Model):
 	_order = "create_date desc"
 
 
-	name = fields.Char(string="Name",track_visibility='onchange')
-	parent_id = fields.Many2one('llp.payroll.rule',string="Parent rule",track_visibility='onchange')
-	code = fields.Char(string="Code",track_visibility='onchange')
-	description = fields.Text(string="Description",track_visibility='onchange')	
-	rule_type = fields.Selection([('percent','Percent'),('regular','Regular'),('code','Code')],string="Rule type",track_visibility='onchange',default='regular')
-	value_type = fields.Selection([('get_value','Get value'),('expression','Expression')],string="Value type",track_visibility='onchange',default='get_value')
-	python_code = fields.Text(string="Python code" ,track_visibility='onchange')
-	percent = fields.Float(string="Percent" ,track_visibility='onchange')
-	regular_number = fields.Float(string="Regular number" ,track_visibility='onchange')
+	name = fields.Char(string="Name",tracking=True)
+	parent_id = fields.Many2one('llp.payroll.rule',string="Parent rule",tracking=True)
+	code = fields.Char(string="Code",tracking=True)
+	description = fields.Text(string="Description",tracking=True)	
+	rule_type = fields.Selection([('percent','Percent'),('regular','Regular'),('code','Code')],string="Rule type",tracking=True,default='regular')
+	value_type = fields.Selection([('get_value','Get value'),('expression','Expression')],string="Value type",tracking=True,default='get_value')
+	python_code = fields.Text(string="Python code" ,tracking=True)
+	percent = fields.Float(string="Percent" ,tracking=True)
+	regular_number = fields.Float(string="Regular number" ,tracking=True)
 	active = fields.Boolean(string="Active",default=True)
 	show_in_payroll = fields.Boolean(string="Show in payroll",default=True)
 	decimal_point = fields.Integer(string='Decimal point')
 	is_vacation_salary = fields.Boolean(string="Is vacation salary",default=False)
 	is_vacation_time = fields.Boolean(string="Is vacation time",default=False)
 	is_show_sum = fields.Boolean(string="Is show sum",default=False)
-	ruleview_type = fields.Selection([('view','View'),('edit','Edit')],string="Rule view type",default="view",track_visibility='onchange')
-	rulefield_type = fields.Selection([('digit','Digit'),('sign','Sign'),('from_previous_month','Get from previous month')], string="Rule field type", default="digit",track_visibility='onchange')
+	ruleview_type = fields.Selection([('view','View'),('edit','Edit')],string="Rule view type",default="view",tracking=True)
+	rulefield_type = fields.Selection([('digit','Digit'),('sign','Sign'),('from_previous_month','Get from previous month')], string="Rule field type", default="digit",tracking=True)
 	history_ids = fields.One2many('llp.payroll.rule.history','rule_id',string="Rule histories")
 	transaction_type = fields.Selection([('salary_advance','Salary advance'),
 											('salary_late','Salary late'),
 										], string="Transaction type")
+	# is_rule_type_percent = fields.Boolean(compute='_compute_same_currency')
+	
 	
 	_sql_constraints = [
 		('code_uniq', 'unique(code)',
 		("There is already a rule defined on this model\n"
 		"You cannot define another: please edit the existing one or change this one."))
 	]
+
+
+	# @api.depends('rule_type')
+	# def _compute_same_currency(self):
+	# 	for record in self:
+	# 		record.is_rule_type_percent = record.rule_type == 'percent' 
 
 
 	
@@ -62,35 +70,11 @@ class LLPPayrollRule(models.Model):
 		departs = self.search(domain + args, limit=limit)
 		return departs.name_get()
 
-	
-	def action_done(self):
-		translations = self.env['ir.translation'].search([('lang', '=', 'mn_MN')])
-		print(f"Found {len(translations)} lines")
-
-
-		self.write({'state':'confirmed'})
-		for his in self.history_ids:
-			if not his.end_date:
-				his.write({'end_date':fields.Date.context_today(self)})
-		if self.python_code:
-			# month_id = self.env['account.period'].sudo().search([('date_start','<=',fields.Date.context_today(self)),('date_stop','>=',fields.Date.context_today(self))])
-			self.env['llp.payroll.rule.history'].create({
-			'rule_id':self.id,
-			# 'month_id':month_id.id,
-			'start_date':fields.Date.context_today(self),
-			'note':self.python_code,
-			})
-
-	
-	def action_draft(self):
-		self.write({'state':'draft'})
-		
-
 class LLPPayrollRuleHistory(models.Model):
 	_name = 'llp.payroll.rule.history'
+	_description = "LLP payroll rule history"
 	_order = "create_date desc"
 	
-	# month_id = fields.Many2one('account.period',string="Month")
 	start_date = fields.Date(string="Start date")
 	end_date = fields.Date(string="end date")
 	note = fields.Text(string="Note")	

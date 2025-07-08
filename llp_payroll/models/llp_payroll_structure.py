@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from odoo import api, fields, models, _
-from odoo.exceptions import UserError
+from odoo import api, fields, models, _ #type: ignore
+from odoo.exceptions import UserError #type: ignore
 
 class LLPPayrollStructure(models.Model):
 	_name = 'llp.payroll.structure'
@@ -10,12 +10,12 @@ class LLPPayrollStructure(models.Model):
 	_order = "create_date desc"
 
 
-	name = fields.Char(string="Name",track_visibility='onchange')
+	name = fields.Char(string="Name",tracking=True)
 	struct_type = fields.Selection([('bonus','Bonus'),
 									('salary_advance','Salary advance'),
-									('salary_late','Salary late')],string="Structure type",track_visibility='onchange')
+									('salary_late','Salary late')],string="Structure type",tracking=True)
 	line_ids = fields.One2many('llp.payroll.structure.line','struct_id',string='Rule lines')
-	state = fields.Selection([('draft','Draft'),('done','Done')],string='State',default='draft',track_visibility='onchange')
+	state = fields.Selection([('draft','Draft'),('done','Done')],string='State',default='draft',tracking=True)
 
 	def action_confirm(self):
 		
@@ -32,6 +32,7 @@ class LLPPayrollStructure(models.Model):
 
 class LLPPayrollStructureLine(models.Model):
 	_name = 'llp.payroll.structure.line'
+	_description = "LLP payroll structure line"
 	_order = "exp_sequence asc"
 
 	struct_id = fields.Many2one('llp.payroll.structure',string="Payroll structure")

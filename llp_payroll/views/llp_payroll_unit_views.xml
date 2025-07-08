@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Payroll Unit: Search -->
+    <record id="view_llp_payroll_unit_filter" model="ir.ui.view">
+        <field name="name">llp.payroll.unit.search</field>
+        <field name="model">llp.payroll.unit</field>
+        <field name="arch" type="xml">
+            <search string="Search unit">
+                <field name="name"/>
+                <field name="code"/>
+                <group expand="0" string="Group By">
+                    <filter string="Name" name="name" context="{'group_by': 'name'}"/>
+                    <filter string="Code" name="code" context="{'group_by': 'code'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Payroll Unit: List View -->
+    <record id="view_llp_payroll_unit_list" model="ir.ui.view">
+        <field name="name">llp.payroll.unit.list</field>
+        <field name="model">llp.payroll.unit</field>
+        <field name="arch" type="xml">
+            <list string="Payroll unit">
+                <field name="name"/>
+                <field name="code"/>
+                <field name="department_ids" widget="many2many_tags"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Payroll Unit: Form View -->
+    <record id="view_llp_payroll_unit_form" model="ir.ui.view">
+        <field name="name">llp.payroll.unit.form</field>
+        <field name="model">llp.payroll.unit</field>
+        <field name="arch" type="xml">
+            <form string="Payroll Unit">
+                <sheet>
+                    <h1>
+                        <label for="name"/>
+                        <field name="name" required="1" placeholder="Name"/>
+                        <label for="code"/>
+                        <field name="code" required="1" placeholder="Code"/>
+                    </h1>
+
+                    <group>
+                        <field name="department_ids" widget="many2many_tags"/>
+                        <field name="active" />
+                    </group>
+
+                    <notebook>
+                        <page string="Журналын бичилт">
+                            <field name="line_ids">
+                                <list string="" editable="bottom">
+                                    <field name="rule_id" required="1" options="{'no_create': True}"/>
+                                    <field name="transaction_value" required="1"/>
+                                    <!-- <field name="debit_account_id" required="0" options="{'no_create': True}"/>
+                                    <field name="credit_account_id" required="0" options="{'no_create': True}"/> -->
+                                </list>
+                                <form>
+                                    <group>
+                                        <group>
+                                            <field name="rule_id" required="1" options="{'no_create': True}"/>
+                                            <!-- <field name="debit_account_id" required="0" options="{'no_create': True}"/>
+                                            <field name="credit_account_id" required="0" options="{'no_create': True}"/> -->
+                                            <field name="transaction_value" required="1" />
+                                        </group>
+                                    </group>
+                                </form>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter reload_on_follower="True"/>
+            </form>
+        </field>
+    </record>
+
+
+    <record id="action_llp_payroll_unit" model="ir.actions.act_window">
+        <field name="name">Payroll Unit</field>
+        <field name="res_model">llp.payroll.unit</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_group_parent': 1}</field>
+        <field name="help">List of payroll unit.</field>
+    </record>
+
+</odoo>

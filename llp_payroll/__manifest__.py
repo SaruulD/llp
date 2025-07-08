@@ -15,6 +15,8 @@
         'security/ir.model.access.csv',
         'views/llp_payroll_rule_views.xml',
         'views/llp_payroll_structure_views.xml',
+        'views/llp_payroll_employee_vacation_views.xml',
+        'views/llp_payroll_unit_views.xml',
         'views/menu_views.xml',
     ],
     'installable': True,
