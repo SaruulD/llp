@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+    <t t-name="llp_payroll.PayrollSheetField">
+        <div class="o_payroll_sheet">
+            <div class="o_payroll_scroll">
+                <table class="o_payroll_table table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <t t-foreach="state.rules" t-as="rule" t-key="rule[0]">
+                                <th>
+                                    <a t-on-click="() => goToRule(rule[0])" href="javascript:void(0)">
+                                        <t t-esc="rule[1]"/>
+                                    </a>
+                                </th>
+                            </t>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <t t-foreach="state.employees" t-as="emp" t-key="emp[0]">
+                            <tr>
+                                <td>
+                                    <a t-on-click="() => goToEmployee(emp[0])" href="javascript:void(0)">
+                                        <t t-esc="emp[1]"/>
+                                    </a>
+                                </td>
+                                <t t-foreach="state.rules" t-as="rule" t-key="emp[0] + '-' + rule[0]">
+                                    <td>
+                                        <t t-set="v" t-value="state.employee_values?.[emp[0]]?.[rule[0]]"/>
+                                        <span>
+                                            <t t-esc="v"/>
+                                        </span>
+                                    </td>
+                                </t>
+                            </tr>
+                        </t>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </t>
+
+</templates>

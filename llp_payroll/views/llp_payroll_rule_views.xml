@@ -41,13 +41,15 @@
             <form string="Payroll Rule">
                 <sheet>
                     <h1>
-                        <label for="name"/>
-                        <field name="name" required="1" placeholder="Name"/>
-                        <label for="code"/>
-                        <field name="code" required="1" placeholder="Code"/>
+                        <group>
+                            <field name="name" required="1" placeholder="Name"/>
+                        </group>
+                        <group>
+                            <field name="code" required="1" placeholder="Code"/>
+                        </group>
                     </h1>
 
-                    <group>
+                    <group col="4">
                         <group>
                             <field name="ruleview_type" required="1" />
                             <field name="show_in_payroll" />
@@ -80,9 +82,9 @@
                                 <field name="percent" required="rule_type == 'percent'" invisible="rule_type != 'percent'"/>
                                 <field name="regular_number" required="rule_type == 'regular'" invisible="rule_type != 'regular'" />
                             </group>
-                            <h1>
-                                <field name="python_code" placeholder="Python Code" invisible="rule_type != 'code'" required="rule_type == 'code'"/>
-                            </h1>
+                            <group col="2">
+                                <field name="python_code" placeholder="Python Code" invisible="rule_type != 'code'" required="rule_type == 'code'" widget="ace" options="{'mode': 'python'}"/>
+                            </group>
                         </page>
 
                         <page string="History">

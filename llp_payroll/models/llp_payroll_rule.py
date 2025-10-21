@@ -32,6 +32,7 @@ class LLPPayrollRule(models.Model):
 	transaction_type = fields.Selection([('salary_advance','Salary advance'),
 											('salary_late','Salary late'),
 										], string="Transaction type")
+	# TODO: transaction_type doc-oos harah
 	# is_rule_type_percent = fields.Boolean(compute='_compute_same_currency')
 	
 	

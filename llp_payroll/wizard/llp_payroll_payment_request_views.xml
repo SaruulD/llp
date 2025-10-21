@@ -1,0 +1,42 @@
+<odoo>
+    <!-- Window action to open the wizard -->
+    <record id="action_llp_payroll_payment_request" model="ir.actions.act_window">
+        <field name="name">Цалингийн төлбөрийн хүсэлт</field>
+        <field name="res_model">llp.payroll.payment.request</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="context">{}</field>
+    </record>
+
+    <!-- Form view (laid out to match your table spec) -->
+    <record id="view_llp_payroll_payment_request_form" model="ir.ui.view">
+        <field name="name">llp.payroll.payment.request.form</field>
+        <field name="model">llp.payroll.payment.request</field>
+        <field name="arch" type="xml">
+            <form string="Цалингийн төлбөрийн хүсэлт">
+                <group>
+                    <group>
+                        <field name="salary_bank_type" readonly="1" string="Цалин авах банк/төрөл" help="Тухайн сарын цалин авах төрлийн нэрийг автоматаар авна. Засах боломжгүй талбар"/>
+                        <field name="payment_ref" readonly="1" string="Гүйлгээний утга" help="Урьдчилгаа үед “.. сарын урьдчилгаа цалин”, сарын сүүл үед “.. сарын сүүл цалин”."/>
+                        <field name="amount" readonly="1" string="Гүйлгээний дүн"/>
+                    </group>
+                    <group>
+                        <field name="partner_id" required="1" string="Хүлээн авах харилцагч"/>
+                        <field name="partner_bank_id" required="1" string="Хүлээн авах банкны данс" domain="[('partner_id','=',partner_id)]"/>
+                    </group>
+                    <group>
+                        <field name="journal_id" required="1" string="Гүйлгээ гарах журнал" domain="[('type','=','bank'), ('company_id','=',company_id)]"/>
+                        <field name="journal_bank_account_id" readonly="1" string="Банкны данс"/>
+                    </group>
+                    <field name="company_id" invisible="1"/>
+                    <field name="currency_id" invisible="1"/>
+                </group>
+
+                <footer>
+                    <button string="Баталгаажуулах" type="object" name="action_confirm" class="btn-primary"/>
+                    <button string="Болих" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

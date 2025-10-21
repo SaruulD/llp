@@ -1,0 +1,49 @@
+
+.o_form_view .o_group .o_group_col,
+.o_form_view .o_inner_group,
+.o_field_widget.o_field_payroll_sheet,
+.o_payroll_sheet {
+  min-width: 0 !important;     /* ← this stops the 3720px expansion */
+  width: 100%;
+}
+
+.o_payroll_scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable both-edges;
+}
+
+.o_payroll_scroll .o_payroll_table.table {
+  width: auto !important;       /* override Bootstrap .table { width:100% } */
+  min-width: max-content;       /* key: grow to content width so it overflows */
+  table-layout: auto;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.o_payroll_scroll .o_payroll_table th,
+.o_payroll_scroll .o_payroll_table td {
+  width: 40px;
+  padding: 4px 8px;
+}
+
+.o_payroll_table tbody tr.is-even { background: var(--o-view-background, #fff); }
+.o_payroll_table tbody tr.is-odd  { background: var(--o-list-striped-background, #fafafa); }
+
+.o_payroll_table tbody tr:hover { background: rgba(0,0,0,.05); }
+
+.o_payroll_scroll .o_payroll_table thead th {
+  position: sticky; top: 0; z-index: 2;
+  background: var(--o-view-background, #fff);
+  font-size: 12px;
+  vertical-align: text-top;
+}
+
+.o_payroll_scroll .o_payroll_table tbody td:first-child,
+.o_payroll_scroll .o_payroll_table thead th:first-child {
+  position: sticky; left: 0; z-index: 3;
+  background: var(--o-view-background, #fff);
+  box-shadow: 1px 0 0 rgba(0,0,0,.06);
+}

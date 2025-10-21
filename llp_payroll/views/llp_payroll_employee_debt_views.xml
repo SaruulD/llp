@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <!-- Payroll Debt: Search -->
+    <record id="view_llp_payroll_employee_debt_filter" model="ir.ui.view">
+        <field name="name">llp.payroll.employee.debt.search</field>
+        <field name="model">llp.payroll.employee.debt</field>
+        <field name="arch" type="xml">
+            <search string="Search debt">
+                <field name="code"/>
+                <group expand="0" string="Group By">
+                    <filter string="Month" name="group_month" context="{'group_by': 'month'}"/>
+                    <filter string="State" name="group_state" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Payroll Debt: List View -->
+    <record id="view_llp_payroll_employee_debt_list" model="ir.ui.view">
+        <field name="name">llp.payroll.employee.debt.list</field>
+        <field name="model">llp.payroll.employee.debt</field>
+        <field name="arch" type="xml">
+            <list string="Payroll employee debt">
+                <field name="code"/>
+                <field name="month"/>
+                <field name="department_ids" widget="many2many_tags"/>
+                <field name="struct_type"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+
+
+    <!-- Payroll Debt: Form View -->
+    <record id="view_llp_payroll_employee_debt_form" model="ir.ui.view">
+        <field name="name">llp.payroll.employee.debt.form</field>
+        <field name="model">llp.payroll.employee.debt</field>
+        <field name="arch" type="xml">
+            <form string="Payroll employee debt">
+
+                <header>
+                    <button name="action_confirm" invisible="state != 'draft'" string="Confirm" type="object" class="btn-primary"/>
+                    <button name="action_return" invisible="state != 'done'" string="Return" type="object" class="btn-secondary"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,done,closed"/>
+                </header>
+
+                <sheet>
+                    <h1>
+                        <label for="code"/>
+                        <field name="code" readonly="1"/>
+                    </h1>
+
+                    <group>
+                        <field name="month" required="1"/>
+                        <field name="department_ids" widget="many2many_tags"/>
+                        <field name="struct_type" />
+                    </group>
+
+                    <notebook>
+                        <page string="Employees">
+                            <field name="line_ids" readonly="state != 'draft'">
+                                <list >
+                                    <field name="employee_id" options="{'no_create': True}" required="1" />
+                                    <field name="department_id" readonly="1"/>
+                                    <field name="total_debt" readonly="1"/>
+                                    <field name="withholding_amount"/>
+                                    <field name="balance"/>
+                                </list>
+                                <form>
+                                    <group>
+                                        <group>
+                                            <field name="employee_id" options="{'no_create': True}" required="1"/>
+                                            <field name="department_id" readonly="1"/>
+                                        </group>
+                                        <group>
+                                            <field name="total_debt"/>
+                                            <field name="withholding_amount"/>
+                                            <field name="balance"/>
+                                        </group>
+                                    </group>
+                                    <notebook>
+                                        <page>
+                                            <field name="line_details_ids">
+                                                <list editable="bottom">
+                                                    <field name="date"/>
+                                                    <field name="transaction_value"/>
+                                                    <field name="amount" sum="Sum amount"/>
+                                                </list>
+                                            </field>
+                                        </page>
+                                    </notebook>
+                                </form>
+
+                            </field>
+                        </page>
+                    </notebook>
+
+                </sheet>
+                <chatter reload_on_follower="True"/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_llp_payroll_employee_debt" model="ir.actions.act_window">
+        <field name="name">Payroll Employee Debt</field>
+        <field name="res_model">llp.payroll.employee.debt</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">
+            {
+                'search_default_group_month': 1,
+                'search_default_group_state': 1
+            }
+        </field>
+        <field name="help">List of payroll employee debts.</field>
+    </record>
+</odoo>

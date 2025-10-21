@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Payroll: Search -->
+    <record id="view_llp_payroll_filter" model="ir.ui.view">
+        <field name="name">llp.payroll.search</field>
+        <field name="model">llp.payroll</field>
+        <field name="arch" type="xml">
+            <search string="Search payroll">
+                <field name="name"/>
+                <field name="department_id"/>
+                <group expand="0" string="Group By">
+                    <filter string="Name" name="name" context="{'group_by': 'name'}"/>
+                    <filter string="Department" name="department_id" context="{'group_by': 'department_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Payroll: List View -->
+    <record id="view_llp_payroll_list" model="ir.ui.view">
+        <field name="name">llp.payroll.list</field>
+        <field name="model">llp.payroll</field>
+        <field name="arch" type="xml">
+            <list string="Payroll">
+                <field name="name"/>
+                <field name="start_date"/>
+                <field name="end_date"/>
+                <field name="department_id"/>
+                <field name="struct_id"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Payroll: Form View -->
+    <record id="view_llp_payroll_form" model="ir.ui.view">
+        <field name="name">llp.payroll.form</field>
+        <field name="model">llp.payroll</field>
+        <field name="arch" type="xml">
+            <form string="Payroll">
+
+                <header>
+                    <button name="action_get_data" invisible="state != 'draft'" string="Get Data" type="object" class="btn-primary"/>
+                    <button name="action_payment_request" invisible="state != 'confirmed'" string="Create Payment Request" type="object" class="btn-primary"/>
+                    <button name="action_financial_record" invisible="state != 'confirmed'" string="Create Financial Record" type="object" class="btn-primary"/>
+
+                    <!-- WORKFLOW -->
+                    <button name="action_send" invisible="state != 'draft'" string="Send" type="object" class="btn-primary"/>
+                    <button name="action_approve" invisible="state != 'sent'" string="Approve" type="object" class="btn-primary"/>
+                    <button name="action_verify" invisible="state != 'pending'" string="Verify" type="object" class="btn-primary"/>
+                    <button name="action_return" invisible="state != 'pending'" string="Return" type="object" class="btn-primary"/>
+                    <button name="action_confirm" invisible="state != 'verify'" string="Confirm" type="object" class="btn-primary"/>
+
+                    <field name="state" widget="statusbar" statusbar_visible="draft,sent,pending,verify,confirmed"/>
+                </header>
+
+                <sheet>
+                    <h1>
+                        <label for="name"/>
+                        <field name="name"/>
+                    </h1>
+
+                    <group>
+                        <field name="start_date" />
+                        <field name="end_date" />
+                        <field name="department_id" />
+                    </group>
+                    <group>
+                        <field name="dynamic_workflow_id" options="{'no_create':True}"/>
+                        <field name="struct_id" />
+                    </group>
+
+                    <notebook>
+                        <page string="Salary detail">
+                            <field name="line_ids" widget="payroll_sheet" readonly="1"/>
+                        </page>
+                        <page string="Salary summary">
+                            <!-- <widget name="payroll_summary_widget"/> -->
+                        </page>
+                        <page string="Employee">
+                            <field name="line_ids" readonly="state != 'draft'">
+                                <list>
+                                    <field name="employee_id" options="{'no_create': True}" required="1" />
+                                    <button name="action_computebyQUERY" groups="llp_payroll.group_payroll_accountant" string="Get data" type="object"/>
+                                </list>
+                                <form>
+                                    <button name="action_computebyQUERY" groups="llp_payroll.group_payroll_accountant" string="Get data" type="object"/>
+                                    <field name="employee_id"/>
+                                    <field name="rule_value_ids" readonly="1">
+                                        <list>
+                                            <field name="payroll_rule_id"/>
+                                            <field name="rulefield_type" />
+                                            <field name="value"/>
+                                            <field name="char_value"/>
+                                            <field name="is_edit" invisible="1"/>
+                                            <field name="is_sum_view" invisible="1"/>
+                                            <field name="show_in_payroll" invisible="1"/>
+                                            <field name="sequence" invisible="1"/>
+                                            <field name="decimal_point" readonly="1"/>
+                                        </list>
+                                        <form>
+                                            <field name="decimal_point" readonly='1'/>
+                                            <field name="payroll_rule_id"/>
+                                            <field name="show_in_payroll" invisible="1"/>
+                                            <field name="rulefield_type" />
+                                            <field name="value"/>
+                                            <field name="char_value"/>
+                                            <field name="is_edit" invisible="1"/>
+                                            <field name="is_sum_view" invisible="1"/>
+                                            <field name="sequence" invisible="1"/>
+                                        </form>
+                                    </field>
+                                </form>
+                            </field>
+                        </page>
+                        <page string="Payment">
+                            <!-- <group>
+                                <field name="payment_history_ids" readonly="1" nolabel="1">
+                                    <tree string="History">
+                                        <field name="payment_request_id" />
+                                        <field name="move_id" />
+                                        <field name="create_date" />
+                                    </tree>
+                                    <form string="History">
+                                        <field name="payment_request_id" />
+                                        <field name="move_id" />
+                                        <field name="create_date" />
+                                    </form>
+                                </field>
+
+                            </group> -->
+                        </page>
+                        <page string="State history">
+                            <!-- <field name="history_ids" readonly="1" nolabel="1">
+                                <tree string="History">
+                                    <field name="user_id" />
+                                    <field name="date" />
+                                    <field name="type" />
+                                    <field name="comment" />
+                                </tree>
+                                <form string="History">
+                                    <field name="user_id" />
+                                    <field name="date" />
+                                    <field name="type" />
+                                    <field name="comment" />
+                                </form>
+                            </field> -->
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter reload_on_follower="True"/>
+            </form>
+        </field>
+    </record>
+
+
+    <record id="action_llp_payroll" model="ir.actions.act_window">
+        <field name="name">Payroll</field>
+        <field name="res_model">llp.payroll</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_group_parent': 1}</field>
+        <field name="help">List of payroll.</field>
+    </record>
+</odoo>
