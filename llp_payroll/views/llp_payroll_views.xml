@@ -43,7 +43,6 @@
                 <header>
                     <button name="action_get_data" invisible="state != 'draft'" string="Get Data" type="object" class="btn-primary"/>
                     <button name="action_payment_request" invisible="state != 'confirmed'" string="Create Payment Request" type="object" class="btn-primary"/>
-                    <button name="action_financial_record" invisible="state != 'confirmed'" string="Create Financial Record" type="object" class="btn-primary"/>
 
                     <!-- WORKFLOW -->
                     <button name="action_send" invisible="state != 'draft'" string="Send" type="object" class="btn-primary"/>
