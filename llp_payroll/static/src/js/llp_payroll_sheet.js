@@ -14,11 +14,26 @@ class PayrollSheetField extends Component {
     this.orm = useService("orm");
     this.action = useService("action");
     this.formatMoney = (val) => {
-      const n = Number(val) || 0;
-      return n.toLocaleString(undefined, {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      });
+      if (typeof val === "string") {
+        const maybeNum = Number(val);
+        if (!isNaN(maybeNum) && val.trim() !== "") {
+          return maybeNum.toLocaleString(undefined, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          });
+        }
+        return val;
+      }
+
+      if (typeof val === "number" && !isNaN(val)) {
+        const n = Number(val) || 0;
+        return n.toLocaleString(undefined, {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        });
+      }
+
+      return val ?? "";
     };
     this.goToEmployee = this.goToEmployee.bind(this);
     this.goToRule = this.goToRule.bind(this);
