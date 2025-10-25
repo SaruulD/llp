@@ -37,6 +37,7 @@ class LLPPayrollEmployeeVacation(models.Model):
 
 	name = fields.Char(related='code')
 	code = fields.Char(string="Code")
+	# TODO month => date (change name)
 	month = fields.Date(string="Month",required=True, tracking=True)
 	department_ids = fields.Many2many('hr.department', string="Departments", tracking=True)
 	dynamic_workflow_id = fields.Many2one('dynamic.workflow', string="Dynamic workflow")
@@ -96,6 +97,33 @@ class LLPPayrollEmployeeVacation(models.Model):
 		for vac in self:
 			for department_id in vac.department_ids:
 				employees = self.env['hr.employee'].sudo().search([('department_id','=',department_id.id),('active','=',True),('next_vacation_salary_date','<=',vac.month)])
+
+				employee_months = {}
+				vac_lines = {}
+				for line in vac.line_ids:
+
+					if line.employee_id.id not in vac_lines:
+						vac_lines[line.employee_id.id] = line
+						# line.month_line_ids.unlink()
+
+					if line.employee_id.id not in employee_months:
+						employee_months[line.employee_id.id] = {'months': {}}
+					
+					for mon in line.month_line_ids:
+						if mon.month_id.id not in employee_months[line.employee_id.id]['months']:
+							employee_months[line.employee_id.id]['months'][mon.month_id.id] = mon.month_id.id
+
+					for employee in employees:
+						if employee.id not in vac_lines:
+							new_line = self.env['llp.payroll.employee.vacation.line'].create({
+								'employee_id': employee.id,
+								'vacation_id': vac.id,
+							})
+							vac_lines[employee.id] = new_line
+							employee_months[employee.id] = {'months': {}}
+						else:
+							if employee.id not in employee_months:
+								employee_months[employee.id] = {'months': {}}
 
 
 	def action_check_lines(self):

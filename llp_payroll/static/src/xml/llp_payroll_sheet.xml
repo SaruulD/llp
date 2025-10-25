@@ -28,13 +28,33 @@
                                     <td>
                                         <t t-set="v" t-value="state.employee_values?.[emp[0]]?.[rule[0]]"/>
                                         <span>
-                                            <t t-esc="v"/>
+                                            <t t-esc="formatMoney(v)"/>
                                         </span>
                                     </td>
                                 </t>
                             </tr>
                         </t>
                     </tbody>
+                    <tfoot>
+                        <tr>
+                            <td style="width:auto; background-color:#fff;" class="john oe_payroll_employee">
+                                Нийт дүн
+                            </td>
+
+                            <t t-foreach="state.rules" t-as="rule" t-key="'sum-' + rule[0]">
+                                <td class="oe_payroll_rule">
+                                    <t t-if="rule[2]">
+                                        <t t-set="total" t-value="Object.values(state.employee_values)
+                                            .reduce((acc, empVals) => acc + (empVals?.[rule[0]] || 0), 0)"/>
+                                        <span>
+                                            <t t-esc="formatMoney(total.toFixed(2))"/>
+                                        </span>
+                                    </t>
+                                </td>
+                            </t>
+                        </tr>
+                    </tfoot>
+
                 </table>
             </div>
         </div>

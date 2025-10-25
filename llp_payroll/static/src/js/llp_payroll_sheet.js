@@ -1,6 +1,6 @@
 /** @odoo-module */
 
-import { Component, useState, onWillStart } from "@odoo/owl";
+import { Component, onWillStart } from "@odoo/owl";
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
 import { standardFieldProps } from "@web/views/fields/standard_field_props";
@@ -13,6 +13,15 @@ class PayrollSheetField extends Component {
   setup() {
     this.orm = useService("orm");
     this.action = useService("action");
+    this.formatMoney = (val) => {
+      const n = Number(val) || 0;
+      return n.toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+    };
+    this.goToEmployee = this.goToEmployee.bind(this);
+    this.goToRule = this.goToRule.bind(this);
     this.state = {
       employees: [],
       rules: [],
@@ -49,6 +58,6 @@ class PayrollSheetField extends Component {
 }
 
 registry.category("fields").add("payroll_sheet", {
-  component: PayrollSheetField, // <- REQUIRED
-  supportedTypes: ["one2many"], // optional (can also live on the class)
+  component: PayrollSheetField,
+  supportedTypes: ["one2many"],
 });

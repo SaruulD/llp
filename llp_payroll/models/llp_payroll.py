@@ -5,13 +5,12 @@ from odoo.exceptions import UserError # type: ignore
 from datetime import timedelta,datetime
 from dateutil.relativedelta import relativedelta # type: ignore
 import logging
-import json
 import re
 _logger = logging.getLogger(__name__)
-import time
 from operator import itemgetter
 from zeep import Client # type: ignore
 from odoo.tools import exception_to_unicode # type: ignore
+from odoo.tools.safe_eval import safe_eval
 
 class LLPPayroll(models.Model):
     _name = 'llp.payroll'
@@ -91,30 +90,19 @@ class LLPPayroll(models.Model):
     def action_get_data(self):
         rules = []
         lines= []
-        start = time.time()		
-        _logger.info("\n\n\n\n\n LOGGER START TIME = '%s'"%start)		
         for pay in self:
             employee_ids = self.env['hr.employee'].search([('department_id','=',pay.department_id.id),('active','=',True)])
-            
-            fingertime = time.time()		
-            _logger.info("\n\n\n\n\n LOGGER fingertime TIME ='%s'"%(fingertime-start))
-
-            # TODO: GET ATTENDANCE DATA
 
             if not pay.line_ids:
                 for line in pay.struct_id.line_ids:
                     is_edit =False
                     if line.rule_id.ruleview_type=='edit':
                         is_edit = True
-                    rules.append((0,0,{'payroll_rule_id':line.rule_id.id,'show_in_payroll':line.rule_id.show_in_payroll,'decimal_point':line.rule_id.decimal_point,'rulefield_type':line.rule_id.rulefield_type,'sequence':line.sequence,'value':0,'is_edit':is_edit}))	
+                    rules.append((0,0,{'payroll_rule_id':line.rule_id.id,'show_in_payroll':line.rule_id.show_in_payroll,'decimal_point':line.rule_id.decimal_point,'rulefield_type':line.rule_id.rulefield_type,'sequence':line.sequence,'value':0,'is_edit':is_edit}))
                 for employee_id in employee_ids:
                     lines.append((0,0,{'rule_value_ids':rules,'employee_id':employee_id.id}))
                 if lines:
                     pay.write({'line_ids':lines})
-                
-                # if self.struct_type =='bonus':
-                #     self.action_getbonus(pay)
-
             else:
                 inrules = []
                 inemployees = []
@@ -124,52 +112,45 @@ class LLPPayroll(models.Model):
                     for rule in line.rule_value_ids:
                         if rule.payroll_rule_id.id not in inrules:
                             inrules.append(rule.payroll_rule_id.id)
-                structs = {}
                 for line in pay.struct_id.line_ids:
                     is_edit =False
                     if line.rule_id.ruleview_type=='edit':
-                        is_edit = True					
-                    structs [line.rule_id.id] = {'payroll_rule_id':line.rule_id.id,'rulefield_type':line.rule_id.rulefield_type,'sequence':line.sequence,'is_edit':is_edit,'value':0}		
-                        
+                        is_edit = True
+
                     rules.append((0,0,{'payroll_rule_id':line.rule_id.id,'show_in_payroll':line.rule_id.show_in_payroll,'decimal_point':line.rule_id.decimal_point,'rulefield_type':line.rule_id.rulefield_type,'sequence':line.sequence,'is_edit':is_edit,'value':0}))	
-                
-            
-                # if self.struct_type =='bonus':
-                #     self.action_getbonus(pay)
+
+                for employee_id in employee_ids:
+                    if employee_id.id not in inemployees:
+                        lines.append((0,0,{'rule_value_ids':rules,'employee_id':employee_id.id}))
+                if lines:
+                    pay.write({'line_ids':lines})
 
             self.action_computebyQUERY()
-                
-        endtime = time.time()		
-        _logger.info("\n\n\n\n\n LOGGER END TIME ='%s'"%(endtime-start))		
-
         return
 
-
     def action_computebyQUERY(self):
-        self.env.cr.commit()	
-        starttime = time.time()			
+        self.env.cr.commit()
         query = "select C.id as rule_value_id,D.rule_type as rule_type, D.rulefield_type as rulefield_type, D.value_type as value_type, \
-                    G.id as employee , D.ruleview_type as ruleview_type,D.code as code, B.id as line_id, D.python_code as python_code, F.exp_sequence as exp_sequence,G.id as payroll_employee, C.is_edited as is_edited\
+                    G.id as employee , D.ruleview_type as ruleview_type,D.code as code, B.id as line_id, D.python_code as python_code, F.exp_sequence as exp_sequence, C.is_edited as is_edited\
                     from llp_payroll A inner join llp_payroll_line B ON A.id= B.payroll_id \
                         inner join llp_payroll_rule_value C on B.id=C.line_id \
                         inner join llp_payroll_rule D on D.id=C.payroll_rule_id \
-                        left join llp_payroll_structure E ON E.id= A.struct_id \
-                        left join llp_payroll_structure_line F ON F.struct_id= E.id and F.rule_id=D.id\
+                        inner join llp_payroll_structure E ON E.id= A.struct_id \
+                        inner join llp_payroll_structure_line F ON F.struct_id= E.id and F.rule_id=D.id\
                         inner join hr_employee G ON G.id=B.employee_id \
                 where A.id=%s group by rule_value_id, rule_type, D.rulefield_type,  value_type, employee, ruleview_type, code,B.id,\
-                    python_code, exp_sequence,payroll_employee,is_edited order by F.exp_sequence asc "%(self.id) 		
-        self.env.cr.execute(query)		
-        dictfetchall = self.env.cr.dictfetchall()	
-        # sheet_obj= self.env['hr.employee.attendance.sheet1']
+                    python_code, exp_sequence,is_edited order by F.exp_sequence asc "%(self.id)
+        self.env.cr.execute(query)
+        dictfetchall = self.env.cr.dictfetchall()
+
         formulas = {}
         if dictfetchall:
-            count=0
             for dic in dictfetchall:
                 group = dic ['exp_sequence'] 
                 if group not in formulas:
                     formulas[group] = {
                         'exp_sequence':0,
-                        'rules':{},						
+                        'rules':{},
                     }
                 formulas[group]['exp_sequence'] = group
                 group1 = dic['code']
@@ -191,46 +172,50 @@ class LLPPayroll(models.Model):
                 if group2 not in formulas[group]['rules'][group1]['employees']:
                     formulas[group]['rules'][group1]['employees'][group2] = {
                         'employee':0,
-                        'payroll_employee':0,
                         'rule_value_id': 0,
                         'line_id': 0,
                         'is_edited':False,
                     }
                 formulas[group]['rules'][group1]['employees'][group2]['employee'] = dic['employee']
                 formulas[group]['rules'][group1]['employees'][group2]['rule_value_id'] = dic['rule_value_id']
-                formulas[group]['rules'][group1]['employees'][group2]['payroll_employee'] = dic['payroll_employee'] 
                 formulas[group]['rules'][group1]['employees'][group2]['line_id'] = dic['line_id'] 
-                formulas[group]['rules'][group1]['employees'][group2]['is_edited'] = dic['is_edited'] 
-        if formulas:	
-            endtime = time.time()						
-            print ('\n\n formulas',formulas)
-            for formula in sorted(formulas.values(), key=itemgetter('exp_sequence')):				
+                formulas[group]['rules'][group1]['employees'][group2]['is_edited'] = dic['is_edited']
+
+        if formulas:
+            for formula in sorted(formulas.values(), key=itemgetter('exp_sequence')):
                 for ruled in sorted(formula['rules'].values(), key=itemgetter('code')):
-                    count =0
                     for emp in sorted(ruled['employees'].values(), key=itemgetter('employee')):
                         attend =False
                         value = None
-                        rule = False				
+                        rule = False
+                        vacation = False
                         is_used = False
                         if emp['rule_value_id']:
                             rule = self.env['llp.payroll.rule.value'].browse(emp['rule_value_id'])
-                        # Ээлжийн амралт
-                        if ruled['code'] in ['n35022','n35005']:
-                            query = "select B.id from llp_payroll_employee_vacation A inner join llp_payroll_employee_vacation_line B ON A.id=B.vacation_id where A.state = 'done' and B.employee_id = %s and A.month BETWEEN '%s' AND '%s' and A.struct_type='%s'"%(emp['payroll_employee'],self.start_date, self.end_date, self.struct_id.struct_type)
-                            self.env.cr.execute(query)
-                            fetch = self.env.cr.fetchone()		
-                            is_used = True					
-                            if fetch and fetch[0]:
-                                attend = self.env['llp.payroll.employee.vacation.line'].browse(fetch[0])
-                                python_code = ruled['python_code'][7:]
-                                value = eval(python_code)
-                                self.env.cr.execute('update llp_payroll_rule_value set value=%s where id=%s'%(value,emp['rule_value_id']))
-                                self.env.cr.commit()
+                            # Finding contract
+                            contract = self.env['hr.contract'].search([('employee_id', '=', emp['employee']),('state','=','open')], limit=1)
+                        
+                        # Finding vacation
+                        query = "select B.id from llp_payroll_employee_vacation A inner join llp_payroll_employee_vacation_line B ON A.id=B.vacation_id where A.state = 'done' and B.employee_id = %s and A.month BETWEEN '%s' AND '%s' and A.struct_type='%s'"%(emp['employee'],self.start_date, self.end_date, self.struct_id.struct_type)
+                        self.env.cr.execute(query)
+                        fetch = self.env.cr.fetchone()
+
+                        if fetch and fetch[0]:
+                            vacation = self.env['llp.payroll.employee.vacation.line'].browse(fetch[0])
+
+                        # Finding debt
+                        query = "select A.id from llp_payroll_employee_debt_line A inner join llp_payroll_employee_debt B ON A.debt_id=B.id where B.month BETWEEN '%s' AND '%s' and A.employee_id=%s and B.struct_type='%s' and B.state in ('confirmed')"%(self.start_date, self.end_date,emp['employee'],self.struct_id.struct_type)
+                        self.env.cr.execute(query)
+                        fetch=self.env.cr.fetchone()
+
+                        if fetch and fetch[0]:
+                            debt = self.env['llp.payroll.employee.debt.line'].sudo().browse(fetch[0])		
+
                         #  Авлага
-                        elif ruled['code'] in ['n33001','n80001','n33004','n80058']:
-                            query_sheet = "select A.id from payroll_employee_debt_line A inner join llp_payroll_employee_debt B ON A.debt_id=B.id where B.month BETWEEN '%s' AND '%s' and A.employee_id=%s and B.struct_type='%s' and B.state in ('confirmed')"%(self.start_date, self.end_date,emp['payroll_employee'],self.struct_id.struct_type)
-                            self.env.cr.execute(query_sheet)
-                            fetch=self.env.cr.fetchone()										
+                        if ruled['code'] in ['n33001','n80001','n33004','n80058']:
+                            query = "select A.id from llp_payroll_employee_debt_line A inner join llp_payroll_employee_debt B ON A.debt_id=B.id where B.month BETWEEN '%s' AND '%s' and A.employee_id=%s and B.struct_type='%s' and B.state in ('confirmed')"%(self.start_date, self.end_date,emp['employee'],self.struct_id.struct_type)
+                            self.env.cr.execute(query)
+                            fetch=self.env.cr.fetchone()
                             value=0
                             python_code = ruled['python_code'][7:]
                             if fetch and fetch[0]:
@@ -244,52 +229,12 @@ class LLPPayroll(models.Model):
                                 self.env.cr.execute('update llp_payroll_rule_value set value=%s where id=%s'%(0.0,emp['rule_value_id']))
                                 self.env.cr.commit()
                             is_used = True
-                        #  Цалин
-                        elif ruled['code']=='n10005':										
-                            if self.struct_id.struct_type=='salary_late':
-                                query="select B.salary from hr_employee A left join hr_history B ON A.id = B.employee_id and  B.salary is not null and B.date is not null where B.employee_id = %s and B.confirm_date <='%s' order by B.date desc, B.confirm_date desc,B.create_date desc limit 1"%(emp['employee'],self.month_id.date_stop)
-                                
-                            else:											
-                                last_month = self.end_date-relativedelta(days=13)											
-                                query="select B.salary from hr_employee A left join hr_history B ON A.id = B.employee_id and B.salary is  not null and B.date is not null where B.employee_id = %s and B.confirm_date <='%s' order by B.date desc, B.confirm_date desc,B.create_date desc limit 1"%(emp['employee'],last_month)
-                            try:							
-                                self.env.cr.execute(query)
-                                fetch = self.env.cr.fetchone()							
-                                python_code = ruled['python_code'][7:]
-
-                                if fetch:												
-                                    value = fetch[0]
-                                else :												
-                                    if self.struct_id.struct_type=='salary_late':
-                                        query="select B.salary from hr_employee A left join hr_history B ON A.id = B.employee_id and  B.salary is not null and B.date is not null where B.employee_id = %s and B.confirm_date <='%s' order by B.date desc, B.confirm_date desc,B.create_date desc limit 1"%(emp['employee'],self.month_id.date_stop)
-                                    else:													
-                                        last_month = self.month_id.date_stop-relativedelta(days=13)															
-                                        query="select B.salary from hr_employee A left join hr_history B ON A.id = B.employee_id and  B.salary is not null and B.date is not null where B.employee_id = %s and B.confirm_date <='%s'  order by B.date desc, B.confirm_date desc,B.create_date desc limit 1"%(emp['employee'],last_month)
-
-                                    self.env.cr.execute(query)
-                                    fetch = self.env.cr.fetchone()							
-                                    if fetch:
-                                        value = fetch[0]
-                                if value==0 or value is None:
-                                    value = eval(python_code)
-                                if ruled['rulefield_type']=='digit':
-                                    if not value:
-                                        value = 0
-                                    if emp['is_edited']==False:											
-                                        self.env.cr.execute('update llp_payroll_rule_value set value=%s where id=%s'%(value,emp['rule_value_id']))
-                                elif ruled['rulefield_type']=='sign':									
-                                    self.env.cr.execute("update llp_payroll_rule_value set char_value='%s' where id=%s"%(value,emp['rule_value_id']))									
-                                
-                                self.env.cr.commit()
-                                is_used = True
-                            except:
-                                self.env.cr.rollback()
                         if ruled['rule_type']=='code' and not is_used:
-                            value= 0 
-                            python_code = ruled['python_code'][7:]
-                            
+                            value= 0
+                            python_code = ruled['python_code']
+
                             if ruled['value_type']=='expression':
-                                rule_codes = re.findall('n\d+',str(python_code))
+                                rule_codes = re.findall(r'\b[A-Za-z]+\d+\b',str(python_code))
                                 if rule_codes:
                                     where ="where A.line_id = %s "%emp['line_id']
                                     if len(rule_codes)>1:
@@ -300,8 +245,7 @@ class LLPPayroll(models.Model):
                                             
                                     self.env.cr.execute(query)
                                     fetchedAll = self.env.cr.dictfetchall()
-                                                
-                                        
+
                                     if fetchedAll:
                                         for fetched in fetchedAll:											
                                             python_code = python_code.replace(fetched['code'],str(fetched['value']))											
@@ -310,51 +254,29 @@ class LLPPayroll(models.Model):
                                         if rule_codes:
                                             for code in rule_codes:
                                                 python_code = python_code.replace(code,str(0))
-                                                                    
 
-                                    
-                                        
-                            if ruled['rulefield_type'] in ('bonus','monthly_bonus'):
-                                if self.struct_type in ('bonus','monthly_bonus'):
-                                    value = self.get_bonus_code(python_code,rule,emp['payroll_employee'])
-                                else:
-                                    rule_codes = re.findall('n\d+',str(python_code))
-                                    if rule_codes:
-                                        value=0
-                                        for code in rule_codes:
-                                            value += self.get_from_bonus(emp['payroll_employee'],code,self.month_id.id,ruled['rulefield_type'])
-                                        
-                                    else:
-                                            value = self.get_from_bonus(emp['payroll_employee'],python_code,self.month_id.id,ruled['rulefield_type'])
-                                if emp['is_edited']==False and value:
-                                    self.env.cr.execute("update llp_payroll_rule_value set value=%s where id=%s"%(value,emp['rule_value_id']))
-                            elif ruled['rulefield_type']=='from_previous_month':
-                                    value = self.get_from_previous_month(emp['payroll_employee'],python_code,self.month_id)								
-                                    if emp['is_edited']==False:
-                                        self.env.cr.execute("update llp_payroll_rule_value set value=%s where id=%s"%(value,emp['rule_value_id']))				
-                            elif ruled['rulefield_type']=='salary_advance':
-                                value = self.get_from_advance(emp['payroll_employee'],python_code,self.month_id.id)
-                                self.env.cr.execute("update llp_payroll_rule_value set value=%s where id=%s"%(value,emp['rule_value_id']))	
-                            elif ruled['rulefield_type']=='risk_bonus':
-                                value = self.get_from_riskbonus(emp['payroll_employee'],python_code,self.month_id.id)
-                                self.env.cr.execute("update llp_payroll_rule_value set value=%s where id=%s"%(value,emp['rule_value_id']))
-                            elif ruled['rulefield_type']=='profit_bonus':
-                                value = self.get_from_profitbonus(emp['payroll_employee'],python_code,self.month_id.id)
-                                self.env.cr.execute("update llp_payroll_rule_value set value=%s where id=%s"%(value,emp['rule_value_id']))
-                            
-                            
-                            
-                            try:		
+                            # if ruled['rulefield_type']=='from_previous_month':
+                            #         value = self.get_from_previous_month(emp['payroll_employee'],python_code,self.start_date, self.end_date)								
+                            #         if emp['is_edited']==False:
+                            #             self.env.cr.execute("update llp_payroll_rule_value set value=%s where id=%s"%(value,emp['rule_value_id']))
 
-                                if rule and 'rule' in python_code:
-                                    value = eval(python_code)
+                            try:
+                                if rule:
+                                    local_dict = {
+                                        'rule': rule,
+                                        'contract': contract,
+                                        'vacation': vacation
+                                    }
+
+                                    safe_eval(python_code, local_dict, mode="exec", nocopy=True)
+                                    value = local_dict.get('result')
+
                                 elif attend:
                                     rule_codes = re.findall('n\d+',str(python_code))			
                                     if rule_codes:
                                         for code in rule_codes:
-                                            python_code = python_code.replace(code,str(0))									
-                                    
-                                        
+                                            python_code = python_code.replace(code,str(0))
+
                                     value = eval(python_code)
                                     if ruled['code'] =='n31005' and value>0:											
                                         employee_id = self.env['hr.employee'].browse(emp['employee'])
@@ -381,14 +303,31 @@ class LLPPayroll(models.Model):
                                     self.env.cr.execute("update llp_payroll_rule_value set char_value='%s' where id=%s"%(value,emp['rule_value_id']))									
                                 
                                 self.env.cr.commit()
-                            except Exception as e:												
+                            except Exception as e:
                                 if ruled['rulefield_type']=='digit':																			
                                     self.env.cr.execute('update llp_payroll_rule_value set value=%s where id=%s'%(0,emp['rule_value_id']))
                                 elif ruled['rulefield_type']=='sign':									
                                     self.env.cr.execute("update llp_payroll_rule_value set char_value='%s' where id=%s"%(False,emp['rule_value_id']))	
                                 pass
-                                    # raise UserError(_(u'Алдаа: %s  CODE %s'%(exception_to_unicode(e),ruled['code'])))
 
+    def get_from_previous_month(self,employee_id,code,start_date, end_date):
+        value = 0.0
+        
+        start_date = start_date-relativedelta(months=1)
+        end_date = end_date-relativedelta(months=1)
+
+        if end_date:
+            query="select C.value as value from llp_payroll A left join llp_payroll_line B ON A.id=B.payroll_id \
+            left join llp_payroll_rule_value C on C.line_id = B.id left join llp_payroll_rule D on D.id=C.payroll_rule_id \
+            left join llp_payroll_structure E ON E.id= A.struct_id \
+            where A.state in ('confirmed','closed') and E.struct_type ='salary_late' and B.payroll_employee_id = %s and D.code ='%s' and A.start_date between '%s' and '%s' and A.end_date between '%s' and '%s' "%(employee_id,code,start_date, end_date)
+
+        # raise UserError(_("%s %s %s ")%(employee_id,code,month_id))
+        self.env.cr.execute(query)
+        fetch = self.env.cr.fetchone()
+        if fetch:			
+            value = fetch[0]		
+        return value
 
 class LLPPayrollLine(models.Model):
     _name = 'llp.payroll.line'
@@ -402,7 +341,6 @@ class LLPPayrollLine(models.Model):
 	
     def action_computebyQUERY(self):
         return
-                                    
 
     # Ажилтаны мөр дээрх утга буцаах
     @api.model
@@ -433,8 +371,6 @@ class LLPPayrollLine(models.Model):
         sum_rules = {}
         
         struct_id = False
-        start = time.time()		
-        _logger.info("\n\n\n\n\n LOGGER START TIME = '%s'"%start)
 
         for obj in payroll_id.line_ids:
             line = obj.sudo()
@@ -464,18 +400,15 @@ class LLPPayrollLine(models.Model):
                     else:
                         employee_values[line.employee_id.id].update({rule.payroll_rule_id.id:rule.char_value})
                         is_signs[line.employee_id.id].update({rule.payroll_rule_id.id:False})
-        end = time.time()		
-        _logger.info("\n\n\n\n\n LOGGER END TIME = '%s'"%(start-end))
+
         if struct_id:
             rules = []
             struct_line_ids = self.env['llp.payroll.structure.line'].search([('struct_id','=',struct_id.id)],order='sequence asc')
             for struct in struct_line_ids:
                 if struct.rule_id.show_in_payroll:
                     if [struct.rule_id.id,struct.rule_id.name] not in rules:
+                        rules.append([struct.rule_id.id,struct.rule_id.name+' '+struct.rule_id.code, bool(struct.rule_id.is_show_sum)])
 
-                        rules.append([struct.rule_id.id,struct.rule_id.name+' '+struct.rule_id.code])
-        end = time.time()	
-        _logger.info("\n\n\n\n\n LOGGER END TIME = '%s'"%(start-end))
         lines.update({'employees':employees,'rules':rules,'employee_values':employee_values,'employee_lines':employee_lines,'decimals':decimals,'is_signs':is_signs,'sum_rules':sum_rules,'is_edits':is_edits})
         return lines
 
