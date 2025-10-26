@@ -72,6 +72,7 @@
                                 <group>
                                     <field name="rule_type" required="1" />
                                     <field name="value_type" required="rule_type == 'code'" invisible="rule_type != 'code'" />
+                                    <field name="object_type" invisible="rule_type != 'code'" />
                                 </group>
                                 <group>
                                     <field name="rulefield_type" required="1" />

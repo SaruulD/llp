@@ -130,7 +130,7 @@ class LLPPayroll(models.Model):
 
     def action_computebyQUERY(self):
         self.env.cr.commit()
-        query = "select C.id as rule_value_id,D.rule_type as rule_type, D.rulefield_type as rulefield_type, D.value_type as value_type, \
+        query = "select C.id as rule_value_id,D.rule_type as rule_type, D.rulefield_type as rulefield_type, D.value_type as value_type, D.object_type as object_type, \
                     G.id as employee , D.ruleview_type as ruleview_type,D.code as code, B.id as line_id, D.python_code as python_code, F.exp_sequence as exp_sequence, C.is_edited as is_edited\
                     from llp_payroll A inner join llp_payroll_line B ON A.id= B.payroll_id \
                         inner join llp_payroll_rule_value C on B.id=C.line_id \
@@ -138,7 +138,7 @@ class LLPPayroll(models.Model):
                         inner join llp_payroll_structure E ON E.id= A.struct_id \
                         inner join llp_payroll_structure_line F ON F.struct_id= E.id and F.rule_id=D.id\
                         inner join hr_employee G ON G.id=B.employee_id \
-                where A.id=%s group by rule_value_id, rule_type, D.rulefield_type,  value_type, employee, ruleview_type, code,B.id,\
+                where A.id=%s group by rule_value_id, rule_type, D.rulefield_type,  value_type, object_type, employee, ruleview_type, code,B.id,\
                     python_code, exp_sequence,is_edited order by F.exp_sequence asc "%(self.id)
         self.env.cr.execute(query)
         dictfetchall = self.env.cr.dictfetchall()
@@ -160,12 +160,14 @@ class LLPPayroll(models.Model):
                         'python_code':'',
                         'rule_type':'',
                         'value_type':'',
+                        'object_type':'',
                         'rulefield_type':'',
                         'employees':{}
                     }
                 formulas[group]['rules'][group1]['code'] = group1
                 formulas[group]['rules'][group1]['python_code'] = dic['python_code']
                 formulas[group]['rules'][group1]['rule_type'] = dic['rule_type']
+                formulas[group]['rules'][group1]['object_type'] = dic['object_type']
                 formulas[group]['rules'][group1]['value_type'] = dic['value_type']
                 formulas[group]['rules'][group1]['rulefield_type'] = dic['rulefield_type']
                 group2 = dic['employee']
@@ -185,31 +187,11 @@ class LLPPayroll(models.Model):
             for formula in sorted(formulas.values(), key=itemgetter('exp_sequence')):
                 for ruled in sorted(formula['rules'].values(), key=itemgetter('code')):
                     for emp in sorted(ruled['employees'].values(), key=itemgetter('employee')):
-                        attend =False
                         value = None
                         rule = False
-                        vacation = False
                         is_used = False
                         if emp['rule_value_id']:
-                            rule = self.env['llp.payroll.rule.value'].browse(emp['rule_value_id'])
-                            # Finding contract
-                            contract = self.env['hr.contract'].search([('employee_id', '=', emp['employee']),('state','=','open')], limit=1)
-                        
-                        # Finding vacation
-                        query = "select B.id from llp_payroll_employee_vacation A inner join llp_payroll_employee_vacation_line B ON A.id=B.vacation_id where A.state = 'done' and B.employee_id = %s and A.month BETWEEN '%s' AND '%s' and A.struct_type='%s'"%(emp['employee'],self.start_date, self.end_date, self.struct_id.struct_type)
-                        self.env.cr.execute(query)
-                        fetch = self.env.cr.fetchone()
-
-                        if fetch and fetch[0]:
-                            vacation = self.env['llp.payroll.employee.vacation.line'].browse(fetch[0])
-
-                        # Finding debt
-                        query = "select A.id from llp_payroll_employee_debt_line A inner join llp_payroll_employee_debt B ON A.debt_id=B.id where B.month BETWEEN '%s' AND '%s' and A.employee_id=%s and B.struct_type='%s' and B.state in ('confirmed')"%(self.start_date, self.end_date,emp['employee'],self.struct_id.struct_type)
-                        self.env.cr.execute(query)
-                        fetch=self.env.cr.fetchone()
-
-                        if fetch and fetch[0]:
-                            debt = self.env['llp.payroll.employee.debt.line'].sudo().browse(fetch[0])		
+                            rule = self.env['llp.payroll.rule.value'].browse(emp['rule_value_id'])	
 
                         #  Авлага
                         if ruled['code'] in ['n33001','n80001','n33004','n80058']:
@@ -229,9 +211,35 @@ class LLPPayroll(models.Model):
                                 self.env.cr.execute('update llp_payroll_rule_value set value=%s where id=%s'%(0.0,emp['rule_value_id']))
                                 self.env.cr.commit()
                             is_used = True
+
                         if ruled['rule_type']=='code' and not is_used:
                             value= 0
                             python_code = ruled['python_code']
+                            object = {}
+
+                            if ruled['object_type'] == 'contract':
+                                object = self.env['hr.contract'].search([('employee_id', '=', emp['employee']),('state','=','open')], limit=1)
+                            
+                            elif ruled['object_type'] == 'vacation':
+                                query = "select B.id from llp_payroll_employee_vacation A inner join llp_payroll_employee_vacation_line B ON A.id=B.vacation_id where A.state = 'done' and B.employee_id = %s and A.month BETWEEN '%s' AND '%s' and A.struct_type='%s'"%(emp['employee'],self.start_date, self.end_date, self.struct_id.struct_type)
+                                self.env.cr.execute(query)
+                                fetch = self.env.cr.fetchone()
+
+                                if fetch and fetch[0]:
+                                    object = self.env['llp.payroll.employee.vacation.line'].browse(fetch[0])
+
+                            elif ruled['object_type'] == 'debt':
+                                query = "select A.id from llp_payroll_employee_debt_line A inner join llp_payroll_employee_debt B ON A.debt_id=B.id where B.month BETWEEN '%s' AND '%s' and A.employee_id=%s and B.struct_type='%s' and B.state in ('confirmed')"%(self.start_date, self.end_date,emp['employee'],self.struct_id.struct_type)
+                                self.env.cr.execute(query)
+                                fetch=self.env.cr.fetchone()
+
+                                if fetch and fetch[0]:
+                                    object = self.env['llp.payroll.employee.debt.line'].sudo().browse(fetch[0])	
+
+                            elif ruled['object_type'] == 'attendance':
+                                object = {}
+                            elif ruled['object_type'] == 'kpi':
+                                object = {}
 
                             if ruled['value_type']=='expression':
                                 rule_codes = re.findall(r'\b[A-Za-z]+\d+\b',str(python_code))
@@ -242,7 +250,7 @@ class LLPPayroll(models.Model):
                                     else:				
                                             where=where+" and B.code = '%s'"%(str(rule_codes[0]))
                                     query="select A.value as value, B.code as code from llp_payroll_rule_value A inner join llp_payroll_rule B ON A.payroll_rule_id = B.id "+where																
-                                            
+
                                     self.env.cr.execute(query)
                                     fetchedAll = self.env.cr.dictfetchall()
 
@@ -264,8 +272,7 @@ class LLPPayroll(models.Model):
                                 if rule:
                                     local_dict = {
                                         'rule': rule,
-                                        'contract': contract,
-                                        'vacation': vacation
+                                        'object': object
                                     }
 
                                     safe_eval(python_code, local_dict, mode="exec", nocopy=True)
