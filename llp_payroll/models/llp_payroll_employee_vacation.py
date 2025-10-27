@@ -113,17 +113,17 @@ class LLPPayrollEmployeeVacation(models.Model):
 						if mon.month_id.id not in employee_months[line.employee_id.id]['months']:
 							employee_months[line.employee_id.id]['months'][mon.month_id.id] = mon.month_id.id
 
-					for employee in employees:
-						if employee.id not in vac_lines:
-							new_line = self.env['llp.payroll.employee.vacation.line'].create({
-								'employee_id': employee.id,
-								'vacation_id': vac.id,
-							})
-							vac_lines[employee.id] = new_line
+				for employee in employees:
+					if employee.id not in vac_lines:
+						new_line = self.env['llp.payroll.employee.vacation.line'].create({
+							'employee_id': employee.id,
+							'vacation_id': vac.id,
+						})
+						vac_lines[employee.id] = new_line
+						employee_months[employee.id] = {'months': {}}
+					else:
+						if employee.id not in employee_months:
 							employee_months[employee.id] = {'months': {}}
-						else:
-							if employee.id not in employee_months:
-								employee_months[employee.id] = {'months': {}}
 
 
 	def action_check_lines(self):

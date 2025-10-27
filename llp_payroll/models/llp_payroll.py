@@ -2,15 +2,12 @@
 
 from odoo import api, fields, models, _ # type: ignore
 from odoo.exceptions import UserError # type: ignore
-from datetime import timedelta,datetime
 from dateutil.relativedelta import relativedelta # type: ignore
 import logging
 import re
 _logger = logging.getLogger(__name__)
 from operator import itemgetter
-from zeep import Client # type: ignore
-from odoo.tools import exception_to_unicode # type: ignore
-from odoo.tools.safe_eval import safe_eval
+from odoo.tools.safe_eval import safe_eval # type: ignore
 
 class LLPPayroll(models.Model):
     _name = 'llp.payroll'
@@ -189,30 +186,10 @@ class LLPPayroll(models.Model):
                     for emp in sorted(ruled['employees'].values(), key=itemgetter('employee')):
                         value = None
                         rule = False
-                        is_used = False
                         if emp['rule_value_id']:
                             rule = self.env['llp.payroll.rule.value'].browse(emp['rule_value_id'])	
 
-                        #  Авлага
-                        if ruled['code'] in ['n33001','n80001','n33004','n80058']:
-                            query = "select A.id from llp_payroll_employee_debt_line A inner join llp_payroll_employee_debt B ON A.debt_id=B.id where B.month BETWEEN '%s' AND '%s' and A.employee_id=%s and B.struct_type='%s' and B.state in ('confirmed')"%(self.start_date, self.end_date,emp['employee'],self.struct_id.struct_type)
-                            self.env.cr.execute(query)
-                            fetch=self.env.cr.fetchone()
-                            value=0
-                            python_code = ruled['python_code'][7:]
-                            if fetch and fetch[0]:
-                                attend = self.env['llp.payroll.employee.debt.line'].sudo().browse(fetch[0])											
-                                value = eval(python_code)																				
-                                self.env.cr.execute('update llp_payroll_rule_value set value=%s where id=%s'%(value,emp['rule_value_id']))
-                                self.env.cr.commit()
-                                value = False
-                                attend = False
-                            else:										
-                                self.env.cr.execute('update llp_payroll_rule_value set value=%s where id=%s'%(0.0,emp['rule_value_id']))
-                                self.env.cr.commit()
-                            is_used = True
-
-                        if ruled['rule_type']=='code' and not is_used:
+                        if ruled['rule_type']=='code':
                             value= 0
                             python_code = ruled['python_code']
                             object = {}
@@ -241,14 +218,14 @@ class LLPPayroll(models.Model):
                             elif ruled['object_type'] == 'kpi':
                                 object = {}
 
-                            if ruled['value_type']=='expression':
+                            if ruled['value_type'] == 'expression':
                                 rule_codes = re.findall(r'\b[A-Za-z]+\d+\b',str(python_code))
                                 if rule_codes:
-                                    where ="where A.line_id = %s "%emp['line_id']
-                                    if len(rule_codes)>1:
-                                            where=where+" and B.code in %s"%(str(tuple(rule_codes)))
+                                    where = "where A.line_id = %s "%emp['line_id']
+                                    if len(rule_codes) > 1:
+                                        where = where + " and B.code in %s"%(str(tuple(rule_codes)))
                                     else:				
-                                            where=where+" and B.code = '%s'"%(str(rule_codes[0]))
+                                        where = where + " and B.code = '%s'"%(str(rule_codes[0]))
                                     query="select A.value as value, B.code as code from llp_payroll_rule_value A inner join llp_payroll_rule B ON A.payroll_rule_id = B.id "+where																
 
                                     self.env.cr.execute(query)
@@ -277,44 +254,23 @@ class LLPPayroll(models.Model):
 
                                     safe_eval(python_code, local_dict, mode="exec", nocopy=True)
                                     value = local_dict.get('result')
-
-                                elif attend:
-                                    rule_codes = re.findall('n\d+',str(python_code))			
-                                    if rule_codes:
-                                        for code in rule_codes:
-                                            python_code = python_code.replace(code,str(0))
-
-                                    value = eval(python_code)
-                                    if ruled['code'] =='n31005' and value>0:											
-                                        employee_id = self.env['hr.employee'].browse(emp['employee'])
-                                        if employee_id.job_id:
-                                            if employee_id.job_id.below_than_stockkeeper and value >60:
-                                                value = 60
-                                            elif not employee_id.job_id.below_than_stockkeeper and value >30:
-                                                self.env.cr.execute("SELECT COUNT(*) FROM generate_series(timestamp %s, %s, '1 day') AS g(mydate) WHERE EXTRACT(DOW FROM mydate) = 6",(self.month_id.date_start,self.month_id.date_stop))
-                                                count_saturdays = self.env.cr.fetchone()[0]
-                                                if count_saturdays>4:
-                                                    if value>20:
-                                                        value = 20
-                                                else:
-                                                    value = 30
                                 else:
                                     value = eval(python_code)
 
-                                if ruled['rulefield_type']=='digit':
+                                if ruled['rulefield_type'] == 'digit':
                                     if not value:
                                         value = 0
-                                    if emp['is_edited']==False:											
-                                        self.env.cr.execute('update llp_payroll_rule_value set value=%s where id=%s'%(value,emp['rule_value_id']))
-                                elif ruled['rulefield_type']=='sign':									
-                                    self.env.cr.execute("update llp_payroll_rule_value set char_value='%s' where id=%s"%(value,emp['rule_value_id']))									
+                                    if emp['is_edited'] == False:											
+                                        self.env.cr.execute('update llp_payroll_rule_value set value = %s where id = %s'%(value,emp['rule_value_id']))
+                                elif ruled['rulefield_type'] == 'sign':									
+                                    self.env.cr.execute("update llp_payroll_rule_value set char_value = '%s' where id = %s"%(value,emp['rule_value_id']))									
                                 
                                 self.env.cr.commit()
                             except Exception as e:
-                                if ruled['rulefield_type']=='digit':																			
-                                    self.env.cr.execute('update llp_payroll_rule_value set value=%s where id=%s'%(0,emp['rule_value_id']))
-                                elif ruled['rulefield_type']=='sign':									
-                                    self.env.cr.execute("update llp_payroll_rule_value set char_value='%s' where id=%s"%(False,emp['rule_value_id']))	
+                                if ruled['rulefield_type'] == 'digit':																			
+                                    self.env.cr.execute('update llp_payroll_rule_value set value = %s where id = %s'%(0,emp['rule_value_id']))
+                                elif ruled['rulefield_type'] == 'sign':									
+                                    self.env.cr.execute("update llp_payroll_rule_value set char_value = '%s' where id = %s"%(False,emp['rule_value_id']))	
                                 pass
 
     def get_from_previous_month(self,employee_id,code,start_date, end_date):

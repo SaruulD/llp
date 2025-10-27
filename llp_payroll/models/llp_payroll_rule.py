@@ -76,6 +76,48 @@ class LLPPayrollRule(models.Model):
 				domain = ['&'] + domain
 		departs = self.search(domain + args, limit=limit)
 		return departs.name_get()
+	
+	def write(self, vals):
+		history_model = self.env['llp.payroll.rule.history']
+		fields_to_watch = [
+			'name', 'code', 'description', 'rule_type', 'value_type', 'python_code',
+			'percent', 'regular_number', 'decimal_point', 'transaction_type',
+			'object_type', 'is_vacation_salary', 'is_vacation_time', 'is_show_sum'
+		]
+		today = fields.Date.context_today(self)
+		histories = []
+		for rec in self:
+			changes = []
+			for f in fields_to_watch:
+				if f in vals:
+					old = rec[f]
+					new = vals.get(f)
+
+					if hasattr(old, 'id'):
+						old_disp = old.id
+					else:
+						old_disp = old
+
+					if hasattr(new, 'id'):
+						new_disp = new.id
+					else:
+						new_disp = new
+
+					if old_disp != new_disp:
+						changes.append("%s: %r -> %r" % (f, old_disp, new_disp))
+			if changes:
+				histories.append({
+					'rule_id': rec.id,
+					'start_date': today,
+					'note': '; '.join(changes)
+				})
+		if histories:
+			for history in self.history_ids:
+				if not history.end_date:
+					history.write({'end_date':today})
+					
+			history_model.create(histories)
+		return super(LLPPayrollRule, self).write(vals)
 
 class LLPPayrollRuleHistory(models.Model):
 	_name = 'llp.payroll.rule.history'

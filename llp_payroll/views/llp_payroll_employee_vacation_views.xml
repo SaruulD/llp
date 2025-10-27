@@ -73,9 +73,9 @@
                     </h1>
 
                     <group>
-                        <field name="month" required="1"/>
-                        <field name="department_ids" widget="many2many_tags"/>
-                        <field name="struct_type" />
+                        <field name="month" required="1" readonly="state != 'draft'"/>
+                        <field name="department_ids" widget="many2many_tags" readonly="state != 'draft'"/>
+                        <field name="struct_type" readonly="state != 'draft'"/>
                     </group>
 
                     <notebook>
