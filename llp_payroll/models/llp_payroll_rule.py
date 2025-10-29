@@ -77,6 +77,14 @@ class LLPPayrollRule(models.Model):
 		departs = self.search(domain + args, limit=limit)
 		return departs.name_get()
 	
+	def copy(self, default=None):
+		default = default or {}
+		default.update({
+			'code': False,
+		})
+		new_rule = super().copy(default)
+		return new_rule
+	
 	def write(self, vals):
 		history_model = self.env['llp.payroll.rule.history']
 		fields_to_watch = [

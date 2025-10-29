@@ -15,10 +15,18 @@ class LLPPayroll(models.Model):
     _description = "LLP payroll"
     _order = "create_date desc"
 
+    def _model_id_domain(self):
+        model = self.env['ir.model']._get(self._name)
+        return [('model_id', '=', model.id)]
+
     name = fields.Char(string='Code',tracking=True, readonly=True)
     start_date = fields.Date(string="Start Date", required=True, tracking=True)
     end_date = fields.Date(string="End Date", required=True, tracking=True)
-    dynamic_workflow_id = fields.Many2one('dynamic.workflow', string="Dynamic workflow")
+    dynamic_workflow_id = fields.Many2one(
+        'dynamic.workflow',
+        string="Dynamic workflow",
+        domain=_model_id_domain,
+    )
 	
     department_id = fields.Many2one('hr.department',string="Department",tracking=True)
 	

@@ -66,8 +66,8 @@
                         <field name="department_id" />
                     </group>
                     <group>
-                        <field name="dynamic_workflow_id" options="{'no_create':True}"/>
-                        <field name="struct_id" />
+                        <field name="dynamic_workflow_id" options="{'no_create':True}" required="1"/>
+                        <field name="struct_id" required="1"/>
                     </group>
 
                     <notebook>

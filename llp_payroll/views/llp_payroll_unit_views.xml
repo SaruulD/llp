@@ -56,8 +56,8 @@
                                 <list string="" editable="bottom">
                                     <field name="rule_id" required="1" options="{'no_create': True}"/>
                                     <field name="transaction_value" required="1"/>
-                                    <!-- <field name="debit_account_id" required="0" options="{'no_create': True}"/>
-                                    <field name="credit_account_id" required="0" options="{'no_create': True}"/> -->
+                                    <field name="debit_account_id" required="0" options="{'no_create': True}"/>
+                                    <field name="credit_account_id" required="0" options="{'no_create': True}"/>
                                 </list>
                                 <form>
                                     <group>

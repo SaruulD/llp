@@ -34,7 +34,5 @@ class LLPPayrollUnitLine(models.Model):
 	# TODO: duusgaad comment ustgah
 	# changed note -> transaction_value
 	transaction_value = fields.Text(string="Transaction value")
-
-	# TODO: account module suulgah
 	debit_account_id = fields.Many2one('account.account',string="Debit account")
 	credit_account_id = fields.Many2one('account.account',string="Credit account")
