@@ -6,14 +6,17 @@ import { useService } from "@web/core/utils/hooks";
 import { standardFieldProps } from "@web/views/fields/standard_field_props";
 
 class PayrollSheetField extends Component {
-  static template = "llp_payroll.PayrollSheetField"; // match your XML t-name
+  static template = "llp_payroll.PayrollSheetField";
   static props = { ...standardFieldProps };
   static supportedTypes = ["one2many"];
 
   setup() {
     this.orm = useService("orm");
     this.action = useService("action");
-    this.formatMoney = (val) => {
+    this.formatMoney = (val, rule) => {
+      if (rule.rulefield_type !== "digit") {
+        return val ?? "";
+      }
       if (typeof val === "string") {
         const maybeNum = Number(val);
         if (!isNaN(maybeNum) && val.trim() !== "") {
@@ -35,6 +38,7 @@ class PayrollSheetField extends Component {
 
       return val ?? "";
     };
+
     this.goToEmployee = this.goToEmployee.bind(this);
     this.goToRule = this.goToRule.bind(this);
     this.state = {

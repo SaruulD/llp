@@ -96,7 +96,11 @@ class LLPPayroll(models.Model):
         rules = []
         lines= []
         for pay in self:
+            employee_ids = []
+            # if pay.department_id:
             employee_ids = self.env['hr.employee'].search([('department_id','=',pay.department_id.id),('active','=',True)])
+            # else:
+            #     employee_ids = self.env['hr.employee'].search([('active','=',True)])
 
             if not pay.line_ids:
                 for line in pay.struct_id.line_ids:
@@ -131,7 +135,7 @@ class LLPPayroll(models.Model):
                     pay.write({'line_ids':lines})
 
             self.action_computebyQUERY()
-        return
+        return {'type': 'ir.actions.client', 'tag': 'reload'}
 
     def action_computebyQUERY(self):
         self.env.cr.commit()

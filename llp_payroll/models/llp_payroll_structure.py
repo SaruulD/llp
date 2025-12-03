@@ -36,6 +36,7 @@ class LLPPayrollStructureLine(models.Model):
 
 	struct_id = fields.Many2one('llp.payroll.structure',string="Payroll structure")
 	rule_id = fields.Many2one('llp.payroll.rule',string="Payroll rule",ondelete='restrict')
+	rule_code = fields.Char(related='rule_id.code', string="Rule Code", readonly=True)
 	sequence = fields.Integer(string="Sequence")
 	exp_sequence = fields.Integer(string="Expression Sequence")
 

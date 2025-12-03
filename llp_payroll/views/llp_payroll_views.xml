@@ -61,13 +61,13 @@
                     </h1>
 
                     <group>
-                        <field name="start_date" />
-                        <field name="end_date" />
-                        <field name="department_id" />
+                        <field name="dynamic_workflow_id" options="{'no_create':True}" required="1" readonly="state != 'draft'"/>
+                        <field name="start_date" readonly="state != 'draft'"/>
+                        <field name="end_date" readonly="state != 'draft'"/>
                     </group>
                     <group>
-                        <field name="dynamic_workflow_id" options="{'no_create':True}" required="1"/>
-                        <field name="struct_id" required="1"/>
+                        <field name="department_id" readonly="state != 'draft'"/>
+                        <field name="struct_id" required="1" readonly="state != 'draft'"/>
                     </group>
 
                     <notebook>
