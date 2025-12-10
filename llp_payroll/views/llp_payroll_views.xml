@@ -112,21 +112,20 @@
                             </field>
                         </page>
                         <page string="Payment">
-                            <!-- <group>
+                            <group>
                                 <field name="payment_history_ids" readonly="1" nolabel="1">
-                                    <tree string="History">
-                                        <field name="payment_request_id" />
+                                    <list string="Payment">
                                         <field name="move_id" />
                                         <field name="create_date" />
-                                    </tree>
-                                    <form string="History">
-                                        <field name="payment_request_id" />
-                                        <field name="move_id" />
-                                        <field name="create_date" />
+                                    </list>
+                                    <form string="Payment">
+                                        <group>
+                                            <field name="move_id" />
+                                            <field name="create_date" />
+                                        </group>
                                     </form>
                                 </field>
-
-                            </group> -->
+                            </group>
                         </page>
                         <page string="State history">
                             <field name="history_ids" readonly="1" nolabel="1">
@@ -136,11 +135,13 @@
                                     <field name="type" />
                                     <field name="comment" />
                                 </list>
-                                <form string="History">
-                                    <field name="user_id" />
-                                    <field name="date" />
-                                    <field name="type" />
-                                    <field name="comment" />
+                                <form string="State History">
+                                    <group>
+                                        <field name="user_id" />
+                                        <field name="date" />
+                                        <field name="type" />
+                                        <field name="comment" />
+                                    </group>
                                 </form>
                             </field>
                         </page>

@@ -48,6 +48,7 @@ class LLPPayrollEmployeeVacation(models.Model):
 		('done', 'Done'), # Батлагдсан
 	], string="State", default='draft', tracking=True)
 	line_ids = fields.One2many('llp.payroll.employee.vacation.line','vacation_id',string="Lines")
+	history_ids = fields.One2many('request.history','payroll_vacation_id',string="State History")
 
 	@api.model
 	def create(self, vals):
@@ -83,14 +84,27 @@ class LLPPayrollEmployeeVacation(models.Model):
 	def action_send(self):
 		self.action_check_lines()
 		self.write({'state':'pending'})
+		self.create_history('pending')
 
 	def action_confirm(self):
 		self.write({'state':'done'})
+		self.create_history('done')
 
 	def action_return(self):
 		# TODO: Үүсгэсэн хэрэглэгчид мэйл явуулах
 		# shaltgaan oruulah
 		self.write({'state':'draft'})
+		self.create_history('draft')
+	
+
+	def create_history(self,state, note = ""):
+		history_obj = self.env['request.history']
+		history_obj.create({'user_id':self._uid,
+									'date':fields.Date.context_today(self),
+									'type':state,
+									'payroll_vacation_id':self.id,
+									'comment': note
+									})
 
 
 	def action_get_data(self):
@@ -183,11 +197,7 @@ class LLPPayrollEmployeeMonthLine(models.Model):
 	worked_day = fields.Float(string="Worked day",digits=(16,5))
 	line_id = fields.Many2one('llp.payroll.employee.vacation.line',string="Vacation",ondelete='cascade')
 
-class LLPStateHistory(models.Model):
-	_name = 'llp.state.history'
-	_description = "LLP state history"
+class LLPPayrollVacationHistory(models.Model):
+	_inherit = 'request.history'
 
-	vacation_id = fields.Many2one('llp.payroll.employee.vacation', string='reference', ondelete='cascade')
-	date = fields.Datetime(string="Date", default=fields.Datetime.now)
-	user_id = fields.Many2one('res.users', string="User", default=lambda self: self.env.user)
-	state = fields.Char(string="State")
+	payroll_vacation_id = fields.Many2one('llp.payroll.employee.vacation', string='Payroll Vacation', ondelete="cascade")

@@ -121,6 +121,22 @@
                             </field>
                         </page>
                         <page string="State history">
+                            <field name="history_ids" readonly="1" nolabel="1">
+                                <list string="History">
+                                    <field name="user_id" />
+                                    <field name="date" />
+                                    <field name="type" />
+                                    <field name="comment" />
+                                </list>
+                                <form string="State History">
+                                    <group>
+                                        <field name="user_id" />
+                                        <field name="date" />
+                                        <field name="type" />
+                                        <field name="comment" />
+                                    </group>
+                                </form>
+                            </field>
                         </page>
                     </notebook>
 

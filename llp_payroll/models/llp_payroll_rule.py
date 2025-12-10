@@ -30,6 +30,7 @@ class LLPPayrollRule(models.Model):
 	history_ids = fields.One2many('llp.payroll.rule.history','rule_id',string="Rule histories")
 	transaction_type = fields.Selection([('salary_advance','Salary advance'),
 											('salary_late','Salary late'),
+											('by_partner','By partner'),
 										], string="Transaction type")
 	object_type = fields.Selection([('attendance','Attendance'),
 								 ('contract','Contract'),

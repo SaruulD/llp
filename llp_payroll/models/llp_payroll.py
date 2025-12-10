@@ -41,7 +41,8 @@ class LLPPayroll(models.Model):
         ('done','Done'),
         ('closed','Closed')
     ],string='State',default='draft',tracking=True)
-    history_ids = fields.One2many('request.history','payroll_id',string="History")
+    history_ids = fields.One2many('request.history','payroll_id',string="State History")
+    payment_history_ids = fields.One2many('payroll.payment.history', 'payroll_id', string="Payment history")
     
     @api.model
     def create(self, vals):
@@ -65,51 +66,32 @@ class LLPPayroll(models.Model):
         if not self.line_ids:
             raise UserError((u'Ажилтнуудын мэдээлэл алга байна.'))
         self.write({'state':'sent'})
-        self.create_history('sent','sent')
+        self.create_history('sent')
         
     def action_approve(self):
         self.write({'state':'pending'})
-        self.create_history('pending','pending')
+        self.create_history('pending')
 
     def action_verify(self):
         self.write({'state':'verify'})
-        self.create_history('verify','verify')
+        self.create_history('verify')
 
     def action_return(self):
         self.write({'state':'draft'})
-        self.create_history('draft','draft')
+        self.create_history('draft')
 
     def action_confirm(self):
         self.write({'state':'confirmed'})
-        self.create_history('confirmed','confirmed')
+        self.create_history('confirmed')
 
     def action_payment_request(self):
         self.ensure_one()
         action = self.env.ref('llp_payroll.action_llp_payroll_payment_request').read()[0]
-        # Pass defaults via context
-        action['context'] = {
-            # 'default_company_id': self.company_id.id if hasattr(self, 'company_id') else self.env.company.id,
-            # 'default_currency_id': self.currency_id.id,
-            # 'payroll_type': self.payroll_type,
-            # 'payroll_month': self.payroll_month and self.payroll_month.strftime('%Y-%m-%d') or False,
-            # 'salary_type_name': self.salary_type_name or '',
-            # 'amount': self.amount_total or 0.0,
-        }
         return action
     
 
     def action_account_move(self):
-        self.ensure_one()
-        action = self.env.ref('llp_payroll.action_llp_payroll_account_move').read()[0]
-        # Pass defaults via context
-        action['context'] = {
-            # 'default_company_id': self.company_id.id if hasattr(self, 'company_id') else self.env.company.id,
-            # 'default_currency_id': self.currency_id.id,
-            # 'payroll_type': self.payroll_type,
-            # 'payroll_month': self.payroll_month and self.payroll_month.strftime('%Y-%m-%d') or False,
-            # 'salary_type_name': self.salary_type_name or '',
-            # 'amount': self.amount_total or 0.0,
-        }
+        action = self.env["ir.actions.actions"]._for_xml_id("llp_payroll.action_llp_payroll_account_move")
         return action
     
     def action_get_data(self):
@@ -339,13 +321,12 @@ class LLPPayroll(models.Model):
         return value
     
 
-    def create_history(self,state,note):
+    def create_history(self,state):
         history_obj = self.env['request.history']
         history_obj.create({'user_id':self._uid,
                                     'date':fields.Date.context_today(self),
                                     'type':state,
-                                    'payroll_id':self.id,
-                                    'comment':note
+                                    'payroll_id':self.id
                                     })
 
 class LLPPayrollLine(models.Model):
@@ -525,8 +506,14 @@ class RequestHistory(models.Model):
     comment = fields.Text(string='Comment')
     sequence = fields.Integer(string='Sequence', default=1)
 
-
 class LLPPayrollHistory(models.Model):
 	_inherit = 'request.history'
 
 	payroll_id = fields.Many2one('llp.payroll', string='Payroll', ondelete="cascade")
+
+class PayrollPaymentHistory(models.Model):
+	_name = 'payroll.payment.history'
+	_order = 'create_date desc'
+	# payment_request_id = fields.Many2one('payment.request',string="Payment request")
+	move_id = fields.Many2one('account.move', string="Move")
+	payroll_id = fields.Many2one('llp.payroll', string="Payroll")

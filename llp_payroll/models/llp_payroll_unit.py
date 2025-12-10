@@ -13,6 +13,7 @@ class LLPPayrollUnit(models.Model):
 	name = fields.Char(string="Name",tracking=True)
 	code = fields.Char(string="Code",tracking=True)
 	department_ids = fields.Many2many('hr.department', string="Departments", tracking=True)
+	journal_id = fields.Many2one('account.journal', string="Journal", tracking=True)
 	line_ids = fields.One2many('llp.payroll.unit.line','unit_id',string="Unit lines",tracking=True)
 	active = fields.Boolean(string="Active",default=True)
 

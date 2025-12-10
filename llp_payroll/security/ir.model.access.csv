@@ -21,5 +21,7 @@ access_llp_payroll_rule_value_line,llp.payroll.rule.value,model_llp_payroll_rule
 
 access_llp_payroll_payment_request_accountant,llp.payroll.payment.request,model_llp_payroll_payment_request,llp_payroll.group_payroll_accountant,1,1,1,1
 access_llp_payroll_account_move_accountant,llp.payroll.account.move,model_llp_payroll_account_move,llp_payroll.group_payroll_accountant,1,1,1,1
+access_llp_payroll_account_move_line_accountant,llp.payroll.account.move.line,model_llp_payroll_account_move_line,llp_payroll.group_payroll_accountant,1,1,1,1
 
 access_request_history,request.history,model_request_history,base.group_user,1,1,1,1
+access_payroll_payment_history,llp.payroll.payment.history,model_payroll_payment_history,llp_payroll.group_payroll_accountant,1,1,1,1
