@@ -74,9 +74,6 @@
                         <page string="Salary detail">
                             <field name="line_ids" widget="payroll_sheet" readonly="1"/>
                         </page>
-                        <page string="Salary summary">
-                            <!-- <widget name="payroll_summary_widget"/> -->
-                        </page>
                         <page string="Employee">
                             <field name="line_ids" readonly="state != 'draft'">
                                 <list>
@@ -131,20 +128,20 @@
                             </group> -->
                         </page>
                         <page string="State history">
-                            <!-- <field name="history_ids" readonly="1" nolabel="1">
-                                <tree string="History">
+                            <field name="history_ids" readonly="1" nolabel="1">
+                                <list string="History">
                                     <field name="user_id" />
                                     <field name="date" />
                                     <field name="type" />
                                     <field name="comment" />
-                                </tree>
+                                </list>
                                 <form string="History">
                                     <field name="user_id" />
                                     <field name="date" />
                                     <field name="type" />
                                     <field name="comment" />
                                 </form>
-                            </field> -->
+                            </field>
                         </page>
                     </notebook>
                 </sheet>

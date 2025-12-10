@@ -39,6 +39,7 @@
             <form string="Payroll employee debt">
 
                 <header>
+                    <button name="action_get_data" string="Get data" invisible="state != 'draft'" class="btn-primary" type="object"/>
                     <button name="action_confirm" invisible="state != 'draft'" string="Confirm" type="object" class="btn-primary"/>
                     <button name="action_return" invisible="state != 'done'" string="Return" type="object" class="btn-secondary"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,done,closed"/>

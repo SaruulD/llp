@@ -93,7 +93,7 @@ class LLPPayrollEmployeeVacation(models.Model):
 		self.write({'state':'draft'})
 
 
-	def action_getdata(self):
+	def action_get_data(self):
 		for vac in self:
 			for department_id in vac.department_ids:
 				employees = self.env['hr.employee'].sudo().search([('department_id','=',department_id.id),('active','=',True),('next_vacation_salary_date','<=',vac.month)])

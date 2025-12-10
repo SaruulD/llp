@@ -32,7 +32,6 @@ class LLPPayroll(models.Model):
 	
     struct_id = fields.Many2one('llp.payroll.structure',string="Stucture", domain="[('state','=','done')]",tracking=True)
     line_ids = fields.One2many('llp.payroll.line','payroll_id',string="Lines")
-
     state = fields.Selection([
         ('draft','Draft'),
         ('sent','Sent'),
@@ -42,6 +41,7 @@ class LLPPayroll(models.Model):
         ('done','Done'),
         ('closed','Closed')
     ],string='State',default='draft',tracking=True)
+    history_ids = fields.One2many('request.history','payroll_id',string="History")
     
     @api.model
     def create(self, vals):
@@ -65,18 +65,23 @@ class LLPPayroll(models.Model):
         if not self.line_ids:
             raise UserError((u'Ажилтнуудын мэдээлэл алга байна.'))
         self.write({'state':'sent'})
+        self.create_history('sent','sent')
         
     def action_approve(self):
         self.write({'state':'pending'})
+        self.create_history('pending','pending')
 
     def action_verify(self):
         self.write({'state':'verify'})
+        self.create_history('verify','verify')
 
     def action_return(self):
         self.write({'state':'draft'})
+        self.create_history('draft','draft')
 
     def action_confirm(self):
         self.write({'state':'confirmed'})
+        self.create_history('confirmed','confirmed')
 
     def action_payment_request(self):
         self.ensure_one()
@@ -140,15 +145,17 @@ class LLPPayroll(models.Model):
     def action_computebyQUERY(self):
         self.env.cr.commit()
         query = "select C.id as rule_value_id,D.rule_type as rule_type, D.rulefield_type as rulefield_type, D.value_type as value_type, D.object_type as object_type, \
-                    G.id as employee , D.ruleview_type as ruleview_type,D.code as code, B.id as line_id, D.python_code as python_code, F.exp_sequence as exp_sequence, C.is_edited as is_edited\
+                    G.id as employee , D.ruleview_type as ruleview_type, D.code as code, D.regular_number as regular_number, B.id as line_id, D.python_code as python_code, F.exp_sequence as exp_sequence, C.is_edited as is_edited\
                     from llp_payroll A inner join llp_payroll_line B ON A.id= B.payroll_id \
                         inner join llp_payroll_rule_value C on B.id=C.line_id \
                         inner join llp_payroll_rule D on D.id=C.payroll_rule_id \
                         inner join llp_payroll_structure E ON E.id= A.struct_id \
                         inner join llp_payroll_structure_line F ON F.struct_id= E.id and F.rule_id=D.id\
                         inner join hr_employee G ON G.id=B.employee_id \
-                where A.id=%s group by rule_value_id, rule_type, D.rulefield_type,  value_type, object_type, employee, ruleview_type, code,B.id,\
-                    python_code, exp_sequence,is_edited order by F.exp_sequence asc "%(self.id)
+                where A.id=%s \
+                group by rule_value_id, rule_type, D.rulefield_type,  value_type, object_type, employee, ruleview_type, code,B.id,\
+                    python_code, regular_number, exp_sequence,is_edited \
+                order by F.exp_sequence asc "%(self.id)
         self.env.cr.execute(query)
         dictfetchall = self.env.cr.dictfetchall()
 
@@ -175,6 +182,7 @@ class LLPPayroll(models.Model):
                     }
                 formulas[group]['rules'][group1]['code'] = group1
                 formulas[group]['rules'][group1]['python_code'] = dic['python_code']
+                formulas[group]['rules'][group1]['regular_number'] = dic['regular_number']
                 formulas[group]['rules'][group1]['rule_type'] = dic['rule_type']
                 formulas[group]['rules'][group1]['object_type'] = dic['object_type']
                 formulas[group]['rules'][group1]['value_type'] = dic['value_type']
@@ -201,7 +209,7 @@ class LLPPayroll(models.Model):
                         if emp['rule_value_id']:
                             rule = self.env['llp.payroll.rule.value'].browse(emp['rule_value_id'])	
 
-                        if ruled['rule_type']=='code':
+                        if ruled['rule_type'] == 'code':
                             value= 0
                             python_code = ruled['python_code']
                             object = {}
@@ -210,7 +218,10 @@ class LLPPayroll(models.Model):
                                 object = self.env['hr.contract'].search([('employee_id', '=', emp['employee']),('state','=','open')], limit=1)
                             
                             elif ruled['object_type'] == 'vacation':
-                                query = "select B.id from llp_payroll_employee_vacation A inner join llp_payroll_employee_vacation_line B ON A.id=B.vacation_id where A.state = 'done' and B.employee_id = %s and A.month BETWEEN '%s' AND '%s' and A.struct_type='%s'"%(emp['employee'],self.start_date, self.end_date, self.struct_id.struct_type)
+                                query = "select B.id from llp_payroll_employee_vacation A \
+                                    inner join llp_payroll_employee_vacation_line B ON A.id=B.vacation_id \
+                                    where A.state = 'done' and B.employee_id = %s and A.month BETWEEN '%s' \
+                                    AND '%s' and A.struct_type='%s'"%(emp['employee'],self.start_date, self.end_date, self.struct_id.struct_type)
                                 self.env.cr.execute(query)
                                 fetch = self.env.cr.fetchone()
 
@@ -218,7 +229,10 @@ class LLPPayroll(models.Model):
                                     object = self.env['llp.payroll.employee.vacation.line'].browse(fetch[0])
 
                             elif ruled['object_type'] == 'debt':
-                                query = "select A.id from llp_payroll_employee_debt_line A inner join llp_payroll_employee_debt B ON A.debt_id=B.id where B.month BETWEEN '%s' AND '%s' and A.employee_id=%s and B.struct_type='%s' and B.state in ('confirmed')"%(self.start_date, self.end_date,emp['employee'],self.struct_id.struct_type)
+                                query = "select A.id from llp_payroll_employee_debt_line A \
+                                    inner join llp_payroll_employee_debt B ON A.debt_id=B.id \
+                                    where B.month BETWEEN '%s' AND '%s' and A.employee_id=%s \
+                                    and B.struct_type='%s' and B.state in ('confirmed')"%(self.start_date, self.end_date,emp['employee'],self.struct_id.struct_type)
                                 self.env.cr.execute(query)
                                 fetch=self.env.cr.fetchone()
 
@@ -238,7 +252,8 @@ class LLPPayroll(models.Model):
                                         where = where + " and B.code in %s"%(str(tuple(rule_codes)))
                                     else:				
                                         where = where + " and B.code = '%s'"%(str(rule_codes[0]))
-                                    query="select A.value as value, B.code as code from llp_payroll_rule_value A inner join llp_payroll_rule B ON A.payroll_rule_id = B.id "+where																
+                                    query = "select A.value as value, B.code as code from llp_payroll_rule_value A \
+                                        inner join llp_payroll_rule B ON A.payroll_rule_id = B.id " + where
 
                                     self.env.cr.execute(query)
                                     fetchedAll = self.env.cr.dictfetchall()
@@ -253,7 +268,7 @@ class LLPPayroll(models.Model):
                                                 python_code = python_code.replace(code,str(0))
 
                             # if ruled['rulefield_type']=='from_previous_month':
-                            #         value = self.get_from_previous_month(emp['payroll_employee'],python_code,self.start_date, self.end_date)								
+                            #         value = self.get_from_previous_month(emp['employee'],python_code,self.start_date, self.end_date)								
                             #         if emp['is_edited']==False:
                             #             self.env.cr.execute("update llp_payroll_rule_value set value=%s where id=%s"%(value,emp['rule_value_id']))
 
@@ -279,11 +294,15 @@ class LLPPayroll(models.Model):
                                 
                                 self.env.cr.commit()
                             except Exception as e:
-                                if ruled['rulefield_type'] == 'digit':																			
+                                if ruled['rulefield_type'] == 'digit':
                                     self.env.cr.execute('update llp_payroll_rule_value set value = %s where id = %s'%(0,emp['rule_value_id']))
-                                elif ruled['rulefield_type'] == 'sign':									
-                                    self.env.cr.execute("update llp_payroll_rule_value set char_value = '%s' where id = %s"%(False,emp['rule_value_id']))	
+                                elif ruled['rulefield_type'] == 'sign':
+                                    self.env.cr.execute("update llp_payroll_rule_value set char_value = '%s' where id = %s"%(False,emp['rule_value_id']))
                                 pass
+
+                        elif ruled['rule_type'] == 'regular':
+                            value = ruled['regular_number']
+                            self.env.cr.execute('update llp_payroll_rule_value set value = %s where id = %s'%(value,emp['rule_value_id']))
 
     def get_from_previous_month(self,employee_id,code,start_date, end_date):
         value = 0.0
@@ -292,17 +311,29 @@ class LLPPayroll(models.Model):
         end_date = end_date-relativedelta(months=1)
 
         if end_date:
-            query="select C.value as value from llp_payroll A left join llp_payroll_line B ON A.id=B.payroll_id \
+            query="select C.value as value \
+            from llp_payroll A \
+            left join llp_payroll_line B ON A.id=B.payroll_id \
             left join llp_payroll_rule_value C on C.line_id = B.id left join llp_payroll_rule D on D.id=C.payroll_rule_id \
             left join llp_payroll_structure E ON E.id= A.struct_id \
-            where A.state in ('confirmed','closed') and E.struct_type ='salary_late' and B.payroll_employee_id = %s and D.code ='%s' and A.start_date between '%s' and '%s' and A.end_date between '%s' and '%s' "%(employee_id,code,start_date, end_date)
+            where A.state in ('confirmed','closed') and E.struct_type ='salary_late' and B.employee_id = %s and D.code ='%s' \
+            and A.start_date between '%s' and '%s' and A.end_date between '%s' and '%s' "%(employee_id,code,start_date, end_date)
 
-        # raise UserError(_("%s %s %s ")%(employee_id,code,month_id))
         self.env.cr.execute(query)
         fetch = self.env.cr.fetchone()
         if fetch:			
             value = fetch[0]		
         return value
+    
+
+    def create_history(self,state,note):
+        history_obj = self.env['request.history']
+        history_obj.create({'user_id':self._uid,
+                                    'date':fields.Date.context_today(self),
+                                    'type':state,
+                                    'payroll_id':self.id,
+                                    'comment':note
+                                    })
 
 class LLPPayrollLine(models.Model):
     _name = 'llp.payroll.line'
@@ -359,7 +390,7 @@ class LLPPayrollLine(models.Model):
             
             for rule in line.rule_value_ids:
                 if [rule.payroll_rule_id.id,rule.payroll_rule_id.name] not in rules:
-                    rules.append([rule.payroll_rule_id.id,rule.payroll_rule_id.name])
+                    rules.append([rule.payroll_rule_id.id,rule.payroll_rule_id.name,rule.payroll_rule_id.rulefield_type])
                     decimals.update({rule.payroll_rule_id.id:rule.payroll_rule_id.decimal_point})
                 if rule.payroll_rule_id.id not in employee_values[line.employee_id.id]:
                     
@@ -382,7 +413,7 @@ class LLPPayrollLine(models.Model):
             for struct in struct_line_ids:
                 if struct.rule_id.show_in_payroll:
                     if [struct.rule_id.id,struct.rule_id.name] not in rules:
-                        rules.append([struct.rule_id.id,struct.rule_id.name+' '+struct.rule_id.code, bool(struct.rule_id.is_show_sum)])
+                        rules.append([struct.rule_id.id,struct.rule_id.name+' '+struct.rule_id.code, bool(struct.rule_id.is_show_sum), struct.rule_id.rulefield_type])
 
         lines.update({'employees':employees,'rules':rules,'employee_values':employee_values,'employee_lines':employee_lines,'decimals':decimals,'is_signs':is_signs,'sum_rules':sum_rules,'is_edits':is_edits})
         return lines
@@ -394,7 +425,16 @@ class LLPPayrollRuleValue(models.Model):
 
     line_id = fields.Many2one('llp.payroll.line', string="Lines",ondelete='cascade',index=True)
     payroll_rule_id = fields.Many2one('llp.payroll.rule', string="Rule", ondelete='restrict',index=True)
-    rulefield_type = fields.Selection([('digit','Digit'),('sign','Sign'),('salary_advance','Salary advance'),('risk_bonus','Bonus'),('bonus','Bonus'),('from_previous_month','Get from previous month'),('profit_bonus','profit bonus'),('monthly_bonus','monthly bonus')], string="Rule field type", default="digit")
+    rulefield_type = fields.Selection([
+        ('digit','Digit'),
+        ('sign','Sign'),
+        ('salary_advance','Salary advance'),
+        ('risk_bonus','Bonus'),
+        ('bonus','Bonus'),
+        ('from_previous_month','Get from previous month'),
+        ('profit_bonus','profit bonus'),
+        ('monthly_bonus','monthly bonus')
+        ], string="Rule field type", default="digit")
     currency_id = fields.Many2one('res.currency', string="Currency")
     value = fields.Monetary(string="Value", currency_field='currency_id', digits=(16, 2))
     char_value = fields.Char(string="Value")
@@ -406,3 +446,54 @@ class LLPPayrollRuleValue(models.Model):
     show_in_payroll = fields.Boolean(string="Show in payroll Active",default=True,index=True)
     is_show = fields.Boolean(string="Is show" ,default=True,index=True)
     is_sum_view = fields.Boolean(string="Is sum view" ,default=False,index=True)
+
+class RequestHistory(models.Model):
+    """ Ажлын урсгалын түүх """
+    
+    _name = 'request.history'
+    _description = 'Request History'
+    _inherit = ['mail.thread', 'mail.activity.mixin']
+    _order = 'id desc'
+    STATE_SELECTION = [('draft','Draft'),
+                       ('sent','Sent'),#Илгээгдсэн
+                       ('approved',u'Зөвшөөрсөн'),#Зөвшөөрсөн
+                       ('verified',u'Хянасан'),#Хянасан
+                       ('next_confirm_user',u'Зөвшөөрсөн'),#Дараагийн батлах хэрэглэгчид илгээгдсэн
+                       ('confirmed',u'Баталсан'),#Батласан
+                       ('tender_created',u'Тендер үүссэн'),#Тендер үүссэн
+                       ('sent_to_supply',u'Хангамжид илгээгдсэн'),#Хангамжаарх худалдан авалт
+                       ('fulfil_request',u'Биелүүлэх хүсэлт'),# Биелүүлэх хүсэлт
+                       ('fulfill',u'Биелүүлэх'),# Биелүүлэх
+                       ('retrived',u'Буцаагдсан'),# Буцаагдсан
+                       ('retrive_request',u'Буцаагдах хүсэлт'),# Буцаагдах хүсэлт
+                       ('rejected',u'Rejected'),
+                       ('assigned',u'Хувиарласан'),
+                       ('canceled',u'Цуцлагдсан'),#Цуцлагдсан
+                       ('purchased',u'Худалдан авалт үүссэн'),#Худалдан авалт үүссэн
+                       ('purchase',U'Худалдан авах захиалга'),#Худалдан авалт үүссэн
+                       ('sent_to_supply_manager',u'Бараа тодорхойлох'),#Хангамж импортын менежер
+                       ('closed',u'Хаагдсан'),
+                       ('done',u'Дууссан'),
+                       ('anket', 'Анкет'),
+                        ('exam', 'Шалгалт'),
+                        ('interview', 'Ярилцлага'),
+                        ('professional', 'Мэргэжлийн шалгалт'),	
+                        ('interview2', 'Ярилцлага2'),	
+                        ('task', 'Даалгавар'),	
+                        ('interview3', 'Ярилцлага3'),	
+                       ('receive',u'Хүлээн авах'),
+                       ('completed','Completed'),
+                       ('pending',u'Хүлээгдэж буй'),
+                       ('verify',u'Хянах'),
+                                   ]
+    user_id = fields.Many2one('res.users', string='User', required=True)
+    date = fields.Datetime(string='Action Date', required=True)
+    type = fields.Selection(STATE_SELECTION, string='Type', required=True, default='draft')
+    comment = fields.Text(string='Comment')
+    sequence = fields.Integer(string='Sequence', default=1)
+
+
+class LLPPayrollHistory(models.Model):
+	_inherit = 'request.history'
+
+	payroll_id = fields.Many2one('llp.payroll', string='Payroll', ondelete="cascade")

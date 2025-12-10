@@ -63,6 +63,39 @@ class LLPPayrollEmployeeDebt(models.Model):
 		# TODO: Батлагдсан Авлага суутгах дүн Ноорогоос бусад төлвийн цалинд ашиглагдсан бол “Ноорог” болгох боломжгүй. Анхааруулга өгнө.
 		self.write({'state':'draft'})
 
+	def action_get_data(self):
+		for debt in self:
+			for department_id in debt.department_ids:
+				# TODO: hariltsagchaar n yaj haih we?
+				employees = self.env['hr.employee'].sudo().search([('department_id','=',department_id.id),('active','=',True)])
+
+				employee_months = {}
+				debt_lines = {}
+				for line in debt.line_ids:
+
+					if line.employee_id.id not in debt_lines:
+						debt_lines[line.employee_id.id] = line
+						# line.month_line_ids.unlink()
+
+					if line.employee_id.id not in employee_months:
+						employee_months[line.employee_id.id] = {'months': {}}
+					
+					for mon in line.month_line_ids:
+						if mon.month_id.id not in employee_months[line.employee_id.id]['months']:
+							employee_months[line.employee_id.id]['months'][mon.month_id.id] = mon.month_id.id
+
+				for employee in employees:
+					if employee.id not in debt_lines:
+						new_line = self.env['llp.payroll.employee.debt.line'].create({
+							'employee_id': employee.id,
+							'vacation_id': debt.id,
+						})
+						debt_lines[employee.id] = new_line
+						employee_months[employee.id] = {'months': {}}
+					else:
+						if employee.id not in employee_months:
+							employee_months[employee.id] = {'months': {}}
+
 
 class LLPPayrollEmployeeDebtLine(models.Model):
 	_name ='llp.payroll.employee.debt.line'

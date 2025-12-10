@@ -14,8 +14,8 @@ class PayrollSheetField extends Component {
     this.orm = useService("orm");
     this.action = useService("action");
     this.formatMoney = (val, rule) => {
-      if (rule.rulefield_type !== "digit") {
-        return val ?? "";
+      if (rule[3] !== "digit") {
+        return val === false ? "" : val ?? "";
       }
       if (typeof val === "string") {
         const maybeNum = Number(val);

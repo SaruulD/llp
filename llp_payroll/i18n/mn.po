@@ -1177,7 +1177,7 @@ msgstr "Төлөв"
 #: model_terms:ir.ui.view,arch_db:llp_payroll.view_llp_payroll_employee_vacation_form
 #: model_terms:ir.ui.view,arch_db:llp_payroll.view_llp_payroll_form
 msgid "State history"
-msgstr "Төлвийн түүх"
+msgstr "Төлөвийн түүх"
 
 #. module: llp_payroll
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_structure__struct_type

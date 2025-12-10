@@ -59,7 +59,7 @@
             <form string="Payroll Vacation">
 
                 <header>
-                    <button name="action_getdata" string="Get data" invisible="state != 'draft'" class="btn-primary" type="object"/>
+                    <button name="action_get_data" string="Get data" invisible="state != 'draft'" class="btn-primary" type="object"/>
                     <button name="action_send" invisible="state != 'draft'" string="Send" type="object" class="btn-primary"/>
                     <button name="action_confirm" invisible="state != 'pending'" string="Confirm" type="object" class="btn-primary"/>
                     <button name="action_return" invisible="state != 'pending'" string="Return" type="object" class="btn-secondary"/>
