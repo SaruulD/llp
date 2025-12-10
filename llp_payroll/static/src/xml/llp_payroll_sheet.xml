@@ -27,9 +27,14 @@
                                 <t t-foreach="state.rules" t-as="rule" t-key="emp[0] + '-' + rule[0]">
                                     <td>
                                         <t t-set="v" t-value="state.employee_values?.[emp[0]]?.[rule[0]]"/>
-                                        <span>
-                                            <t t-esc="formatMoney(v, rule)"/>
-                                        </span>
+                                        <t t-if="rule[4] === 'edit' and props.record.data.state === 'draft'">
+                                            <input type="number" t-att-value="v" t-on-change="(ev) => onValueChange(ev, state.employee_lines?.[emp[0]]?.[rule[0]], emp[0], rule[0])" class="form-control form-control-sm" style="width:90px;"/>
+                                        </t>
+                                        <t t-else="">
+                                            <span>
+                                                <t t-esc="formatMoney(v, rule, state.decimals?.[rule[0]])"/>
+                                            </span>
+                                        </t>
                                     </td>
                                 </t>
                             </tr>
@@ -48,7 +53,7 @@
                                             .reduce((acc, empVals) => acc + (empVals?.[rule[0]] || 0), 0)"/>
                                         <span>
                                             <strong>
-                                                <t t-esc="formatMoney(total, rule)"/>
+                                                <t t-esc="formatMoney(total, rule, decimals)"/>
                                             </strong>
                                         </span>
                                     </t>

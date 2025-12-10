@@ -15,8 +15,7 @@ class LLPPayrollRule(models.Model):
 	parent_id = fields.Many2one('llp.payroll.rule',string="Parent rule",tracking=True)
 	code = fields.Char(string="Code",tracking=True)
 	description = fields.Text(string="Description",tracking=True)	
-	rule_type = fields.Selection([('percent','Percent'),('regular','Regular'),('code','Code')],string="Rule type",tracking=True,default='regular')
-	value_type = fields.Selection([('get_value','Get value'),('expression','Expression')],string="Value type",tracking=True,default='get_value')
+	rule_type = fields.Selection([('regular','Regular'),('code','Code')],string="Rule type",tracking=True,default='regular')
 	python_code = fields.Text(string="Python code" ,tracking=True)
 	percent = fields.Float(string="Percent" ,tracking=True)
 	regular_number = fields.Float(string="Regular number" ,tracking=True)
@@ -27,7 +26,7 @@ class LLPPayrollRule(models.Model):
 	is_vacation_time = fields.Boolean(string="Is vacation time",default=False)
 	is_show_sum = fields.Boolean(string="Is show sum",default=False)
 	ruleview_type = fields.Selection([('view','View'),('edit','Edit')],string="Rule view type",default="view",tracking=True)
-	rulefield_type = fields.Selection([('digit','Digit'),('sign','Sign'),('from_previous_month','Get from previous month')], string="Rule field type", default="digit",tracking=True)
+	rulefield_type = fields.Selection([('digit','Digit'),('sign','Sign'),('from_previous_payroll','Get from previous payroll')], string="Rule field type", default="digit",tracking=True)
 	history_ids = fields.One2many('llp.payroll.rule.history','rule_id',string="Rule histories")
 	transaction_type = fields.Selection([('salary_advance','Salary advance'),
 											('salary_late','Salary late'),
@@ -88,7 +87,7 @@ class LLPPayrollRule(models.Model):
 	def write(self, vals):
 		history_model = self.env['llp.payroll.rule.history']
 		fields_to_watch = [
-			'name', 'code', 'description', 'rule_type', 'value_type', 'python_code',
+			'name', 'code', 'description', 'rule_type', 'python_code',
 			'percent', 'regular_number', 'decimal_point', 'transaction_type',
 			'object_type', 'is_vacation_salary', 'is_vacation_time', 'is_show_sum'
 		]

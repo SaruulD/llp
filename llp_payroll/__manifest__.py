@@ -21,6 +21,7 @@
         'views/llp_payroll_views.xml',
         'views/menu_views.xml',
         'wizard/llp_payroll_payment_request_views.xml',
+        'wizard/llp_payroll_account_move_views.xml',
     ],
     'installable': True,
     'application': True,
