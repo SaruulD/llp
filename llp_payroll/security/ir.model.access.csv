@@ -25,3 +25,7 @@ access_llp_payroll_account_move_line_accountant,llp.payroll.account.move.line,mo
 
 access_request_history,request.history,model_request_history,base.group_user,1,1,1,1
 access_payroll_payment_history,llp.payroll.payment.history,model_payroll_payment_history,llp_payroll.group_payroll_accountant,1,1,1,1
+
+access_llp_payroll_edit_wizard,llp.payroll.edit.wizard,model_llp_payroll_edit_wizard,llp_payroll.group_payroll_admin,1,1,1,1
+access_llp_payroll_salary_report,llp.payroll.salary.report,model_llp_payroll_salary_report,llp_payroll.group_payroll_admin,1,1,1,1
+access_llp_payroll_bank_report,llp.payroll.bank.report,model_llp_payroll_bank_report,llp_payroll.group_payroll_admin,1,1,1,1

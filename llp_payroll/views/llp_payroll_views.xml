@@ -52,6 +52,10 @@
                     <button name="action_return" invisible="state != 'pending'" string="Return" type="object" class="btn-primary"/>
                     <button name="action_confirm" invisible="state != 'verify'" string="Confirm" type="object" class="btn-primary"/>
 
+                    <xpath expr="//header" position="inside">
+                        <button name="action_open_edit_wizard" string="Импорт / Экспорт" type="object" class="oe_highlight"/>
+                    </xpath>
+
                     <field name="state" widget="statusbar" statusbar_visible="draft,sent,pending,verify,confirmed"/>
                 </header>
 
@@ -116,11 +120,13 @@
                                 <field name="payment_history_ids" readonly="1" nolabel="1">
                                     <list string="Payment">
                                         <field name="move_id" />
+                                        <field name="state" />
                                         <field name="create_date" />
                                     </list>
                                     <form string="Payment">
                                         <group>
                                             <field name="move_id" />
+                                            <field name="state" />
                                             <field name="create_date" />
                                         </group>
                                     </form>

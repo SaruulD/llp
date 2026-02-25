@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- PDF Report Action -->
+    <record id="action_report_payroll_matrix_pdf" model="ir.actions.report">
+        <field name="name">Payroll Report PDF</field>
+        <!-- CHANGE this to your wizard model -->
+        <field name="model">llp.payroll.salary.report</field>
+        <field name="report_type">qweb-pdf</field>
+        <!-- Must match AbstractModel: report.<module>.<report_name> -->
+        <field name="report_name">llp_payroll.report_payroll_matrix_pdf</field>
+        <field name="report_file">llp_payroll.report_payroll_matrix_pdf</field>
+        <field name="print_report_name">'Цалингийн тайлан'</field>
+    </record>
+
+    <!-- QWeb Template -->
+    <template id="report_payroll_matrix_pdf">
+        <t t-call="web.html_container">
+            <t t-call="web.basic_layout">
+
+                <div class="page">
+                    <style>
+            .llp-title { text-align:center; font-size:16px; font-weight:700; margin: 0 0 10px 0; }
+            .llp-table { width:100%; border-collapse: collapse; }
+            .llp-table th, .llp-table td { border: 1px solid #000; padding: 4px 6px; font-size: 10px; }
+            .llp-table th { background: #E0E0E0; text-align: center; font-weight: 700; }
+            .dept-row td { font-weight:700; }
+            .emp-name { padding-left: 14px; }
+            .num { text-align: right; white-space: nowrap; }
+            .total-row td { background:#D9D9D9; font-weight:700; }
+                    </style>
+
+                    <!-- Title (same width as table because table is 100%) -->
+                    <div class="llp-title">
+                        <t t-esc="vals.get('file_name') or 'Цалингийн тайлан'"/>
+                    </div>
+
+                    <div style="font-size:10px; font-family:Arial; margin: 0 0 8px 0;">
+                        <div>Эхлэх хугацаа:                            <t t-esc="docs.start_date or ''"/>
+                        </div>
+                        <div>Дуусах хугацаа:                            <t t-esc="docs.end_date or ''"/>
+                        </div>
+                    </div>
+
+                    <table class="llp-table">
+                        <thead>
+                            <tr>
+                                <th>Ажилтан</th>
+                                <t t-foreach="vals['rule_ids']" t-as="rid">
+                                    <th>
+                                        <t t-esc="vals['rules_map'][rid][1]"/>
+                                    </th>
+                                </t>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            <t t-set="grand" t-value="{}"/>
+
+                            <t t-foreach="sorted(vals['payrolls'].values(), key=lambda p: p.get('payroll_id', 0))" t-as="p">
+
+                                <t t-set="dept" t-value="{}"/>
+
+                                <tr class="dept-row">
+                                    <td>
+                                        <t t-esc="p.get('department_name') or 'Тодорхойгүй'"/>
+                                    </td>
+                                    <t t-foreach="vals['rule_ids']" t-as="rid">
+                                        <td></td>
+                                    </t>
+                                </tr>
+
+                                <t t-foreach="sorted(p['employees'].values(), key=lambda e: e.get('name') or '')" t-as="emp">
+                                    <tr>
+                                        <td class="emp-name">
+                                            <t t-esc="emp.get('last_name') or 'Тодорхойгүй'"/>
+                                            <t t-esc="emp.get('first_name') or 'Тодорхойгүй'"/>
+                                        </td>
+
+                                        <t t-foreach="vals['rule_ids']" t-as="rid">
+                                            <t t-set="r" t-value="emp['rules'].get(rid)"/>
+                                            <td class="num">
+                                                <t t-if="r">
+                                                    <t t-if="r.get('rulefield_type') == 'char'">
+                                                        <t t-esc="r.get('char_value') or ''"/>
+                                                    </t>
+                                                    <t t-else="">
+                                                        <t t-esc="'{:,.2f}'.format(float(r.get('value') or 0.0))"/>
+
+                                                        <t t-if="r.get('is_show_sum')">
+                                                            <t t-set="tmp_dept" t-value="dept.update({rid: (dept.get(rid, 0.0) + float(r.get('value') or 0.0))})"/>
+                                                        </t>
+                                                    </t>
+                                                </t>
+                                            </td>
+                                        </t>
+                                    </tr>
+                                </t>
+
+                                <tr class="total-row">
+                                    <td>Албаны нийт дүн</td>
+
+                                    <t t-foreach="vals['rule_ids']" t-as="rid">
+                                        <t t-set="seq" t-value="vals['rules_map'][rid][0]"/>
+                                        <t t-set="rname" t-value="vals['rules_map'][rid][1]"/>
+                                        <t t-set="rtype" t-value="vals['rules_map'][rid][2]"/>
+                                        <t t-set="show_sum" t-value="vals['rules_map'][rid][3]"/>
+
+                                        <td class="num">
+                                            <t t-if="show_sum and rtype != 'char'">
+                                                <t t-esc="'{:,.2f}'.format(dept.get(rid, 0.0))"/>
+
+                                                <t t-set="tmp_grand" t-value="grand.update({rid: (grand.get(rid, 0.0) + dept.get(rid, 0.0))})"/>
+                                            </t>
+                                        </td>
+                                    </t>
+                                </tr>
+
+                            </t>
+
+                            <!-- Grand total row -->
+                            <tr class="total-row">
+                                <td>НИЙТ ДҮН</td>
+                                <t t-foreach="vals['rule_ids']" t-as="rid">
+                                    <t t-set="rtype" t-value="vals['rules_map'][rid][2]"/>
+                                    <t t-set="show_sum" t-value="vals['rules_map'][rid][3]"/>
+                                    <td class="num">
+                                        <t t-if="show_sum and rtype != 'char'">
+                                            <t t-esc="'{:,.2f}'.format(grand.get(rid, 0.0))"/>
+                                        </t>
+                                    </td>
+                                </t>
+                            </tr>
+
+                        </tbody>
+                    </table>
+
+                </div>
+            </t>
+        </t>
+    </template>
+
+</odoo>

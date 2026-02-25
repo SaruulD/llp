@@ -64,38 +64,78 @@ class LLPPayrollEmployeeDebt(models.Model):
 		self.write({'state':'draft'})
 
 	def action_get_data(self):
+		DebtLine = self.env['llp.payroll.employee.debt.line'].sudo()
+		Detail = self.env['llp.payroll.employee.debt.line.details'].sudo()
+
 		for debt in self:
-			for department_id in debt.department_ids:
-				# TODO: hariltsagchaar n yaj haih we?
-				employees = self.env['hr.employee'].sudo().search([('department_id','=',department_id.id),('active','=',True)])
+			if not debt.department_ids:
+				raise UserError(_("Please select departments."))
 
-				employee_months = {}
-				debt_lines = {}
-				for line in debt.line_ids:
+			employees = self.env['hr.employee'].sudo().search([
+				('active', '=', True),
+				('department_id', 'in', debt.department_ids.ids),
+				('work_contact_id', '!=', False),
+			])
+			if not employees:
+				continue
 
-					if line.employee_id.id not in debt_lines:
-						debt_lines[line.employee_id.id] = line
-						# line.month_line_ids.unlink()
+			emp_partner = {e.id: e.work_contact_id.id for e in employees if e.work_contact_id}
+			partner_to_emp = {}
+			for emp_id, partner_id in emp_partner.items():
+				partner_to_emp.setdefault(partner_id, []).append(emp_id)
 
-					if line.employee_id.id not in employee_months:
-						employee_months[line.employee_id.id] = {'months': {}}
-					
-					for mon in line.month_line_ids:
-						if mon.month_id.id not in employee_months[line.employee_id.id]['months']:
-							employee_months[line.employee_id.id]['months'][mon.month_id.id] = mon.month_id.id
+			partners = self.env['res.partner'].browse(list(partner_to_emp.keys()))
+			if not partners:
+				continue
 
-				for employee in employees:
-					if employee.id not in debt_lines:
-						new_line = self.env['llp.payroll.employee.debt.line'].create({
-							'employee_id': employee.id,
-							'vacation_id': debt.id,
+			line_by_emp = {l.employee_id.id: l for l in debt.line_ids if l.employee_id}
+
+			debt.line_ids.mapped('line_details_ids').unlink()
+
+			aml_domain = [
+				('partner_id', 'in', partners.ids),
+				('account_id.account_type', 'in', ['asset_receivable', 'asset_current']),
+				('move_id.state', '=', 'posted'),
+				('amount_residual', '!=', 0),
+			]
+			if debt.month:
+				aml_domain.append(('date', '<=', debt.month))
+
+			amls = self.env['account.move.line'].sudo().search(
+				aml_domain,
+				order='partner_id, date asc, id asc'
+			)
+			if not amls:
+				continue
+
+			aml_partner_ids = set(amls.mapped('partner_id').ids)
+			for p_id in aml_partner_ids:
+				for emp_id in partner_to_emp.get(p_id, []):
+					if emp_id not in line_by_emp:
+						line_by_emp[emp_id] = DebtLine.create({
+							'debt_id': debt.id,
+							'employee_id': emp_id,
 						})
-						debt_lines[employee.id] = new_line
-						employee_months[employee.id] = {'months': {}}
-					else:
-						if employee.id not in employee_months:
-							employee_months[employee.id] = {'months': {}}
 
+			create_vals = []
+			for aml in amls:
+				p_id = aml.partner_id.id
+				for emp_id in partner_to_emp.get(p_id, []):
+					line = line_by_emp.get(emp_id)
+					if not line:
+						continue
+
+					create_vals.append({
+						'line_id': line.id,
+						'date': aml.date,
+						'transaction_value': aml.name or aml.move_name or '',
+						'amount': aml.amount_residual,
+					})
+
+			if create_vals:
+				Detail.create(create_vals)
+
+		return True
 
 class LLPPayrollEmployeeDebtLine(models.Model):
 	_name ='llp.payroll.employee.debt.line'
@@ -117,8 +157,7 @@ class LLPPayrollEmployeeDebtLine(models.Model):
         required=True,
         default=lambda self: self.env.company.currency_id.id
     )
-	# TODO: нийт авлагын дүн оруулах 1202, 1206-тай данс
-	total_debt = fields.Monetary(string="Total debt", tracking=True, currency_field='currency_id')
+	total_debt = fields.Monetary(string="Total debt", tracking=True, currency_field='currency_id', compute="_compute_total_debt", store=True)
 	balance = fields.Monetary(string="Balance", readonly=True, 
 		compute="_compute_balance",
 		store=True)
@@ -133,10 +172,15 @@ class LLPPayrollEmployeeDebtLine(models.Model):
 		string="Line details",
 	)
 
-	@api.depends('total_debt', 'balance')
+	@api.depends('line_details_ids.amount')
+	def _compute_total_debt(self):
+		for line in self:
+			line.total_debt = sum(line.line_details_ids.mapped('amount'))
+
+	@api.depends('total_debt', 'withholding_amount')
 	def _compute_balance(self):
 		for rec in self:
-			rec.balance = rec.total_debt - rec.withholding_amount
+			rec.balance = (rec.total_debt or 0.0) - (rec.withholding_amount or 0.0)
 
 
 

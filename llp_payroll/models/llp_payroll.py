@@ -2,7 +2,6 @@
 
 from odoo import api, fields, models, _ # type: ignore
 from odoo.exceptions import UserError # type: ignore
-from dateutil.relativedelta import relativedelta # type: ignore
 import logging
 import re
 _logger = logging.getLogger(__name__)
@@ -98,11 +97,7 @@ class LLPPayroll(models.Model):
         rules = []
         lines= []
         for pay in self:
-            employee_ids = []
-            # if pay.department_id:
             employee_ids = self.env['hr.employee'].search([('department_id','=',pay.department_id.id),('active','=',True)])
-            # else:
-            #     employee_ids = self.env['hr.employee'].search([('active','=',True)])
 
             if not pay.line_ids:
                 for line in pay.struct_id.line_ids:
@@ -114,27 +109,6 @@ class LLPPayroll(models.Model):
                     lines.append((0,0,{'rule_value_ids':rules,'employee_id':employee_id.id}))
                 if lines:
                     pay.write({'line_ids':lines})
-            # else:
-            #     inrules = []
-            #     inemployees = []
-            #     for line in pay.line_ids:
-            #         if line.employee_id.id not in inemployees:
-            #             inemployees.append(line.employee_id.id)
-            #         for rule in line.rule_value_ids:
-            #             if rule.payroll_rule_id.id not in inrules:
-            #                 inrules.append(rule.payroll_rule_id.id)
-            #     for line in pay.struct_id.line_ids:
-            #         is_edit =False
-            #         if line.rule_id.ruleview_type=='edit':
-            #             is_edit = True
-
-            #         rules.append((0,0,{'payroll_rule_id':line.rule_id.id,'show_in_payroll':line.rule_id.show_in_payroll,'decimal_point':line.rule_id.decimal_point,'rulefield_type':line.rule_id.rulefield_type,'sequence':line.sequence,'is_edit':is_edit,'value':0}))	
-
-            #     for employee_id in employee_ids:
-            #         if employee_id.id not in inemployees:
-            #             lines.append((0,0,{'rule_value_ids':rules,'employee_id':employee_id.id}))
-            #     if lines:
-            #         pay.write({'line_ids':lines})
 
             self.action_computebyQUERY()
         return {'type': 'ir.actions.client', 'tag': 'reload'}
@@ -227,7 +201,7 @@ class LLPPayroll(models.Model):
                                 query = "select A.id from llp_payroll_employee_debt_line A \
                                     inner join llp_payroll_employee_debt B ON A.debt_id=B.id \
                                     where B.month BETWEEN '%s' AND '%s' and A.employee_id=%s \
-                                    and B.struct_type='%s' and B.state in ('confirmed')"%(self.start_date, self.end_date,emp['employee'],self.struct_id.struct_type)
+                                    and B.struct_type='%s' and B.state in ('done')"%(self.start_date, self.end_date,emp['employee'],self.struct_id.struct_type)
                                 self.env.cr.execute(query)
                                 fetch=self.env.cr.fetchone()
 
@@ -240,8 +214,6 @@ class LLPPayroll(models.Model):
                                 object = {}
 
                             rule_codes = re.findall(r'\b[A-Za-z]+\d+\b|\b[A-Za-z]+\b',str(python_code))
-                            print('\n\n\nPYTHON CODE:',python_code)
-                            print('\n\n\nrule_codes:',rule_codes)
 
                             if rule_codes:
                                 where = "where A.line_id = %s "%emp['line_id']
@@ -328,6 +300,18 @@ class LLPPayroll(models.Model):
                                     'type':state,
                                     'payroll_id':self.id
                                     })
+    def action_open_edit_wizard(self):
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Payroll Import/Export',
+            'res_model': 'llp.payroll.edit.wizard',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+                'default_payroll_id': self.id,
+            }
+        }
 
 class LLPPayrollLine(models.Model):
     _name = 'llp.payroll.line'
@@ -512,8 +496,15 @@ class LLPPayrollHistory(models.Model):
 	payroll_id = fields.Many2one('llp.payroll', string='Payroll', ondelete="cascade")
 
 class PayrollPaymentHistory(models.Model):
-	_name = 'payroll.payment.history'
-	_order = 'create_date desc'
-	# payment_request_id = fields.Many2one('payment.request',string="Payment request")
-	move_id = fields.Many2one('account.move', string="Move")
-	payroll_id = fields.Many2one('llp.payroll', string="Payroll")
+    _name = 'payroll.payment.history'
+    _order = 'create_date desc'
+
+    move_id = fields.Many2one('account.move', string="Move")
+    state = fields.Selection(
+        related="move_id.state",
+        string="State",
+        store=True,
+        index=True,
+        readonly=True
+    )
+    payroll_id = fields.Many2one('llp.payroll', string="Payroll")

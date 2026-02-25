@@ -54,6 +54,8 @@
                             <group>
                                 <field name="ruleview_type" required="1" />
                                 <field name="show_in_payroll" />
+                                <field name="show_in_report" />
+                                <field name="is_net_amount" />
                                 <field name="active" />
                                 <field name="is_vacation_salary" />
                                 <field name="is_vacation_time" />

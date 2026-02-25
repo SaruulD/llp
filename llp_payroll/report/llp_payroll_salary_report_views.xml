@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="form_llp_payroll_salary_report_view" model="ir.ui.view">
+        <field name="name">llp.payroll.salary.report</field>
+        <field name="model">llp.payroll.salary.report</field>
+        <field name="arch" type="xml">
+            <form string="Report">
+                <group>
+                    <group>
+                        <group>
+                            <field name="start_date" required="1"/>
+                            <field name="struct_id" required="1" options="{'no_create':True}"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group>
+                            <field name="end_date" required="1" />
+                            <field name="export_type" required="1"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="department_ids" widget="many2many_tags" options="{'no_create':True}"/>
+                    </group>
+                </group>
+                <footer>
+                    <button name="action_export_pdf" invisible="export_type != 'pdf'" class="btn-primary" string="Татах" type="object" icon="fa-download"/>
+                    <button name="action_export" invisible="export_type == 'pdf'" class ="btn-primary" string="Татах" type="object" icon="fa-download"/>
+                    <button string="Цуцлах" class="btn-default" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+
+
+    <record model="ir.actions.act_window" id="action_llp_payroll_salary_report">
+        <field name="name">Цалингийн тайлан</field>
+        <field name="res_model">llp.payroll.salary.report</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="form_llp_payroll_salary_report_view"/>
+        <field name="target">new</field>
+    </record>
+</odoo>

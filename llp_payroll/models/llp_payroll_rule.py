@@ -21,6 +21,8 @@ class LLPPayrollRule(models.Model):
 	regular_number = fields.Float(string="Regular number" ,tracking=True)
 	active = fields.Boolean(string="Active",default=True)
 	show_in_payroll = fields.Boolean(string="Show in payroll",default=True)
+	show_in_report = fields.Boolean(string="Show in report",default=True)
+	is_net_amount = fields.Boolean(string="Is net amount",default=False, help='Банкны тайланд хэвлэгдэх дүн.')
 	decimal_point = fields.Integer(string='Decimal point')
 	is_vacation_salary = fields.Boolean(string="Is vacation salary",default=False)
 	is_vacation_time = fields.Boolean(string="Is vacation time",default=False)
@@ -36,24 +38,13 @@ class LLPPayrollRule(models.Model):
 								 ('contract','Contract'),
 								 ('vacation','Vacation'),
 								 ('debt','Debt'),
-								 ('kpi','Kpi')],string="Object type",tracking=True)
-
-	# TODO: transaction_type doc-oos harah
-	# is_rule_type_percent = fields.Boolean(compute='_compute_same_currency')
-	
+								 ('kpi','Kpi')],string="Object type",tracking=True)	
 	
 	_sql_constraints = [
 		('code_uniq', 'unique(code)',
 		("There is already a rule defined on this model\n"
 		"You cannot define another: please edit the existing one or change this one."))
 	]
-
-
-	# @api.depends('rule_type')
-	# def _compute_same_currency(self):
-	# 	for record in self:
-	# 		record.is_rule_type_percent = record.rule_type == 'percent' 
-
 
 	
 	@api.depends('name', 'code')

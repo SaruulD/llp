@@ -1,0 +1,33 @@
+<odoo>
+    <record id="view_llp_payroll_edit_wizard_form" model="ir.ui.view">
+        <field name="name">llp.payroll.edit.wizard.form</field>
+        <field name="model">llp.payroll.edit.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Payroll Import/Export">
+                <group>
+                    <field name="mode" required="1"/>
+                    <field name="payroll_id" invisible="1"/>
+
+                    <field name="file_data" filename="file_name" invisible="mode != 'import'" required="mode == 'import'"/>
+                    <field name="file_name" invisible="1"/>
+                </group>
+
+                <footer>
+                    <button name="action_export" type="object" string="Export" class="btn-primary" invisible="mode != 'export'"/>
+
+                    <button name="action_import" type="object" string="Import" class="btn-primary" invisible="mode != 'import'"/>
+
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_llp_payroll_edit_wizard" model="ir.actions.act_window">
+        <field name="name">Цалин импорт / экспорт</field>
+        <field name="res_model">llp.payroll.edit.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+</odoo>

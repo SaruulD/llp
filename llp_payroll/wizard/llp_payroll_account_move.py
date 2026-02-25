@@ -1,11 +1,7 @@
-from odoo import api, fields, models, _
-from odoo.exceptions import UserError
-from odoo.tools import exception_to_unicode
-import logging
-import time
-from datetime import date,datetime
+from odoo import api, fields, models, _ # type: ignore
+from odoo.exceptions import UserError # type: ignore
+from odoo.tools import exception_to_unicode # type: ignore
 from operator import itemgetter
-_logger = logging.getLogger(__name__)
 
 class LLPPayrollAccountMove(models.TransientModel):
     _name = 'llp.payroll.account.move'
@@ -242,12 +238,7 @@ class LLPPayrollAccountMove(models.TransientModel):
                 'partner_id': False,
                 'name': u'[Цалин харилцагчаар задлах - %s]'%(payroll_id.department_id.name),
                 'debit': round(dbamount,2),
-                'credit': 0.0,
-                # 'amount_currency': 0.0,
-                # 'currency_rate': 0.0,
-                # 'currency_id': False,
-                # 'quantity': 1,  
-                # 'department_id':payroll_id.department_id.id,
+                'credit': 0.0
             }
             moves.append((0,0,moves_append))
         if moves:
@@ -255,8 +246,7 @@ class LLPPayrollAccountMove(models.TransientModel):
                 'ref': u'%s [Цалин]'%payroll_id.start_date,
                 'line_ids': moves,
                 'journal_id': unit_id.journal_id.id,
-                'date': payroll_id.end_date,
-                # 'department_id':payroll_id.department_id.id,
+                'date': payroll_id.end_date
             }
         
             try:
@@ -303,16 +293,6 @@ class LLPPayrollAccountMove(models.TransientModel):
         self.env.cr.commit()
         
         return True
-        # return {
-        #     'domain': "[('id','in', [%s])]" % ','.join([str(p) for p in mmoves]),
-        #     'name': _('Account move'),
-        #     'view_type': 'form',
-        #     'view_mode': 'tree,form',
-        #     'res_model': 'account.move',
-        #     'view_id': False,
-        #     'type': 'ir.actions.act_window',
-        #     # 'search_view_id': id['res_id']
-        # }
 
     def create_move(self, move):
         moves=[]
@@ -322,12 +302,7 @@ class LLPPayrollAccountMove(models.TransientModel):
                 'partner_id': False,
                 'name': u'[Цалин] %s'%(move['note']),
                 'debit': round(move['debit_sum'],2)>0  and round(move['debit_sum'],2),
-                'credit': round(move['debit_sum'],2)<0 and -1*round(move['debit_sum'],2),										
-                # 'amount_currency': 0.0,
-                # 'currency_rate': 0.0,
-                # 'currency_id': False,
-                # 'quantity': 1,  
-                # 'department_id': move['department_id'],
+                'credit': round(move['debit_sum'],2)<0 and -1*round(move['debit_sum'],2)
             }
                 
             moves.append((0,0,moves_append))
@@ -339,12 +314,7 @@ class LLPPayrollAccountMove(models.TransientModel):
                 'partner_id': False,
                 'name': u'[Цалин] %s'%(move['note']),
                 'debit': round(move['debit_sum'],2)<0  and -1*round(move['debit_sum'],2),
-                'credit': round(move['credit_sum'],2)>0 and round(move['credit_sum'],2),
-                # 'amount_currency': 0.0,
-                # 'currency_rate': 0.0,
-                # 'currency_id': False,
-                # 'quantity': 1,  
-                # 'department_id': move['department_id'],
+                'credit': round(move['credit_sum'],2)>0 and round(move['credit_sum'],2)
             }
             moves.append((0,0, moves_append))
         if move['internal_type']:
@@ -356,12 +326,7 @@ class LLPPayrollAccountMove(models.TransientModel):
                     'partner_id': part['partner_id'],
                     'name': part['name'],
                     'debit': move['internal_type']=='debit' and amount or 0.0 ,
-                    'credit': move['internal_type']=='credit' and amount or 0.0,
-                    # 'amount_currency': 0.0,
-                    # 'currency_rate': 0.0,
-                    # 'currency_id': False,
-                    # 'quantity': 1,   
-                    # 'department_id': move['department_id'],
+                    'credit': move['internal_type']=='credit' and amount or 0.0
                 }
                 moves.append((0,0,moves_append))
         return moves

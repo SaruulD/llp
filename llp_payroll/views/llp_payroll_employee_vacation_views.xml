@@ -93,7 +93,7 @@
                                 <form>
                                     <group>
                                         <group>
-                                            <field name="employee_id" options="{'no_create': True}" required="1"/>
+                                            <field name="employee_id" options="{'no_create': True}" required="1" domain="[('department_id', 'in', parent.department_ids)]"/>
                                             <field name="department_id" readonly="1"/>
                                             <field name="month" readonly="1"/>
                                             <field name="total_salary"/>

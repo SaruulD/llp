@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 18.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-12-10 15:51+0000\n"
-"PO-Revision-Date: 2025-12-10 15:51+0000\n"
+"POT-Creation-Date: 2026-02-25 13:09+0000\n"
+"PO-Revision-Date: 2026-02-25 13:09+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -25,6 +25,11 @@ msgstr ""
 #. odoo-python
 #: code:addons/llp_payroll/wizard/llp_payroll_payment_request.py:0
 msgid "%s сарын урьдчилгаа цалин"
+msgstr ""
+
+#. module: llp_payroll
+#: model:ir.actions.report,print_report_name:llp_payroll.action_report_payroll_matrix_pdf
+msgid "'Цалингийн тайлан'"
 msgstr ""
 
 #. module: llp_payroll
@@ -228,6 +233,7 @@ msgstr "Цалингийн ажил гүйлгээ үүсгэх"
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll__create_uid
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_account_move__create_uid
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_account_move_line__create_uid
+#: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_bank_report__create_uid
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_employee_debt__create_uid
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_employee_debt_line__create_uid
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_employee_debt_line_details__create_uid
@@ -239,6 +245,7 @@ msgstr "Цалингийн ажил гүйлгээ үүсгэх"
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_rule__create_uid
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_rule_history__create_uid
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_rule_value__create_uid
+#: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_salary_report__create_uid
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_structure__create_uid
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_structure_line__create_uid
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_unit__create_uid
@@ -252,6 +259,7 @@ msgstr "Үүсгэгч"
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll__create_date
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_account_move__create_date
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_account_move_line__create_date
+#: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_bank_report__create_date
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_employee_debt__create_date
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_employee_debt_line__create_date
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_employee_debt_line_details__create_date
@@ -263,6 +271,7 @@ msgstr "Үүсгэгч"
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_rule__create_date
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_rule_history__create_date
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_rule_value__create_date
+#: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_salary_report__create_date
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_structure__create_date
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_structure_line__create_date
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_unit__create_date
@@ -270,7 +279,7 @@ msgstr "Үүсгэгч"
 #: model:ir.model.fields,field_description:llp_payroll.field_payroll_payment_history__create_date
 #: model:ir.model.fields,field_description:llp_payroll.field_request_history__create_date
 msgid "Created on"
-msgstr ""
+msgstr "Үүсгэсэн огноо"
 
 #. module: llp_payroll
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_account_move_line__credit
@@ -297,12 +306,12 @@ msgstr "Огноо"
 #. module: llp_payroll
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_account_move_line__debit
 msgid "Debit"
-msgstr "Дебит"
+msgstr "Дебет"
 
 #. module: llp_payroll
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_unit_line__debit_account_id
 msgid "Debit account"
-msgstr "Дебит данс"
+msgstr "Дебет данс"
 
 #. module: llp_payroll
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_employee_debt_line__debt_id
@@ -310,6 +319,11 @@ msgstr "Дебит данс"
 #: model:ir.ui.menu,name:llp_payroll.llp_payroll_debt
 msgid "Debt"
 msgstr "Авлага суутгал"
+
+#. module: llp_payroll
+#: model_terms:ir.ui.view,arch_db:llp_payroll.view_llp_payroll_employee_debt_form
+msgid "Debt lines"
+msgstr "Авлагын мөр"
 
 #. module: llp_payroll
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_rule__decimal_point
@@ -328,8 +342,10 @@ msgid "Department"
 msgstr "Алба нэгж"
 
 #. module: llp_payroll
+#: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_bank_report__department_ids
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_employee_debt__department_ids
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_employee_vacation__department_ids
+#: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_salary_report__department_ids
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_unit__department_ids
 msgid "Departments"
 msgstr "Алба нэгж"
@@ -350,6 +366,7 @@ msgstr "Тоо"
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll__display_name
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_account_move__display_name
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_account_move_line__display_name
+#: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_bank_report__display_name
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_employee_debt__display_name
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_employee_debt_line__display_name
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_employee_debt_line_details__display_name
@@ -361,6 +378,7 @@ msgstr "Тоо"
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_rule__display_name
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_rule_history__display_name
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_rule_value__display_name
+#: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_salary_report__display_name
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_structure__display_name
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_structure_line__display_name
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_unit__display_name
@@ -422,9 +440,27 @@ msgid "End Date"
 msgstr "Дуусах огноо"
 
 #. module: llp_payroll
+#: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_bank_report__end_date
+#: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_salary_report__end_date
+msgid "End date"
+msgstr "Дуусах огноо"
+
+#. module: llp_payroll
+#: model:ir.model.fields.selection,name:llp_payroll.selection__llp_payroll_bank_report__export_type__excel
+#: model:ir.model.fields.selection,name:llp_payroll.selection__llp_payroll_salary_report__export_type__excel
+msgid "Excel"
+msgstr "Эксел"
+
+#. module: llp_payroll
+#: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_bank_report__export_type
+#: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_salary_report__export_type
+msgid "Export type"
+msgstr "Татах төрөл"
+
+#. module: llp_payroll
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_structure_line__exp_sequence
 msgid "Expression Sequence"
-msgstr "Томъёо бодох дараалал"
+msgstr "Томьёо бодох дараалал"
 
 #. module: llp_payroll
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll__message_follower_ids
@@ -462,7 +498,7 @@ msgstr ""
 #. module: llp_payroll
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_rule_value__attend
 msgid "Formula"
-msgstr "Томъёо"
+msgstr "Томьёо"
 
 #. module: llp_payroll
 #: model_terms:ir.ui.view,arch_db:llp_payroll.view_llp_payroll_form
@@ -527,6 +563,7 @@ msgstr "Түүх"
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll__id
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_account_move__id
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_account_move_line__id
+#: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_bank_report__id
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_employee_debt__id
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_employee_debt_line__id
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_employee_debt_line_details__id
@@ -538,6 +575,7 @@ msgstr "Түүх"
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_rule__id
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_rule_history__id
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_rule_value__id
+#: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_salary_report__id
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_structure__id
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_structure_line__id
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_unit__id
@@ -635,6 +673,11 @@ msgid "Is edited"
 msgstr ""
 
 #. module: llp_payroll
+#: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_rule__is_net_amount
+msgid "Is net amount"
+msgstr "Гарт олгох дүн эсэх"
+
+#. module: llp_payroll
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_rule_value__is_show
 msgid "Is show"
 msgstr ""
@@ -679,7 +722,7 @@ msgstr "Цалин"
 #: model:ir.model,name:llp_payroll.model_llp_payroll
 #: model:ir.model,name:llp_payroll.model_llp_payroll_rule_value
 msgid "LLP payroll"
-msgstr ""
+msgstr "Цалин"
 
 #. module: llp_payroll
 #: model:ir.model,name:llp_payroll.model_llp_payroll_employee_debt
@@ -745,6 +788,7 @@ msgstr "Ээлжийн амралтын мөр"
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll__write_uid
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_account_move__write_uid
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_account_move_line__write_uid
+#: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_bank_report__write_uid
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_employee_debt__write_uid
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_employee_debt_line__write_uid
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_employee_debt_line_details__write_uid
@@ -756,6 +800,7 @@ msgstr "Ээлжийн амралтын мөр"
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_rule__write_uid
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_rule_history__write_uid
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_rule_value__write_uid
+#: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_salary_report__write_uid
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_structure__write_uid
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_structure_line__write_uid
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_unit__write_uid
@@ -769,6 +814,7 @@ msgstr "Сүүлийн засвар хийсэн"
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll__write_date
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_account_move__write_date
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_account_move_line__write_date
+#: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_bank_report__write_date
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_employee_debt__write_date
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_employee_debt_line__write_date
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_employee_debt_line_details__write_date
@@ -780,6 +826,7 @@ msgstr "Сүүлийн засвар хийсэн"
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_rule__write_date
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_rule_history__write_date
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_rule_value__write_date
+#: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_salary_report__write_date
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_structure__write_date
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_structure_line__write_date
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_unit__write_date
@@ -1003,6 +1050,11 @@ msgid "One day salary"
 msgstr "Нэг өдрийн цалин"
 
 #. module: llp_payroll
+#: model:ir.model.fields.selection,name:llp_payroll.selection__llp_payroll_salary_report__export_type__pdf
+msgid "PDF"
+msgstr ""
+
+#. module: llp_payroll
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_rule__parent_id
 #: model_terms:ir.ui.view,arch_db:llp_payroll.view_llp_payroll_rule_filter
 msgid "Parent rule"
@@ -1011,7 +1063,7 @@ msgstr "Эцэг дүрэм"
 #. module: llp_payroll
 #: model_terms:ir.ui.view,arch_db:llp_payroll.view_llp_payroll_form
 msgid "Payment"
-msgstr "Төлбөр"
+msgstr "Холбоотой гүйлгээ"
 
 #. module: llp_payroll
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll__payment_history_ids
@@ -1051,6 +1103,11 @@ msgid "Payroll Employee Vacation"
 msgstr "Ээлжийн амралт бодуулах ажилтан"
 
 #. module: llp_payroll
+#: model:ir.model,name:llp_payroll.model_report_llp_payroll_report_payroll_matrix_pdf
+msgid "Payroll Matrix PDF Report"
+msgstr ""
+
+#. module: llp_payroll
 #: model:ir.model,name:llp_payroll.model_llp_payroll_payment_request
 msgid "Payroll Payment Request Wizard"
 msgstr ""
@@ -1059,6 +1116,11 @@ msgstr ""
 #: model:ir.ui.menu,name:llp_payroll.llp_payroll_salary_report
 msgid "Payroll Report"
 msgstr "Цалингийн тайлан"
+
+#. module: llp_payroll
+#: model:ir.actions.report,name:llp_payroll.action_report_payroll_matrix_pdf
+msgid "Payroll Report PDF"
+msgstr ""
 
 #. module: llp_payroll
 #: model_terms:ir.ui.view,arch_db:llp_payroll.view_llp_payroll_rule_form
@@ -1134,14 +1196,20 @@ msgid "Percent"
 msgstr "Хувиар"
 
 #. module: llp_payroll
+#. odoo-python
+#: code:addons/llp_payroll/models/llp_payroll_employee_debt.py:0
+msgid "Please select departments."
+msgstr "Алба нэгж сонгоно уу."
+
+#. module: llp_payroll
 #: model_terms:ir.ui.view,arch_db:llp_payroll.view_llp_payroll_rule_form
 msgid "Python Code"
-msgstr "Томъёо тодорхойлох"
+msgstr "Томьёо тодорхойлох"
 
 #. module: llp_payroll
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_rule__python_code
 msgid "Python code"
-msgstr "Томъёо тодорхойлох"
+msgstr "Томьёо тодорхойлох"
 
 #. module: llp_payroll
 #: model:ir.model.fields.selection,name:llp_payroll.selection__llp_payroll_rule__rule_type__regular
@@ -1160,6 +1228,8 @@ msgstr ""
 
 #. module: llp_payroll
 #: model:ir.ui.menu,name:llp_payroll.llp_payroll_report
+#: model_terms:ir.ui.view,arch_db:llp_payroll.form_llp_payroll_bank_report_view
+#: model_terms:ir.ui.view,arch_db:llp_payroll.form_llp_payroll_salary_report_view
 msgid "Report"
 msgstr "Тайлан"
 
@@ -1310,12 +1380,17 @@ msgstr "Дараалал"
 #. module: llp_payroll
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_rule__show_in_payroll
 msgid "Show in payroll"
-msgstr "Цалин бодолтонд харуулах"
+msgstr "Цалин бодолтод харуулах"
 
 #. module: llp_payroll
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_rule_value__show_in_payroll
 msgid "Show in payroll Active"
 msgstr ""
+
+#. module: llp_payroll
+#: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_rule__show_in_report
+msgid "Show in report"
+msgstr "Тайланд харуулах эсэх"
 
 #. module: llp_payroll
 #: model:ir.model.fields.selection,name:llp_payroll.selection__llp_payroll_rule__rulefield_type__sign
@@ -1329,7 +1404,9 @@ msgid "Start Date"
 msgstr "Эхлэх огноо"
 
 #. module: llp_payroll
+#: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_bank_report__start_date
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_rule_history__start_date
+#: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_salary_report__start_date
 msgid "Start date"
 msgstr "Эхлэх огноо"
 
@@ -1338,6 +1415,7 @@ msgstr "Эхлэх огноо"
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_employee_debt__state
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_employee_vacation__state
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_structure__state
+#: model:ir.model.fields,field_description:llp_payroll.field_payroll_payment_history__state
 #: model_terms:ir.ui.view,arch_db:llp_payroll.view_llp_payroll_employee_debt_filter
 #: model_terms:ir.ui.view,arch_db:llp_payroll.view_llp_payroll_employee_vacation_filter
 msgid "State"
@@ -1373,6 +1451,8 @@ msgstr "Загварын төрөл"
 
 #. module: llp_payroll
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll__struct_id
+#: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_bank_report__struct_id
+#: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_salary_report__struct_id
 msgid "Stucture"
 msgstr "Бүтэц"
 
@@ -1538,6 +1618,16 @@ msgid "llp.payroll.account.move.line"
 msgstr ""
 
 #. module: llp_payroll
+#: model:ir.model,name:llp_payroll.model_llp_payroll_bank_report
+msgid "llp.payroll.bank.report"
+msgstr ""
+
+#. module: llp_payroll
+#: model:ir.model,name:llp_payroll.model_llp_payroll_salary_report
+msgid "llp.payroll.salary.report"
+msgstr ""
+
+#. module: llp_payroll
 #: model:ir.model,name:llp_payroll.model_llp_payroll_unit_line
 msgid "llp.payroll.unit.line"
 msgstr ""
@@ -1559,6 +1649,22 @@ msgid "structure"
 msgstr "бүтэц"
 
 #. module: llp_payroll
+#: model_terms:ir.ui.view,arch_db:llp_payroll.report_payroll_matrix_pdf
+msgid "Ажилтан"
+msgstr ""
+
+#. module: llp_payroll
+#. odoo-python
+#: code:addons/llp_payroll/models/llp_payroll_employee_vacation.py:0
+msgid "Алба нэгж сонгоно уу."
+msgstr ""
+
+#. module: llp_payroll
+#: model_terms:ir.ui.view,arch_db:llp_payroll.report_payroll_matrix_pdf
+msgid "Албаны нийт дүн"
+msgstr ""
+
+#. module: llp_payroll
 #. odoo-python
 #: code:addons/llp_payroll/wizard/llp_payroll_account_move.py:0
 msgid "Алдаа: %s "
@@ -1567,6 +1673,11 @@ msgstr ""
 #. module: llp_payroll
 #: model:ir.model.fields.selection,name:llp_payroll.selection__request_history__type__anket
 msgid "Анкет"
+msgstr ""
+
+#. module: llp_payroll
+#: model:ir.actions.act_window,name:llp_payroll.action_llp_payroll_bank_report
+msgid "Банк руу өгөх тайлан"
 msgstr ""
 
 #. module: llp_payroll
@@ -1644,6 +1755,11 @@ msgid "Даалгавар"
 msgstr ""
 
 #. module: llp_payroll
+#: model_terms:ir.ui.view,arch_db:llp_payroll.report_payroll_matrix_pdf
+msgid "Дуусах хугацаа:"
+msgstr ""
+
+#. module: llp_payroll
 #: model:ir.model.fields.selection,name:llp_payroll.selection__request_history__type__done
 msgid "Дууссан"
 msgstr ""
@@ -1678,9 +1794,20 @@ msgid "Мэргэжлийн шалгалт"
 msgstr ""
 
 #. module: llp_payroll
+#: model_terms:ir.ui.view,arch_db:llp_payroll.report_payroll_matrix_pdf
+msgid "НИЙТ ДҮН"
+msgstr ""
+
+#. module: llp_payroll
 #. odoo-javascript
 #: code:addons/llp_payroll/static/src/xml/llp_payroll_sheet.xml:0
 msgid "Нийт дүн"
+msgstr ""
+
+#. module: llp_payroll
+#: model_terms:ir.ui.view,arch_db:llp_payroll.form_llp_payroll_bank_report_view
+#: model_terms:ir.ui.view,arch_db:llp_payroll.form_llp_payroll_salary_report_view
+msgid "Татах"
 msgstr ""
 
 #. module: llp_payroll
@@ -1781,6 +1908,11 @@ msgid "Цалин хэрэглэгч"
 msgstr ""
 
 #. module: llp_payroll
+#: model:ir.actions.act_window,name:llp_payroll.action_llp_payroll_salary_report
+msgid "Цалингийн тайлан"
+msgstr ""
+
+#. module: llp_payroll
 #: model:ir.actions.act_window,name:llp_payroll.action_llp_payroll_payment_request
 #: model_terms:ir.ui.view,arch_db:llp_payroll.view_llp_payroll_payment_request_form
 msgid "Цалингийн төлбөрийн хүсэлт"
@@ -1801,8 +1933,19 @@ msgid "Цуцлагдсан"
 msgstr ""
 
 #. module: llp_payroll
+#: model_terms:ir.ui.view,arch_db:llp_payroll.form_llp_payroll_bank_report_view
+#: model_terms:ir.ui.view,arch_db:llp_payroll.form_llp_payroll_salary_report_view
+msgid "Цуцлах"
+msgstr ""
+
+#. module: llp_payroll
 #: model:ir.model.fields.selection,name:llp_payroll.selection__request_history__type__exam
 msgid "Шалгалт"
+msgstr ""
+
+#. module: llp_payroll
+#: model_terms:ir.ui.view,arch_db:llp_payroll.report_payroll_matrix_pdf
+msgid "Эхлэх хугацаа:"
 msgstr ""
 
 #. module: llp_payroll
