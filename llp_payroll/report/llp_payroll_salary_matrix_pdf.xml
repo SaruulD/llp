@@ -73,8 +73,8 @@
                                 <t t-foreach="sorted(p['employees'].values(), key=lambda e: e.get('name') or '')" t-as="emp">
                                     <tr>
                                         <td class="emp-name">
-                                            <t t-esc="emp.get('last_name') or 'Тодорхойгүй'"/>
-                                            <t t-esc="emp.get('first_name') or 'Тодорхойгүй'"/>
+                                            <t t-esc="emp.get('lastname') or 'Тодорхойгүй'"/>
+                                            <t t-esc="emp.get('firstname') or 'Тодорхойгүй'"/>
                                         </td>
 
                                         <t t-foreach="vals['rule_ids']" t-as="rid">

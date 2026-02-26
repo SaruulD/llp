@@ -30,8 +30,8 @@ class LLPPayrollSalaryReport(models.TransientModel):
                 A.department_id AS department_id,
                 H.complete_name AS department_name,
                 B.employee_id AS employee_id,
-                G.first_name AS first_name,
-                G.last_name AS last_name,
+                G.firstname AS firstname,
+                G.lastname AS lastname,
 
                 E.id AS rule_id,
                 E.name AS rule_name,
@@ -81,8 +81,8 @@ class LLPPayrollSalaryReport(models.TransientModel):
 
             eid = dic['employee_id']
             payrolls[pid]['employees'].setdefault(eid, {
-                'first_name': dic.get('first_name') or 'Тодорхойгүй',
-                'last_name': dic.get('last_name') or 'Тодорхойгүй',
+                'firstname': dic.get('firstname') or 'Тодорхойгүй',
+                'lastname': dic.get('lastname') or 'Тодорхойгүй',
                 'rules': {}
             })
 
@@ -129,8 +129,8 @@ class LLPPayrollSalaryReport(models.TransientModel):
                 H.complete_name AS department_name,
 
                 B.employee_id AS employee_id,
-                G.first_name AS first_name,
-                G.last_name AS last_name,
+                G.firstname AS firstname,
+                G.lastname AS lastname,
 
                 E.id AS rule_id,
                 E.name AS rule_name,
@@ -186,8 +186,8 @@ class LLPPayrollSalaryReport(models.TransientModel):
             if emp_id not in payrolls[payroll_id]['employees']:
                 payrolls[payroll_id]['employees'][emp_id] = {
                     'employee_id': emp_id,
-                    'first_name': dic.get('first_name') or u'Тодорхойгүй',
-                    'last_name': dic.get('last_name') or u'Тодорхойгүй',
+                    'firstname': dic.get('firstname') or u'Тодорхойгүй',
+                    'lastname': dic.get('lastname') or u'Тодорхойгүй',
                     'rules': {},
                 }
 
@@ -285,9 +285,9 @@ class LLPPayrollSalaryReport(models.TransientModel):
 
             dept_rule_totals = {rid: 0.0 for rid in rule_ids_sorted}
 
-            employees_sorted = sorted(payroll['employees'].values(), key=lambda e: (e.get('first_name') or ''))
+            employees_sorted = sorted(payroll['employees'].values(), key=lambda e: (e.get('firstname') or ''))
             for emp in employees_sorted:
-                sheet.write(row, start_col, "    " + (emp.get('last_name') or u'Тодорхойгүй') + " " + (emp.get('first_name') or u'Тодорхойгүй'), left_fmt)
+                sheet.write(row, start_col, "    " + (emp.get('lastname') or u'Тодорхойгүй') + " " + (emp.get('firstname') or u'Тодорхойгүй'), left_fmt)
 
                 for i, rid in enumerate(rule_ids_sorted, start=1):
                     rule = emp['rules'].get(rid)

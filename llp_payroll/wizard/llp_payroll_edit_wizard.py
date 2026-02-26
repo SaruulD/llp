@@ -31,8 +31,8 @@ class LLPPayrollEditWizard(models.TransientModel):
         query = """
             SELECT
                 G.id as employee_id,
-                G.last_name,
-                G.first_name,
+                G.lastname,
+                G.firstname,
                 G.identification_id,
                 D.id as rule_id,
                 D.name as rule_name,
@@ -47,7 +47,7 @@ class LLPPayrollEditWizard(models.TransientModel):
                 LEFT JOIN llp_payroll_rule_value F ON F.payroll_rule_id = D.id AND F.line_id = E.id
                 LEFT JOIN hr_employee G ON G.id = E.employee_id
             WHERE A.id = %s
-            ORDER BY G.last_name, G.first_name, C.sequence
+            ORDER BY G.lastname, G.firstname, C.sequence
         """
         self.env.cr.execute(query, (self.payroll_id.id,))
         rows = self.env.cr.fetchall()

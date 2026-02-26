@@ -33,8 +33,8 @@ class LLPPayrollBankReport(models.TransientModel):
                 A.department_id AS department_id,
                 H.complete_name AS department_name,
                 B.employee_id AS employee_id,
-                G.first_name AS first_name,
-                G.last_name AS last_name,
+                G.firstname AS firstname,
+                G.lastname AS lastname,
                 E.id AS rule_id,
                 E.name AS rule_name,
                 COALESCE(F.value, 0) AS value,
@@ -63,7 +63,7 @@ class LLPPayrollBankReport(models.TransientModel):
             query += " AND A.department_id IN %s"
             params.append(tuple(self.department_ids.ids))
 
-        query += " ORDER BY J.name, G.last_name, G.first_name"
+        query += " ORDER BY J.name, G.lastname, G.firstname"
 
         self.env.cr.execute(query, tuple(params))
         cols = [d[0] for d in self.env.cr.description]
@@ -155,19 +155,19 @@ class LLPPayrollBankReport(models.TransientModel):
 
             bank_rows_sorted = sorted(
                 bank_rows,
-                key=lambda r: ((r.get('last_name') or ''), (r.get('first_name') or ''), (r.get('account_number') or ''))
+                key=lambda r: ((r.get('lastname') or ''), (r.get('firstname') or ''), (r.get('account_number') or ''))
             )
 
             for r in bank_rows_sorted:
-                last_name = r.get('last_name') or ''
-                first_name = r.get('first_name') or ''
+                lastname = r.get('lastname') or ''
+                firstname = r.get('firstname') or ''
                 account_number = r.get('account_number') or ''
                 value = float(r.get('value') or 0.0)
 
                 total += value
 
-                sheet.write(row, 0, last_name, text_fmt)
-                sheet.write(row, 1, first_name, text_fmt)
+                sheet.write(row, 0, lastname, text_fmt)
+                sheet.write(row, 1, firstname, text_fmt)
                 sheet.write(row, 2, account_number, text_fmt)
                 sheet.write_number(row, 3, value, num_fmt)
                 row += 1
