@@ -4,6 +4,7 @@ access_llp_payroll_rule_admin,llp.payroll.rule,model_llp_payroll_rule,llp_payrol
 access_llp_payroll_rule_history_admin,llp.payroll.rule,model_llp_payroll_rule_history,llp_payroll.group_payroll_admin,1,1,1,1
 access_llp_payroll_structure_admin,llp.payroll.structure,model_llp_payroll_structure,llp_payroll.group_payroll_admin,1,1,1,1
 access_llp_payroll_structure_line_admin,llp.payroll.structure.line,model_llp_payroll_structure_line,llp_payroll.group_payroll_admin,1,1,1,1
+access_llp_payroll_report_config_admin,llp.payroll.report.config,model_llp_payroll_report_config,llp_payroll.group_payroll_admin,1,1,1,1
 
 access_llp_payroll_employee_vacation_accountant,llp.payroll.employee.vacation,model_llp_payroll_employee_vacation,llp_payroll.group_payroll_accountant,1,1,1,1
 access_llp_payroll_employee_vacation_line_accountant,llp.payroll.employee.vacation.line,model_llp_payroll_employee_vacation_line,llp_payroll.group_payroll_accountant,1,1,1,1
@@ -29,3 +30,6 @@ access_payroll_payment_history,llp.payroll.payment.history,model_payroll_payment
 access_llp_payroll_edit_wizard,llp.payroll.edit.wizard,model_llp_payroll_edit_wizard,llp_payroll.group_payroll_admin,1,1,1,1
 access_llp_payroll_salary_report,llp.payroll.salary.report,model_llp_payroll_salary_report,llp_payroll.group_payroll_admin,1,1,1,1
 access_llp_payroll_bank_report,llp.payroll.bank.report,model_llp_payroll_bank_report,llp_payroll.group_payroll_admin,1,1,1,1
+access_llp_payroll_insurance_import,llp.payroll.insurance.import,model_llp_payroll_insurance_import,llp_payroll.group_payroll_admin,1,1,1,1
+access_llp_payroll_insurance_tax_report,llp.payroll.insurance.tax.report,model_llp_payroll_insurance_tax_report,llp_payroll.group_payroll_admin,1,1,1,1
+access_llp_payroll_income_tax_import,llp.payroll.income.tax.import,model_llp_payroll_income_tax_import,llp_payroll.group_payroll_admin,1,1,1,1

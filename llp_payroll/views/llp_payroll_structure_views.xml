@@ -23,6 +23,8 @@
             <list string="Payroll structure">
                 <field name="name"/>
                 <field name="struct_type"/>
+                <field name="company_id"/>
+                <field name="state"/>
             </list>
         </field>
     </record>
@@ -40,12 +42,11 @@
                 </header>
 
                 <sheet>
-                    <h1>
-                        <label for="name" class="oe_edit_only"/>
-                        <field readonly="state == 'done'" name="name" class="oe_inline" placeholder="name" required="1"/>
- -                        <label for="struct_type" class="oe_edit_only"/>
-                        <field name="struct_type" readonly="state == 'done'" placeholder="structure" required="1" class="oe_inline"/>
-                    </h1>
+                    <group>
+                        <field name="name"/>
+                        <field name="struct_type"/>
+                        <field name="company_id" options="{'no_create': True}"/>
+                    </group>
 
                     <notebook>
                         <page string="Rule lines">

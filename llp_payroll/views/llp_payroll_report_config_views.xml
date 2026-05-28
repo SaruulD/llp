@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_llp_payroll_report_config_filter" model="ir.ui.view">
+        <field name="name">llp.payroll.report.config.search</field>
+        <field name="model">llp.payroll.report.config</field>
+        <field name="arch" type="xml">
+            <search string="Search report config">
+                <field name="type"/>
+                <field name="company_id"/>
+                <group expand="0" string="Group By">
+                    <filter string="Company" name="group_company_id" context="{'group_by': 'company_id'}"/>
+                    <filter string="Type" name="group_type" context="{'group_by': 'type'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_llp_payroll_report_config_list" model="ir.ui.view">
+        <field name="name">llp.payroll.report.config.list</field>
+        <field name="model">llp.payroll.report.config</field>
+        <field name="arch" type="xml">
+            <list string="Report config">
+                <field name="company_id"/>
+                <field name="type"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_llp_payroll_report_config_form" model="ir.ui.view">
+        <field name="name">llp.payroll.report.config.form</field>
+        <field name="model">llp.payroll.report.config</field>
+        <field name="arch" type="xml">
+            <form string="Report Config">
+                <sheet>
+                    <h1>
+                        <group>
+                            <field name="type" required="1"/>
+                        </group>
+                        <group>
+                            <field name="company_id" required="1"/>
+                        </group>
+                    </h1>
+
+                    <group>
+                        <group>
+                            <group>
+                                <field name="civil_number" invisible="type not in ['insurance_tax_import', 'insurance_tax_report']"/>
+                                <field name="register_number" invisible="type != 'insurance_tax_import'"/>
+                                <field name="family_name" invisible="type != 'insurance_tax_import'"/>
+                                <field name="last_name" invisible="type not in ['insurance_tax_import', 'insurance_tax_report']"/>
+                                <field name="first_name" invisible="type not in ['insurance_tax_import', 'insurance_tax_report']"/>
+                                <field name="insurance_type" invisible="type not in ['insurance_tax_import', 'insurance_tax_report']"/>
+                                <field name="citizenship" invisible="type != 'insurance_tax_import'"/>
+                                <field name="wages_and_equivalent_income" invisible="type != 'insurance_tax_import'"/>
+                                <field name="base_and_additional_salary" invisible="type != 'insurance_tax_import'"/>
+
+
+                                <field name="job" invisible="type != 'insurance_tax_report'"/>
+                                <field name="wages_and_equivalent_income" invisible="type not in ['insurance_tax_import', 'insurance_tax_report']"/>
+                                <field name="is_limit_max" invisible="type != 'insurance_tax_report'"/>
+                            </group>
+                        </group>
+                        <group>
+                            <group>
+                                <field name="bonus_salary" invisible="type != 'insurance_tax_import'"/>
+                                <field name="other_additional_salary" invisible="type != 'insurance_tax_import'"/>
+                                <field name="food_transportation_cost" invisible="type != 'insurance_tax_import'"/>
+                                <field name="firewood_discount" invisible="type != 'insurance_tax_import'"/>
+                                <field name="career_classification" invisible="type != 'insurance_tax_import'"/>
+                                <field name="cellphone" invisible="type != 'insurance_tax_import'"/>
+                                <field name="email" invisible="type != 'insurance_tax_import'"/>
+
+
+                                <field name="insurance_tax_employer" invisible="type != 'insurance_tax_report'"/>
+                                <field name="insurance_tax_employee" invisible="type != 'insurance_tax_report'"/>
+                            </group>
+                        </group>
+                    </group>
+                </sheet>
+                <chatter reload_on_follower="True"/>
+            </form>
+        </field>
+    </record>
+
+
+    <record id="action_llp_payroll_report_config" model="ir.actions.act_window">
+        <field name="name">Payroll Report Configs</field>
+        <field name="res_model">llp.payroll.report.config</field>
+        <field name="view_mode">list,form</field>
+        <field name="help">List of payroll report configs.</field>
+    </record>
+
+</odoo>

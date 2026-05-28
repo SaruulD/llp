@@ -11,6 +11,7 @@ class LLPPayrollStructure(models.Model):
 
 
 	name = fields.Char(string="Name",tracking=True)
+	company_id = fields.Many2one('res.company',string="Company",tracking=True,default=lambda self: self.env.company)
 	struct_type = fields.Selection([('salary_advance','Salary advance'),
 									('salary_late','Salary late')],string="Structure type",tracking=True)
 	line_ids = fields.One2many('llp.payroll.structure.line','struct_id',string='Rule lines')
