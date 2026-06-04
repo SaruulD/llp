@@ -38,7 +38,9 @@ class LLPPayrollRule(models.Model):
 								 ('contract','Contract'),
 								 ('vacation','Vacation'),
 								 ('debt','Debt'),
-								 ('kpi','Kpi')],string="Object type",tracking=True)	
+								 ('kpi','Kpi'),
+								 ('employee','Employee'),
+								 ],string="Object type",tracking=True)	
 	
 	_sql_constraints = [
 		('code_uniq', 'unique(code)',

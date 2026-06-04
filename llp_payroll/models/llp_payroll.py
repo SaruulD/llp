@@ -197,6 +197,9 @@ class LLPPayroll(models.Model):
                                 if fetch and fetch[0]:
                                     object = self.env['llp.payroll.employee.vacation.line'].browse(fetch[0])
 
+                            elif ruled['object_type'] == 'employee':
+                                object = self.env['hr.employee'].browse(emp['employee'])
+
                             elif ruled['object_type'] == 'debt':
                                 query = "select A.id from llp_payroll_employee_debt_line A \
                                     inner join llp_payroll_employee_debt B ON A.debt_id=B.id \
