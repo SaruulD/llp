@@ -109,9 +109,9 @@
                                         <page>
                                             <field name="month_line_ids">
                                                 <list editable="bottom">
-                                                    <field name="month"/>
-                                                    <field name="salary" sum="Sum salary"/>
-                                                    <field name="worked_day" sum="Sum worked day"/>
+                                                    <field name="month" force_save="1"/>
+                                                    <field name="salary" sum="Sum salary" force_save="1"/>
+                                                    <field name="worked_day" sum="Sum worked day" force_save="1"/>
                                                 </list>
                                             </field>
                                         </page>

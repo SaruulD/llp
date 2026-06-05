@@ -106,7 +106,10 @@ class LLPPayrollEmployeeVacation(models.Model):
 									})
 
 
+
+
 	def action_get_data(self):
+
 		for vac in self:
 			if not vac.department_ids:
 				raise UserError(_("Алба нэгж сонгоно уу."))
@@ -162,28 +165,42 @@ class LLPPayrollEmployeeVacation(models.Model):
 
 			if earliest_start and earliest_start > prev_month_end:
 				continue
-
-			self.env.cr.execute("""
+			m2m_field = self.env['llp.payroll']._fields['department_id']
+			rel_table = m2m_field.relation
+			rel_col1 = m2m_field.column1
+			rel_col2 = m2m_field.column2
+			query = f"""
 				SELECT
 					pl.employee_id AS employee_id,
 					date_trunc('month', p.start_date)::date AS month,
 					SUM(CASE WHEN r.is_vacation_salary = TRUE THEN COALESCE(rv.value, 0) ELSE 0 END) AS salary,
-					SUM(CASE WHEN r.is_vacation_time   = TRUE THEN COALESCE(rv.value, 0) ELSE 0 END)/8 AS worked_day
+					SUM(CASE WHEN r.is_vacation_time = TRUE THEN COALESCE(rv.value, 0) ELSE 0 END) / 8 AS worked_day
 				FROM llp_payroll p
 				JOIN llp_payroll_line pl ON pl.payroll_id = p.id
 				JOIN llp_payroll_rule_value rv ON rv.line_id = pl.id
 				JOIN llp_payroll_rule r ON r.id = rv.payroll_rule_id
 				JOIN llp_payroll_structure s ON s.id = p.struct_id
 				WHERE p.state = 'confirmed'
-					AND p.department_id = ANY(%s)
+					AND EXISTS (
+						SELECT 1
+						FROM {rel_table} rel
+						WHERE rel.{rel_col1} = p.id
+							AND rel.{rel_col2} = ANY(%s)
+					)
 					AND p.end_date <= %s
 					AND p.start_date >= %s
 					AND s.struct_type = 'salary_late'
 					AND r.id = ANY(%s)
 				GROUP BY pl.employee_id, date_trunc('month', p.start_date)::date
 				ORDER BY pl.employee_id, month
-			""", (vac.department_ids.ids, prev_month_end, earliest_start, rule_ids))
+			"""
 
+			self.env.cr.execute(query, (
+				vac.department_ids.ids,
+				prev_month_end,
+				earliest_start,
+				rule_ids,
+			))
 			rows = self.env.cr.fetchall()
 
 			by_emp = {}
@@ -192,6 +209,7 @@ class LLPPayrollEmployeeVacation(models.Model):
 
 			MonthLine = self.env['llp.payroll.employee.month.line']
 			create_vals = []
+
 
 			for emp_id, line in line_by_emp.items():
 				emp_start = emp_start_map.get(emp_id)
@@ -210,11 +228,120 @@ class LLPPayrollEmployeeVacation(models.Model):
 						'salary': sal,
 						'worked_day': wd,
 					})
-
 			if create_vals:
 				MonthLine.create(create_vals)
 
 		return True
+
+	# def action_get_data(self):
+	# 	for vac in self:
+	# 		if not vac.department_ids:
+	# 			raise UserError(_("Алба нэгж сонгоно уу."))
+
+	# 		today = fields.Date.context_today(vac)
+	# 		prev_month_end = (today.replace(day=1) - timedelta(days=1))
+
+	# 		employees = self.env['hr.employee'].sudo().search([
+	# 			('active', '=', True),
+	# 			('department_id', 'in', vac.department_ids.ids),
+	# 			('last_vacation_salary_date', '!=', False),
+	# 		])
+
+	# 		line_by_emp = {l.employee_id.id: l for l in vac.line_ids if l.employee_id}
+	# 		for emp in employees:
+	# 			if emp.id not in line_by_emp:
+	# 				line_by_emp[emp.id] = self.env['llp.payroll.employee.vacation.line'].create({
+	# 					'employee_id': emp.id,
+	# 					'vacation_id': vac.id,
+	# 				})
+
+	# 		if not line_by_emp:
+	# 			continue
+
+	# 		all_lines = self.env['llp.payroll.employee.vacation.line'].browse([l.id for l in line_by_emp.values()])
+	# 		all_lines.mapped('month_line_ids').unlink()
+
+	# 		struct_ids = self.env['llp.payroll.structure'].sudo().search([
+	# 			('struct_type', '=', 'salary_late')
+	# 		]).ids
+	# 		if not struct_ids:
+	# 			raise UserError(_("Сарын сүүл төрөлтэй цалингийн бүтэц олдсонгүй."))
+
+	# 		self.env.cr.execute("""
+	# 			SELECT DISTINCT r.id
+	# 			FROM llp_payroll_structure_line sl
+	# 			JOIN llp_payroll_rule r ON r.id = sl.rule_id
+	# 			WHERE sl.struct_id = ANY(%s)
+	# 				AND (r.is_vacation_salary = TRUE OR r.is_vacation_time = TRUE)
+	# 		""", (struct_ids,))
+	# 		rule_ids = [r[0] for r in self.env.cr.fetchall()]
+	# 		if not rule_ids:
+	# 			continue
+
+	# 		emp_start_map = {}
+	# 		earliest_start = None
+	# 		for emp in employees:
+	# 			d = emp.last_vacation_salary_date
+	# 			start = d.replace(day=1)
+	# 			emp_start_map[emp.id] = start
+	# 			if earliest_start is None or start < earliest_start:
+	# 				earliest_start = start
+
+	# 		if earliest_start and earliest_start > prev_month_end:
+	# 			continue
+
+	# 		self.env.cr.execute("""
+	# 			SELECT
+	# 				pl.employee_id AS employee_id,
+	# 				date_trunc('month', p.start_date)::date AS month,
+	# 				SUM(CASE WHEN r.is_vacation_salary = TRUE THEN COALESCE(rv.value, 0) ELSE 0 END) AS salary,
+	# 				SUM(CASE WHEN r.is_vacation_time   = TRUE THEN COALESCE(rv.value, 0) ELSE 0 END)/8 AS worked_day
+	# 			FROM llp_payroll p
+	# 			JOIN llp_payroll_line pl ON pl.payroll_id = p.id
+	# 			JOIN llp_payroll_rule_value rv ON rv.line_id = pl.id
+	# 			JOIN llp_payroll_rule r ON r.id = rv.payroll_rule_id
+	# 			JOIN llp_payroll_structure s ON s.id = p.struct_id
+	# 			WHERE p.state = 'confirmed'
+	# 				AND p.department_id = ANY(%s)
+	# 				AND p.end_date <= %s
+	# 				AND p.start_date >= %s
+	# 				AND s.struct_type = 'salary_late'
+	# 				AND r.id = ANY(%s)
+	# 			GROUP BY pl.employee_id, date_trunc('month', p.start_date)::date
+	# 			ORDER BY pl.employee_id, month
+	# 		""", (vac.department_ids.ids, prev_month_end, earliest_start, rule_ids))
+
+	# 		rows = self.env.cr.fetchall()
+
+	# 		by_emp = {}
+	# 		for emp_id, mon, sal, wd in rows:
+	# 			by_emp.setdefault(emp_id, []).append((mon, float(sal or 0.0), float(wd or 0.0)))
+
+	# 		MonthLine = self.env['llp.payroll.employee.month.line']
+	# 		create_vals = []
+
+	# 		for emp_id, line in line_by_emp.items():
+	# 			emp_start = emp_start_map.get(emp_id)
+	# 			if not emp_start:
+	# 				continue
+
+	# 			for mon, sal, wd in by_emp.get(emp_id, []):
+	# 				if mon < emp_start:
+	# 					continue
+	# 				if mon > prev_month_end.replace(day=1):
+	# 					continue
+
+	# 				create_vals.append({
+	# 					'line_id': line.id,
+	# 					'month': mon,
+	# 					'salary': sal,
+	# 					'worked_day': wd,
+	# 				})
+
+	# 		if create_vals:
+	# 			MonthLine.create(create_vals)
+
+	# 	return True
 
 
 	def action_check_lines(self):
