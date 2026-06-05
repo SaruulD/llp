@@ -27,7 +27,7 @@ class LLPPayroll(models.Model):
         domain=_model_id_domain,
     )
 	
-    department_id = fields.Many2one('hr.department',string="Department",tracking=True)
+    department_id = fields.Many2many('hr.department',string="Department",tracking=True)
 	
     struct_id = fields.Many2one('llp.payroll.structure',string="Stucture", domain="[('state','=','done')]",tracking=True)
     line_ids = fields.One2many('llp.payroll.line','payroll_id',string="Lines")
@@ -93,24 +93,67 @@ class LLPPayroll(models.Model):
         action = self.env["ir.actions.actions"]._for_xml_id("llp_payroll.action_llp_payroll_account_move")
         return action
     
+    # def action_get_data(self):
+    #     rules = []
+    #     lines= []
+    #     for pay in self:
+    #         employee_ids = self.env['hr.employee'].search([('department_id','=',pay.department_ids.ids),('active','=',True)])
+
+    #         if not pay.line_ids:
+    #             for line in pay.struct_id.line_ids:
+    #                 is_edit =False
+    #                 if line.rule_id.ruleview_type=='edit':
+    #                     is_edit = True
+    #                 rules.append((0,0,{'payroll_rule_id':line.rule_id.id,
+    #                                    'show_in_payroll':line.rule_id.show_in_payroll,
+    #                                    'decimal_point':line.rule_id.decimal_point,
+    #                                    'rulefield_type':line.rule_id.rulefield_type,
+    #                                    'sequence':line.sequence,
+    #                                    'value':0,
+    #                                    'is_edit':is_edit}))
+    #             for employee_id in employee_ids:
+    #                 lines.append((0,0,{'rule_value_ids':rules,'employee_id':employee_id.id}))
+    #             if lines:
+    #                 pay.write({'line_ids':lines})
+
+    #         self.action_computebyQUERY()
+    #     return {'type': 'ir.actions.client', 'tag': 'reload'}
     def action_get_data(self):
-        rules = []
-        lines= []
         for pay in self:
-            employee_ids = self.env['hr.employee'].search([('department_id','=',pay.department_id.id),('active','=',True)])
+            employee_ids = self.env['hr.employee'].search([
+                ('department_id', 'in', pay.department_id.ids),
+                ('active', '=', True)
+            ])
 
             if not pay.line_ids:
-                for line in pay.struct_id.line_ids:
-                    is_edit =False
-                    if line.rule_id.ruleview_type=='edit':
-                        is_edit = True
-                    rules.append((0,0,{'payroll_rule_id':line.rule_id.id,'show_in_payroll':line.rule_id.show_in_payroll,'decimal_point':line.rule_id.decimal_point,'rulefield_type':line.rule_id.rulefield_type,'sequence':line.sequence,'value':0,'is_edit':is_edit}))
-                for employee_id in employee_ids:
-                    lines.append((0,0,{'rule_value_ids':rules,'employee_id':employee_id.id}))
-                if lines:
-                    pay.write({'line_ids':lines})
+                lines = []
 
-            self.action_computebyQUERY()
+                for employee in employee_ids:
+                    rules = []
+
+                    for line in pay.struct_id.line_ids:
+                        is_edit = line.rule_id.ruleview_type == 'edit'
+
+                        rules.append((0, 0, {
+                            'payroll_rule_id': line.rule_id.id,
+                            'show_in_payroll': line.rule_id.show_in_payroll,
+                            'decimal_point': line.rule_id.decimal_point,
+                            'rulefield_type': line.rule_id.rulefield_type,
+                            'sequence': line.sequence,
+                            'value': 0,
+                            'is_edit': is_edit,
+                        }))
+
+                    lines.append((0, 0, {
+                        'rule_value_ids': rules,
+                        'employee_id': employee.id,
+                    }))
+
+                if lines:
+                    pay.write({'line_ids': lines})
+
+            pay.action_computebyQUERY()
+
         return {'type': 'ir.actions.client', 'tag': 'reload'}
 
     def action_computebyQUERY(self):
