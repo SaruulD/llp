@@ -26,7 +26,7 @@
                 <field name="name"/>
                 <field name="start_date"/>
                 <field name="end_date"/>
-                <field name="department_id" />
+                <field name="department_id" widget="many2many_tags"/>
                 <field name="struct_id"/>
                 <field name="state"/>
             </list>
@@ -82,6 +82,7 @@
                         <page string="Employee">
                             <field name="line_ids" readonly="state != 'draft'">
                                 <list>
+                                    <field name="number" readonly="1"/>
                                     <field name="employee_id" options="{'no_create': True}" required="1" />
                                     <button name="action_computebyQUERY" groups="llp_payroll.group_payroll_accountant" string="Get data" type="object"/>
                                 </list>

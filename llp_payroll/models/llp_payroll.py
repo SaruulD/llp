@@ -28,7 +28,6 @@ class LLPPayroll(models.Model):
     )
 	
     department_id = fields.Many2many('hr.department',string="Department",tracking=True)
-	
     struct_id = fields.Many2one('llp.payroll.structure',string="Stucture", domain="[('state','=','done')]",tracking=True)
     line_ids = fields.One2many('llp.payroll.line','payroll_id',string="Lines")
     state = fields.Selection([
@@ -127,6 +126,7 @@ class LLPPayroll(models.Model):
 
             if not pay.line_ids:
                 lines = []
+                number = 1
 
                 for employee in employee_ids:
                     rules = []
@@ -145,9 +145,12 @@ class LLPPayroll(models.Model):
                         }))
 
                     lines.append((0, 0, {
+                        'number': number,
                         'rule_value_ids': rules,
                         'employee_id': employee.id,
                     }))
+
+                    number += 1
 
                 if lines:
                     pay.write({'line_ids': lines})
@@ -368,6 +371,7 @@ class LLPPayrollLine(models.Model):
     employee_id = fields.Many2one('hr.employee',string="HR Employee", store=True, index=True)
     payroll_id = fields.Many2one('llp.payroll',string="Payroll", ondelete='cascade', index=True)
     rule_value_ids = fields.One2many('llp.payroll.rule.value','line_id', string="Value")
+    number = fields.Integer(string='№')
 	
     def action_computebyQUERY(self):
         return
