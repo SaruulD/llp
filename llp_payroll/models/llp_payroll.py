@@ -261,6 +261,9 @@ class LLPPayroll(models.Model):
                                 object = {}
                             elif ruled['object_type'] == 'kpi':
                                 object = {}
+                            elif ruled['object_type'] == 'employee':
+                                object = self.env['hr.employee'].browse(emp['employee'])
+
 
                             rule_codes = re.findall(r'\b[A-Za-z]+\d+\b|\b[A-Za-z]+\b',str(python_code))
 
