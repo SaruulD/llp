@@ -6,3 +6,4 @@ from . import llp_payroll
 from . import llp_payroll_employee_vacation
 from . import llp_payroll_employee_debt
 from . import llp_payroll_report_config
+from . import llp_payroll_employee_public
