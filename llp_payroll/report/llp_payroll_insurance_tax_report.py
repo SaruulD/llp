@@ -66,7 +66,7 @@ class LLPPayrollInsuranceTaxReport(models.TransientModel):
                 LEFT JOIN hr_department O ON O.id = N.department_id
                 LEFT JOIN res_company P ON P.id = O.company_id
             WHERE A.state = 'confirmed' 
-            AND T.struct_type = 'salary_late'
+            AND M.struct_type = 'salary_late'
             AND A.start_date = %s
             AND A.end_date   = %s
         """
