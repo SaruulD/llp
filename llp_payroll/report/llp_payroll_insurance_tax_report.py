@@ -25,6 +25,7 @@ class LLPPayrollInsuranceTaxReport(models.TransientModel):
             SELECT 
                 P.id AS company_id, P.name AS company_name,
                 O.id AS department_id, O.complete_name as department_name,
+                B.employee_id,
                 CASE WHEN D.rulefield_type = 'digit' THEN COALESCE(DV.value, 0)::text ELSE COALESCE(DV.char_value, '') END AS civil_number,
                 CASE WHEN E.rulefield_type = 'digit' THEN COALESCE(EV.value, 0)::text ELSE COALESCE(EV.char_value, '') END AS lastname,
                 CASE WHEN F.rulefield_type = 'digit' THEN COALESCE(FV.value, 0)::text ELSE COALESCE(FV.char_value, '') END AS firstname,
