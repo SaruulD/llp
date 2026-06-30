@@ -45,17 +45,21 @@
                     <group>
                         <field name="name"/>
                         <field name="struct_type"/>
-                        <field name="company_id" options="{'no_create': True}"/>
+                        <field name="company_id" options="{'no_create': True}" />
                     </group>
 
                     <notebook>
                         <page string="Rule lines">
                             <field name="line_ids" readonly="state == 'done'">
                                 <list string="" editable="bottom">
-                                    <field name="rule_id" required="1" options="{'no_create': True}"/>
+                                    <field name="rule_id"
+                                        required="1"
+                                        options="{'no_create': True}"
+                                        domain="[('company_id', '=', parent.company_id)]"/>
                                     <field name="rule_code"/>
                                     <field name="sequence"/>
                                     <field name="exp_sequence" options="{'no_create': True}"/>
+                                    <field name="company_id"/>
                                 </list>
                             </field>
                         </page>

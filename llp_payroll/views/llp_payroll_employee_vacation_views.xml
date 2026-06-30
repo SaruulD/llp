@@ -30,6 +30,7 @@
                     <filter string="Month" name="group_month" context="{'group_by': 'month'}"/>
                     <filter string="Department" name="group_department_ids" context="{'group_by': 'department_ids'}"/>
                     <filter string="State" name="group_state" context="{'group_by': 'state'}"/>
+                    <filter string="Company" name="group_company" context="{'group_by': 'company_id'}"/>
                 </group>
             </search>
         </field>
@@ -76,6 +77,7 @@
                         <field name="month" required="1" readonly="state != 'draft'"/>
                         <field name="department_ids" widget="many2many_tags" readonly="state != 'draft'"/>
                         <field name="struct_type" readonly="state != 'draft'"/>
+                        <field name="company_id" readonly="state != 'draft'"/>
                     </group>
 
                     <notebook>

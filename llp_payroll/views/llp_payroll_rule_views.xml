@@ -12,6 +12,7 @@
                 <group expand="0" string="Group By">
                     <filter string="Code" name="code" context="{'group_by': 'code'}"/>
                     <filter string="Parent rule" name="group_parent" context="{'group_by': 'parent_id'}"/>
+                    <filter string="Company" name="group_company" context="{'group_by': 'company_id'}"/>
                 </group>
             </search>
         </field>
@@ -29,6 +30,7 @@
                 <field name="rule_type"/>
                 <field name="rulefield_type"/>
                 <field name="transaction_type"/>
+                <field name="company_id"/>
             </list>
         </field>
     </record>
@@ -46,6 +48,9 @@
                         </group>
                         <group>
                             <field name="code" required="1" placeholder="Code"/>
+                        </group>
+                        <group>
+                            <field name="company_id" required="1" placeholder="Company"/>
                         </group>
                     </h1>
 

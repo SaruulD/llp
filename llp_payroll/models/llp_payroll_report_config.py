@@ -11,7 +11,7 @@ class LLPPayrollReportConfig(models.Model):
     _order = "create_date desc"
 
 
-    company_id = fields.Many2one('res.company',string="Company",tracking=True,default=lambda self: self.env.company)
+    company_id = fields.Many2one('res.company', string="Company",default=lambda self: self.env.company,)
     type = fields.Selection([
         ('insurance_tax_report','Insurance Tax Report'),
         ('insurance_report','Insurance Report'),

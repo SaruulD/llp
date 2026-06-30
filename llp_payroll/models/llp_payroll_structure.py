@@ -11,7 +11,7 @@ class LLPPayrollStructure(models.Model):
 
 
 	name = fields.Char(string="Name",tracking=True)
-	company_id = fields.Many2one('res.company',string="Company",tracking=True,default=lambda self: self.env.company)
+	company_id = fields.Many2one('res.company', string="Company",default=lambda self: self.env.company,)
 	struct_type = fields.Selection([('salary_advance','Salary advance'),
 									('salary_late','Salary late')],string="Structure type",tracking=True)
 	line_ids = fields.One2many('llp.payroll.structure.line','struct_id',string='Rule lines')
@@ -40,4 +40,5 @@ class LLPPayrollStructureLine(models.Model):
 	rule_code = fields.Char(related='rule_id.code', string="Rule Code", readonly=True)
 	sequence = fields.Integer(string="Sequence")
 	exp_sequence = fields.Integer(string="Expression Sequence")
+	company_id = fields.Many2one('res.company', string="Company",default=lambda self: self.env.company,)
 

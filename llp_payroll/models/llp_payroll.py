@@ -26,6 +26,8 @@ class LLPPayroll(models.Model):
         string="Dynamic workflow",
         domain=_model_id_domain,
     )
+
+    company_id = fields.Many2one('res.company', string="Company",default=lambda self: self.env.company,)
 	
     department_id = fields.Many2many('hr.department',string="Department",tracking=True)
     struct_id = fields.Many2one('llp.payroll.structure',string="Stucture", domain="[('state','=','done')]",tracking=True)

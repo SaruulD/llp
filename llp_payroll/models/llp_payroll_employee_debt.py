@@ -23,7 +23,7 @@ class LLPPayrollEmployeeDebt(models.Model):
 		('closed', 'Closed'), # Хаагдсан
 	], string="State", default='draft', tracking=True)
 	line_ids = fields.One2many('llp.payroll.employee.debt.line','debt_id',string="Lines")
-
+	company_id = fields.Many2one('res.company', string="Company",default=lambda self: self.env.company,)
 	@api.model
 	def create(self, vals):
 		seq_code = 'llp.payroll.employee.debt.seq'
@@ -71,11 +71,15 @@ class LLPPayrollEmployeeDebt(models.Model):
 			if not debt.department_ids:
 				raise UserError(_("Please select departments."))
 
-			employees = self.env['hr.employee'].sudo().search([
+			emp_domain = [
 				('active', '=', True),
 				('department_id', 'in', debt.department_ids.ids),
 				('work_contact_id', '!=', False),
-			])
+			]
+			if debt.company_id:
+				emp_domain.append(('company_id', 'in', debt.company_ids.ids))
+
+			employees = self.env['hr.employee'].sudo().search(emp_domain)
 			if not employees:
 				continue
 

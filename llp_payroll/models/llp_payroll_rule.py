@@ -34,6 +34,8 @@ class LLPPayrollRule(models.Model):
 											('salary_late','Salary late'),
 											('by_partner','By partner'),
 										], string="Transaction type")
+
+	company_id = fields.Many2one('res.company', string="Company",default=lambda self: self.env.company,)
 	object_type = fields.Selection([('attendance','Attendance'),
 								 ('contract','Contract'),
 								 ('vacation','Vacation'),

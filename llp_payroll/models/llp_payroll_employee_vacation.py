@@ -48,6 +48,8 @@ class LLPPayrollEmployeeVacation(models.Model):
 	], string="State", default='draft', tracking=True)
 	line_ids = fields.One2many('llp.payroll.employee.vacation.line','vacation_id',string="Lines")
 	history_ids = fields.One2many('request.history','payroll_vacation_id',string="State History")
+	company_id = fields.Many2one('res.company', string="Company",default=lambda self: self.env.company,)
+
 
 	@api.model
 	def create(self, vals):
@@ -116,12 +118,14 @@ class LLPPayrollEmployeeVacation(models.Model):
 
 			today = fields.Date.context_today(vac)
 			prev_month_end = (today.replace(day=1) - timedelta(days=1))
-
-			employees = self.env['hr.employee'].sudo().search([
+			emp_domain = [
 				('active', '=', True),
 				('department_id', 'in', vac.department_ids.ids),
 				('last_vacation_salary_date', '!=', False),
-			])
+			]
+			if vac.company_id:
+				emp_domain.append(('company_id', '=', vac.company_id.id))
+			employees = self.env['hr.employee'].sudo().search(emp_domain)
 
 			line_by_emp = {l.employee_id.id: l for l in vac.line_ids if l.employee_id}
 			for emp in employees:

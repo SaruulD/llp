@@ -22,4 +22,43 @@
         <field name="category_id" ref="module_llp_payroll"/>
         <field name="implied_ids" eval="[(4, ref('llp_payroll.group_payroll_user'))]"/>
     </record>
+
+    <record model="ir.rule" id="show_companys_payroll_debt">
+        <field name="name">Компанийхаа мэдээллийг харах - debt</field>
+        <field name="model_id" ref="model_llp_payroll_employee_debt"/>
+        <field name="domain_force">[('company_id', '=', company_id)]</field>
+        <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+    </record> 
+
+    <record model="ir.rule" id="show_companys_payroll">
+        <field name="name">Компанийхаа мэдээллийг харах</field>
+        <field name="model_id" ref="model_llp_payroll"/>
+        <field name="domain_force">[('company_id', '=', company_id)]</field>
+        <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+    </record> 
+
+    <record model="ir.rule" id="show_companys_payroll_vacation">
+        <field name="name">Компанийхаа мэдээллийг харах - vacaion</field>
+        <field name="model_id" ref="model_llp_payroll_employee_vacation"/>
+        <field name="domain_force">[('company_id', '=', company_id)]</field>
+        <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+    </record> 
+    <record model="ir.rule" id="show_companys_payroll_rule">
+        <field name="name">Компанийхаа мэдээллийг харах - rule</field>
+        <field name="model_id" ref="model_llp_payroll_rule"/>
+        <field name="domain_force">[('company_id', '=', company_id)]</field>
+        <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+    </record> 
+    <record model="ir.rule" id="show_companys_payroll_structure">
+        <field name="name">Компанийхаа мэдээллийг харах - structure</field>
+        <field name="model_id" ref="model_llp_payroll_structure"/>
+        <field name="domain_force">[('company_id', '=', company_id)]</field>
+        <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+    </record> 
+    <record model="ir.rule" id="show_companys_payroll_report">
+        <field name="name">Компанийхаа мэдээллийг харах - report</field>
+        <field name="model_id" ref="model_llp_payroll_report_config"/>
+        <field name="domain_force">[('company_id', '=', company_id)]</field>
+        <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+    </record> 
 </odoo>
