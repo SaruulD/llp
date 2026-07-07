@@ -34,6 +34,7 @@ class LLPPayrollStructure(models.Model):
 		for rec in self:
 			if rec.state != 'draft':
 				raise UserError(_("Зөвхөн 'Ноорог' төлөвтэй бичлэгийг устгах боломжтой."))
+		return super(LLPPayrollStructure, self).unlink()
 
 
 class LLPPayrollStructureLine(models.Model):
@@ -41,7 +42,7 @@ class LLPPayrollStructureLine(models.Model):
 	_description = "LLP payroll structure line"
 	_order = "exp_sequence asc"
 
-	struct_id = fields.Many2one('llp.payroll.structure',string="Payroll structure")
+	struct_id = fields.Many2one('llp.payroll.structure',string="Payroll structure", ondelete='cascade')
 	rule_id = fields.Many2one('llp.payroll.rule',string="Payroll rule",ondelete='restrict')
 	rule_code = fields.Char(related='rule_id.code', string="Rule Code", readonly=True)
 	sequence = fields.Integer(string="Sequence")
