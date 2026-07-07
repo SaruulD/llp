@@ -77,7 +77,7 @@ class LLPPayrollEmployeeDebt(models.Model):
 				('work_contact_id', '!=', False),
 			]
 			if debt.company_id:
-				emp_domain.append(('company_id', 'in', debt.company_ids.ids))
+				emp_domain.append(('company_id', 'in', debt.company_id.ids))
 
 			employees = self.env['hr.employee'].sudo().search(emp_domain)
 			if not employees:

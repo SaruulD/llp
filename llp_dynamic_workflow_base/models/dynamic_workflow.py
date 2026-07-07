@@ -39,8 +39,8 @@ class DynamicWorkflow(models.Model):
             
     def unlink(self):
         for rec in self:
-            rec._check_if_used('dynamic_id')
-            rec._check_if_used('workflow_id')
+            rec.line_ids._check_if_used('dynamic_id')
+            rec.line_ids._check_if_used('workflow_id')
         return super(DynamicWorkflow, self).unlink()
     
     def is_unique_list(self,lst):

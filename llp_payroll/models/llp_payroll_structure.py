@@ -30,6 +30,12 @@ class LLPPayrollStructure(models.Model):
 	def action_draft(self):
 		self.write({'state':'draft'})
 
+	def unlink(self):
+		for rec in self:
+			if rec.state != 'draft':
+				raise UserError(_("Зөвхөн 'Ноорог' төлөвтэй бичлэгийг устгах боломжтой."))
+
+
 class LLPPayrollStructureLine(models.Model):
 	_name = 'llp.payroll.structure.line'
 	_description = "LLP payroll structure line"

@@ -46,8 +46,9 @@
                     </h1>
 
                     <group>
-                        <field name="department_ids" widget="many2many_tags"/>
-                        <field name="journal_id" options="{'no_create': True}" required="1"/>
+                        <field name="company_id" options="{'no_create': True}" required="1"/>
+                        <field name="department_ids" widget="many2many_tags" domain="[('company_id', '=', company_id)]"/>
+                        <field name="journal_id" options="{'no_create': True}" required="1" domain="[('company_id', '=', company_id)]"/>
                         <field name="active" />
                     </group>
 
@@ -55,17 +56,17 @@
                         <page string="Журналын бичилт">
                             <field name="line_ids">
                                 <list string="" editable="bottom">
-                                    <field name="rule_id" required="1" options="{'no_create': True}"/>
+                                    <field name="rule_id" required="1" options="{'no_create': True}" domain="[('company_id', '=', parent.company_id)]"/>
                                     <field name="transaction_value" required="1"/>
-                                    <field name="debit_account_id" required="0" options="{'no_create': True}"/>
-                                    <field name="credit_account_id" required="0" options="{'no_create': True}"/>
+                                    <field name="debit_account_id" required="0" options="{'no_create': True}" domain="[('company_ids', 'in', parent.company_id)]"/>
+                                    <field name="credit_account_id" required="0" options="{'no_create': True}" domain="[('company_ids', 'in', parent.company_id)]"/>
                                 </list>
                                 <form>
                                     <group>
                                         <group>
-                                            <field name="rule_id" required="1" options="{'no_create': True}"/>
-                                            <!-- <field name="debit_account_id" required="0" options="{'no_create': True}"/>
-                                            <field name="credit_account_id" required="0" options="{'no_create': True}"/> -->
+                                            <field name="rule_id" required="1" options="{'no_create': True}" domain="[('company_id', '=', parent.company_id)]"/>
+                                            <!-- <field name="debit_account_id" required="0" options="{'no_create': True}" domain="[('company_ids', 'in', parent.company_id)]"/>
+                                            <field name="credit_account_id" required="0" options="{'no_create': True}" domain="[('company_ids', 'in', parent.company_id)]"/> -->
                                             <field name="transaction_value" required="1" />
                                         </group>
                                     </group>
