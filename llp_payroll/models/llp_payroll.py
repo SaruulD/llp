@@ -43,6 +43,7 @@ class LLPPayroll(models.Model):
     ],string='State',default='draft',tracking=True)
     history_ids = fields.One2many('request.history','payroll_id',string="State History")
     payment_history_ids = fields.One2many('payroll.payment.history', 'payroll_id', string="Payment history")
+
     
     @api.model
     def create(self, vals):
@@ -80,10 +81,63 @@ class LLPPayroll(models.Model):
         self.write({'state':'draft'})
         self.create_history('draft')
 
-    def action_confirm(self):
-        self.write({'state':'confirmed'})
-        self.create_history('confirmed')
+    # def action_confirm(self):
+    #     self.write({'state':'confirmed'})
+    #     self.create_history('confirmed')
+    # def action_confirm(self):
+    #     for payroll in self:
+    #         payroll.write({'state': 'confirmed'})
+    #         payroll.create_history('confirmed')
 
+    #         for line in payroll.line_ids:
+    #             # debt rule ашигласан эсэх
+    #             if not line.rule_value_ids.filtered('is_debt_rule'):
+    #                 continue
+
+    #             loan_lines = self.env['llp.payroll.employee.debt.line'].search([
+    #                 ('employee_id', '=', line.employee_id.id),
+    #                 ('state', '=', 'waiting_approval_1'),
+    #             ])
+
+    #             loan_lines.write({
+    #                 'state': 'approve',
+    #                 'done_or_not': True
+    #             })
+    def action_confirm(self):
+        for payroll in self:
+            payroll.write({'state': 'confirmed'})
+            payroll.create_history('confirmed')
+
+            for line in payroll.line_ids:
+                # debt rule ашигласан эсэх
+                if not line.rule_value_ids.filtered('is_debt_rule'):
+                    continue
+
+                debt_lines = self.env['llp.payroll.employee.debt.line'].search([
+                    ('employee_id', '=', line.employee_id.id),
+                    ('debt_id.state', '=', 'done'),
+                    ('debt_id.struct_type', '=', payroll.struct_id.struct_type),
+                    ('debt_id.month', '>=', payroll.start_date),
+                    ('debt_id.month', '<=', payroll.end_date),
+                ])
+
+                if not debt_lines:
+                    continue
+
+                # ажилтан төлөлт хийсэн гэж тэмдэглэх
+                debt_lines.write({
+                    'done_or_not': True
+                })
+
+                # Холбогдох debt record
+                debts = debt_lines.mapped('debt_id')
+
+                for debt in debts:
+                    # Бүх ажилтан дууссан эсэх
+                    if debt.line_ids and all(debt.line_ids.mapped('done_or_not')):
+                        debt.write({
+                            'state': 'closed'
+                        })
     def action_payment_request(self):
         self.ensure_one()
         action = self.env.ref('llp_payroll.action_llp_payroll_payment_request').read()[0]
@@ -119,6 +173,51 @@ class LLPPayroll(models.Model):
 
     #         self.action_computebyQUERY()
     #     return {'type': 'ir.actions.client', 'tag': 'reload'}
+
+
+    # def action_get_data(self):
+    #     for pay in self:
+    #         employee_ids = self.env['hr.employee'].search([
+    #             ('department_id', 'in', pay.department_id.ids),
+    #             ('active', '=', True)
+    #         ])
+
+    #         if not pay.line_ids:
+    #             lines = []
+    #             number = 1
+
+    #             for employee in employee_ids:
+    #                 rules = []
+
+    #                 for line in pay.struct_id.line_ids:
+    #                     is_edit = line.rule_id.ruleview_type == 'edit'
+
+    #                     rules.append((0, 0, {
+    #                         'payroll_rule_id': line.rule_id.id,
+    #                         'show_in_payroll': line.rule_id.show_in_payroll,
+    #                         'decimal_point': line.rule_id.decimal_point,
+    #                         'rulefield_type': line.rule_id.rulefield_type,
+    #                         'sequence': line.sequence,
+    #                         'value': 0,
+    #                         'is_edit': is_edit,
+    #                     }))
+
+    #                 lines.append((0, 0, {
+    #                     'number': number,
+    #                     'rule_value_ids': rules,
+    #                     'employee_id': employee.id,
+    #                 }))
+
+    #                 number += 1
+
+    #             if lines:
+    #                 pay.write({'line_ids': lines})
+
+    #         pay.action_computebyQUERY()
+
+    #     return {'type': 'ir.actions.client', 'tag': 'reload'}
+
+
     def action_get_data(self):
         for pay in self:
             employee_ids = self.env['hr.employee'].search([
@@ -135,6 +234,19 @@ class LLPPayroll(models.Model):
 
                     for line in pay.struct_id.line_ids:
                         is_edit = line.rule_id.ruleview_type == 'edit'
+                        python_code = line.rule_id.python_code or ''
+
+                        is_debt_rule = (
+                            line.rule_id.object_type == 'debt'
+                            and any(
+                                x in python_code
+                                for x in (
+                                    'object.sum_total',
+                                    'object.withholding_amount',
+                                    'object.sum_loan_amount',
+                                )
+                            )
+                        )
 
                         rules.append((0, 0, {
                             'payroll_rule_id': line.rule_id.id,
@@ -144,6 +256,7 @@ class LLPPayroll(models.Model):
                             'sequence': line.sequence,
                             'value': 0,
                             'is_edit': is_edit,
+                            'is_debt_rule': is_debt_rule,
                         }))
 
                     lines.append((0, 0, {
@@ -381,7 +494,7 @@ class LLPPayrollLine(models.Model):
     payroll_id = fields.Many2one('llp.payroll',string="Payroll", ondelete='cascade', index=True)
     rule_value_ids = fields.One2many('llp.payroll.rule.value','line_id', string="Value")
     number = fields.Integer(string='№')
-	
+
     def action_computebyQUERY(self):
         return
 
@@ -503,6 +616,13 @@ class LLPPayrollRuleValue(models.Model):
     show_in_payroll = fields.Boolean(string="Show in payroll Active",default=True,index=True)
     is_show = fields.Boolean(string="Is show" ,default=True,index=True)
     is_sum_view = fields.Boolean(string="Is sum view" ,default=False,index=True)
+
+    is_debt_rule = fields.Boolean(
+        string='Is Debt Rule',
+        default=False,
+        index=True,
+    )
+	
 
 class RequestHistory(models.Model):
     """ Ажлын урсгалын түүх """

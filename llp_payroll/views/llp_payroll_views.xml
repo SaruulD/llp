@@ -104,6 +104,7 @@
                                             <field name="show_in_payroll" invisible="1"/>
                                             <field name="sequence" invisible="1"/>
                                             <field name="decimal_point" readonly="1"/>
+                                            <field name="is_debt_rule" readonly="1"/>
                                         </list>
                                         <form>
                                             <field name="decimal_point" readonly='1'/>
