@@ -177,7 +177,7 @@ class LLPPayroll(models.Model):
                 order by F.exp_sequence asc "%(self.id)
         self.env.cr.execute(query)
         dictfetchall = self.env.cr.dictfetchall()
-
+ 
         formulas = {}
         if dictfetchall:
             for dic in dictfetchall:
@@ -216,8 +216,9 @@ class LLPPayroll(models.Model):
                 formulas[group]['rules'][group1]['employees'][group2]['rule_value_id'] = dic['rule_value_id']
                 formulas[group]['rules'][group1]['employees'][group2]['line_id'] = dic['line_id'] 
                 formulas[group]['rules'][group1]['employees'][group2]['is_edited'] = dic['is_edited']
-
+ 
         if formulas:
+            object_type_base_map = self.env['llp.payroll.rule']._get_object_type_base_map()
             for formula in sorted(formulas.values(), key=itemgetter('exp_sequence')):
                 for ruled in sorted(formula['rules'].values(), key=itemgetter('code')):
                     for emp in sorted(ruled['employees'].values(), key=itemgetter('employee')):
@@ -225,50 +226,51 @@ class LLPPayroll(models.Model):
                         rule = False
                         if emp['rule_value_id']:
                             rule = self.env['llp.payroll.rule.value'].browse(emp['rule_value_id'])	
-
+ 
                         if ruled['rule_type'] == 'code':
                             value= 0
                             python_code = ruled['python_code']
                             object = {}
-
-                            if ruled['object_type'] == 'contract':
+                            object_base_type = object_type_base_map.get(ruled['object_type'], ruled['object_type'])
+ 
+                            if object_base_type == 'contract':
                                 object = self.env['hr.contract'].search([('employee_id', '=', emp['employee']),('state','=','open')], limit=1)
                             
-                            elif ruled['object_type'] == 'vacation':
+                            elif object_base_type == 'vacation':
                                 query = "select B.id from llp_payroll_employee_vacation A \
                                     inner join llp_payroll_employee_vacation_line B ON A.id=B.vacation_id \
                                     where A.state = 'done' and B.employee_id = %s and A.month BETWEEN '%s' \
                                     AND '%s' and A.struct_type='%s'"%(emp['employee'],self.start_date, self.end_date, self.struct_id.struct_type)
                                 self.env.cr.execute(query)
                                 fetch = self.env.cr.fetchone()
-
+ 
                                 if fetch and fetch[0]:
                                     object = self.env['llp.payroll.employee.vacation.line'].browse(fetch[0])
-
-                            elif ruled['object_type'] == 'employee':
+ 
+                            elif object_base_type == 'employee':
                                 object = self.env['hr.employee'].browse(emp['employee'])
-
-                            elif ruled['object_type'] == 'debt':
+ 
+                            elif object_base_type == 'debt':
                                 query = "select A.id from llp_payroll_employee_debt_line A \
                                     inner join llp_payroll_employee_debt B ON A.debt_id=B.id \
                                     where B.month BETWEEN '%s' AND '%s' and A.employee_id=%s \
                                     and B.struct_type='%s' and B.state in ('done')"%(self.start_date, self.end_date,emp['employee'],self.struct_id.struct_type)
                                 self.env.cr.execute(query)
                                 fetch=self.env.cr.fetchone()
-
+ 
                                 if fetch and fetch[0]:
                                     object = self.env['llp.payroll.employee.debt.line'].sudo().browse(fetch[0])	
-
-                            elif ruled['object_type'] == 'attendance':
+ 
+                            elif object_base_type == 'attendance':
                                 object = {}
-                            elif ruled['object_type'] == 'kpi':
+                            elif object_base_type == 'kpi':
                                 object = {}
                             elif ruled['object_type'] == 'employee':
                                 object = self.env['hr.employee'].browse(emp['employee'])
-
-
+ 
+ 
                             rule_codes = re.findall(r'\b[A-Za-z]+\d+\b|\b[A-Za-z]+\b',str(python_code))
-
+ 
                             if rule_codes:
                                 where = "where A.line_id = %s "%emp['line_id']
                                 if len(rule_codes) > 1:
@@ -277,10 +279,10 @@ class LLPPayroll(models.Model):
                                     where = where + " and B.code = '%s'"%(str(rule_codes[0]))
                                 query = "select A.value as value, B.code as code from llp_payroll_rule_value A \
                                     inner join llp_payroll_rule B ON A.payroll_rule_id = B.id " + where
-
+ 
                                 self.env.cr.execute(query)
                                 fetchedAll = self.env.cr.dictfetchall()
-
+ 
                                 if fetchedAll:
                                     for fetched in fetchedAll:											
                                         python_code = python_code.replace(fetched['code'],str(fetched['value']))											
@@ -289,24 +291,26 @@ class LLPPayroll(models.Model):
                                     if rule_codes:
                                         for code in rule_codes:
                                             python_code = python_code.replace(code,str(0))
-
+ 
                             if ruled['rulefield_type']=='from_previous_payroll':
                                     value = self.get_from_previous_payroll(emp['employee'],python_code,self.start_date, self.end_date)								
                                     if emp['is_edited'] == False:
                                         self.env.cr.execute("update llp_payroll_rule_value set value=%s where id=%s"%(value,emp['rule_value_id']))
-
+ 
                             try:
                                 if rule:
                                     local_dict = {
                                         'rule': rule,
-                                        'object': object
+                                        'object': object,
+                                        'payroll_start_date': self.start_date,
+                                        'payroll_end_date': self.end_date,
                                     }
-
+ 
                                     safe_eval(python_code, local_dict, mode="exec", nocopy=True)
                                     value = local_dict.get('result')
                                 else:
                                     value = eval(python_code)
-
+ 
                                 if ruled['rulefield_type'] == 'digit':
                                     if not value:
                                         value = 0
@@ -322,7 +326,7 @@ class LLPPayroll(models.Model):
                                 elif ruled['rulefield_type'] == 'sign':
                                     self.env.cr.execute("update llp_payroll_rule_value set char_value = '%s' where id = %s"%(False,emp['rule_value_id']))
                                 pass
-
+ 
                         elif ruled['rule_type'] == 'regular':
                             if emp['is_edited'] == False:
                                 value = ruled['regular_number']

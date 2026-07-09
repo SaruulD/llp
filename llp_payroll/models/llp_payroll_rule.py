@@ -42,6 +42,8 @@ class LLPPayrollRule(models.Model):
 								 ('debt','Debt'),
 								 ('kpi','Kpi'),
 								 ('employee','Employee'),
+								 ('part_time_work_additional_salary','Contract - Хавсран ажлын нэмэгдэл цалин'),
+								 ('part_time_work_additional_salary_percent','Contract - Хавсран ажлын нэмэгдэл цалингийн хувь'),
 								 ],string="Object type",tracking=True)	
 	
 	_sql_constraints = [
@@ -49,6 +51,60 @@ class LLPPayrollRule(models.Model):
 		("There is already a rule defined on this model\n"
 		"You cannot define another: please edit the existing one or change this one."))
 	]
+	def _get_object_type_base_map(self):
+			"""object_type-ийн утга бүрийг action_computebyQUERY() доторх аль
+			үндсэн ангилалд (contract/vacation/debt/attendance/kpi/employee)
+			харгалзахыг тодорхойлно. llp_payroll модуль ЗӨВХӨН эдгээр 6 үндсэн
+			ангиллыг л мэднэ.
+	
+			Өөр модуль (жишээ нь ug_regulation, llp_hr_penalty) шинэ object_type
+			утга нэмэх бол, энэ функцийг super()-оор дуудаад, өөрийн шинэ
+			утгаа аль үндсэн ангилалд харьяалагдахыг нэмж өгнө. Ингэснээр
+			llp_payroll модуль тэдгээр модулиудаас хамааралгүй, бие даан
+			ажиллах боломжтой хэвээр үлдэнэ."""
+			return {
+				'contract': 'contract',
+				'part_time_work_additional_salary': 'contract',
+				'part_time_work_additional_salary_percent': 'contract',
+				'vacation': 'vacation',
+				'debt': 'debt',
+				'attendance': 'attendance',
+				'kpi': 'kpi',
+				'employee': 'employee',
+		}
+ 
+	def _get_python_code_templates(self):
+		"""object_type-ийн "shortcut" утгуудын ард нуугдах бэлэн Python code.
+		Өөр модуль (ug_regulation, llp_hr_penalty) энэ функцийг super()-оор
+		дуудаад, өөрийн шинэ object_type-той холбоотой бэлэн кодоо нэмж
+		өгнө."""
+		return {
+			'part_time_work_additional_salary': (
+"""result = 0
+if object:
+    if object.part_time_work_start_date or object.part_time_work_end_date:
+        if object.part_time_work_start_date >= payroll_start_date and object.part_time_work_start_date <= payroll_end_date or payroll_start_date <= object.part_time_work_end_date and payroll_end_date >= object.part_time_work_end_date:
+            result = object.part_time_work_additional_salary"""
+			),
+			'part_time_work_additional_salary_percent': (
+"""result = 0
+if object:
+    if object.part_time_work_start_date or object.part_time_work_end_date:
+        if object.part_time_work_start_date >= payroll_start_date and object.part_time_work_start_date <= payroll_end_date or payroll_start_date <= object.part_time_work_end_date and payroll_end_date >= object.part_time_work_end_date:
+            result = object.part_time_work_additional_salary_percent"""
+			),
+		}
+	
+	@api.onchange('object_type')
+	def _onchange_object_type_python_code_shortcut(self):
+		for rec in self:
+			templates = rec._get_python_code_templates()
+			if rec.object_type in templates:
+				rec.python_code = templates[rec.object_type]
+			elif rec.python_code in templates.values():
+				# өмнө нь shortcut-аар автоматаар бичигдсэн байсан кодыг,
+				# өөр object_type рүү шилжихэд цэвэрлэнэ
+				rec.python_code = ''
 
 	
 	@api.depends('name', 'code')
