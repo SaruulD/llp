@@ -1550,7 +1550,7 @@ msgstr "Цалин бодолтод харуулах"
 #. module: llp_payroll
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_rule_value__show_in_payroll
 msgid "Show in payroll Active"
-msgstr ""
+msgstr "Цалин бодолтод харуулах"
 
 #. module: llp_payroll
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_rule__show_in_report
@@ -1795,7 +1795,7 @@ msgstr "Дуусах огноо"
 #. module: llp_payroll
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_rule_value__is_edit
 msgid "is_edit"
-msgstr ""
+msgstr "Засварлах боломжтой"
 
 #. module: llp_payroll
 #: model:ir.model,name:llp_payroll.model_llp_payroll_account_move_line
