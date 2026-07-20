@@ -1,6 +1,6 @@
 /** @odoo-module */
 
-import { Component, onWillStart } from "@odoo/owl";
+import { Component, onWillStart, onWillUpdateProps } from "@odoo/owl";
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
 import { standardFieldProps } from "@web/views/fields/standard_field_props";
@@ -50,14 +50,34 @@ class PayrollSheetField extends Component {
       employee_lines: {},
     };
 
+    this.loadData = this.loadData.bind(this);
+
     onWillStart(async () => {
-      const sheetId = this.props.record?.resId;
-      if (!sheetId) return;
-      const data = await this.orm.call("llp.payroll.line", "get_line_values", [
-        sheetId,
-      ]);
-      Object.assign(this.state, data);
+      await this.loadData(this.props.record?.resId);
     });
+
+    onWillUpdateProps(async (nextProps) => {
+      const nextId = nextProps.record?.resId;
+      if (nextId !== this.props.record?.resId) {
+        await this.loadData(nextId);
+      }
+    });
+  }
+
+  async loadData(sheetId) {
+    // Pager-ээр шинэ bичлэг рүү орох эсвэл шинэ (unsaved) bичлэг дээр байх үед
+    // хуучин утгыг цэвэрлэнэ, ингэснээр солигдох хооронд хуучин өгөгдөл харагдахгүй
+    this.state.employees = [];
+    this.state.rules = [];
+    this.state.employee_values = {};
+    this.state.employee_lines = {};
+
+    if (!sheetId) return;
+
+    const data = await this.orm.call("llp.payroll.line", "get_line_values", [
+      sheetId,
+    ]);
+    Object.assign(this.state, data);
   }
 
   onValueChange(ev, ruleValueId, empId, ruleId) {

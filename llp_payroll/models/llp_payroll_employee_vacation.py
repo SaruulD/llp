@@ -45,6 +45,7 @@ class LLPPayrollEmployeeVacation(models.Model):
 		('draft', 'Draft'), # Ноорог
 		('pending', 'Pending Approval'), # Зөвшөөрөл хүлээж буй
 		('done', 'Done'), # Батлагдсан
+		('locked', 'Locked'), # Түгжигдсэн
 	], string="State", default='draft', tracking=True)
 	line_ids = fields.One2many('llp.payroll.employee.vacation.line','vacation_id',string="Lines")
 	history_ids = fields.One2many('request.history','payroll_vacation_id',string="State History")
@@ -126,6 +127,22 @@ class LLPPayrollEmployeeVacation(models.Model):
 			if vac.company_id:
 				emp_domain.append(('company_id', '=', vac.company_id.id))
 			employees = self.env['hr.employee'].sudo().search(emp_domain)
+
+			# struct_type-с хамааран next_vacation_salary_date-ийн өдрөөр шүүх
+			if vac.struct_type == 'salary_advance':
+				employees = employees.filtered(
+					lambda e: e.next_vacation_salary_date
+					and e.next_vacation_salary_date.year == vac.month.year
+					and e.next_vacation_salary_date.month == vac.month.month
+					and 1 <= e.next_vacation_salary_date.day <= 15
+				)
+			elif vac.struct_type == 'salary_late':
+				employees = employees.filtered(
+					lambda e: e.next_vacation_salary_date
+					and e.next_vacation_salary_date.year == vac.month.year
+					and e.next_vacation_salary_date.month == vac.month.month
+					and e.next_vacation_salary_date.day >= 16
+				)
 
 			line_by_emp = {l.employee_id.id: l for l in vac.line_ids if l.employee_id}
 			for emp in employees:
@@ -213,7 +230,6 @@ class LLPPayrollEmployeeVacation(models.Model):
 
 			MonthLine = self.env['llp.payroll.employee.month.line']
 			create_vals = []
-
 
 			for emp_id, line in line_by_emp.items():
 				emp_start = emp_start_map.get(emp_id)
@@ -370,12 +386,19 @@ class LLPPayrollEmployeeVacationLine(models.Model):
 	def _compute_total(self):
 		total_worked_day = 1
 		for line in self:		
+			if line.total_vacation_day == False:
+				line.total_vacation_day = line.employee_id.annual_leave_remaining_days
 			line.total_salary = sum(line.salary for line in line.month_line_ids)	
 			line.total_worked_day = sum(line.worked_day for line in line.month_line_ids)
 			if line.total_worked_day !=0:
 				total_worked_day = line.total_worked_day				
 			line.one_day_salary = line.total_salary / total_worked_day
 			line.total_vacation_amount = line.total_vacation_day * line.one_day_salary
+
+	def _onchange_total_vacation_day(self):
+		if self.total_vacation_day == 0:
+			self.total_vacation_day = self.employee_id.annual_leave_remaining_days
+		
 
 	employee_id = fields.Many2one(
 		'hr.employee',
@@ -392,6 +415,7 @@ class LLPPayrollEmployeeVacationLine(models.Model):
 	month_line_ids = fields.One2many('llp.payroll.employee.month.line','line_id',string="Month lines")
 	vacation_id = fields.Many2one('llp.payroll.employee.vacation', string="Vacation")
 	month = fields.Date(string="Month", related="vacation_id.month", required=True, tracking=True)
+	done_or_not = fields.Boolean(string="Done or Not", store=True, default=False)
 
 
 class LLPPayrollEmployeeMonthLine(models.Model):

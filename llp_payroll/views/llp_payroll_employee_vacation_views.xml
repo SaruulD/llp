@@ -64,7 +64,7 @@
                     <button name="action_send" invisible="state != 'draft'" string="Send" type="object" class="btn-primary"/>
                     <button name="action_confirm" invisible="state != 'pending'" string="Confirm" type="object" class="btn-primary"/>
                     <button name="action_return" invisible="state != 'pending'" string="Return" type="object" class="btn-secondary"/>
-                    <field name="state" widget="statusbar" statusbar_visible="draft,pending,done"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,pending,done,locked"/>
                 </header>
 
                 <sheet>
@@ -105,6 +105,7 @@
                                             <field name="total_vacation_day"/>
                                             <field name="one_day_salary"/>
                                             <field name="total_vacation_amount"/>
+                                            <field name="done_or_not" readonly="1"/>
                                         </group>
                                     </group>
                                     <notebook>

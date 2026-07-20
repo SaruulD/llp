@@ -22,6 +22,26 @@ msgid "%s сарын сүүл цалин"
 msgstr ""
 
 #. module: llp_payroll
+#: model:ir.model.fields.selection,name:llp_payroll.selection__llp_payroll_employee_vacation__state__locked
+msgid "Locked"
+msgstr "Түгжигдсэн"
+
+#. module: llp_payroll
+#: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_employee_vacation_line__done_or_not
+msgid "Done or Not"
+msgstr "Дууссан эсэх"
+
+#. module: llp_payroll
+#: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_rule_value__is_debt_rule
+msgid "Is Debt Rule"
+msgstr "Авлага суутгалын дүрэм эсэх"
+
+#. module: llp_payroll
+#: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_rule_value__is_vacation_rule
+msgid "Is Vacation Rule"
+msgstr "Ээлжийн амралтын дүрэм эсэх"
+
+#. module: llp_payroll
 #. odoo-python
 #: code:addons/llp_payroll/wizard/llp_payroll_payment_request.py:0
 msgid "%s сарын урьдчилгаа цалин"

@@ -109,35 +109,54 @@ class LLPPayroll(models.Model):
             payroll.create_history('confirmed')
 
             for line in payroll.line_ids:
-                # debt rule ашигласан эсэх
-                if not line.rule_value_ids.filtered('is_debt_rule'):
+                has_debt_rule = bool(line.rule_value_ids.filtered('is_debt_rule'))
+                has_vacation_rule = bool(line.rule_value_ids.filtered('is_vacation_rule'))
+
+                if not has_debt_rule and not has_vacation_rule:
                     continue
 
-                debt_lines = self.env['llp.payroll.employee.debt.line'].search([
-                    ('employee_id', '=', line.employee_id.id),
-                    ('debt_id.state', '=', 'done'),
-                    ('debt_id.struct_type', '=', payroll.struct_id.struct_type),
-                    ('debt_id.month', '>=', payroll.start_date),
-                    ('debt_id.month', '<=', payroll.end_date),
-                ])
+                # --- DEBT тал ---
+                if has_debt_rule:
+                    debt_lines = self.env['llp.payroll.employee.debt.line'].search([
+                        ('employee_id', '=', line.employee_id.id),
+                        ('debt_id.state', '=', 'done'),
+                        ('debt_id.struct_type', '=', payroll.struct_id.struct_type),
+                        ('debt_id.month', '>=', payroll.start_date),
+                        ('debt_id.month', '<=', payroll.end_date),
+                    ])
 
-                if not debt_lines:
-                    continue
+                    if debt_lines:
+                        debt_lines.write({'done_or_not': True})
 
-                # ажилтан төлөлт хийсэн гэж тэмдэглэх
-                debt_lines.write({
-                    'done_or_not': True
-                })
+                        debts = debt_lines.mapped('debt_id')
+                        for debt in debts:
+                            if debt.line_ids and all(debt.line_ids.mapped('done_or_not')):
+                                debt.write({'state': 'closed'})
 
-                # Холбогдох debt record
-                debts = debt_lines.mapped('debt_id')
+                # --- VACATION тал ---
+                if has_vacation_rule:
+                    vacation_lines = self.env['llp.payroll.employee.vacation.line'].search([
+                        ('employee_id', '=', line.employee_id.id),
+                        ('vacation_id.state', '=', 'done'),
+                        ('vacation_id.struct_type', '=', payroll.struct_id.struct_type),
+                        ('vacation_id.month', '>=', payroll.start_date),
+                        ('vacation_id.month', '<=', payroll.end_date),
+                    ])
 
-                for debt in debts:
-                    # Бүх ажилтан дууссан эсэх
-                    if debt.line_ids and all(debt.line_ids.mapped('done_or_not')):
-                        debt.write({
-                            'state': 'closed'
-                        })
+                    if vacation_lines:
+                        vacation_lines.write({'done_or_not': True})
+
+                        vacations = vacation_lines.mapped('vacation_id')
+                        for vacation in vacations:
+                            if vacation.line_ids and all(vacation.line_ids.mapped('done_or_not')):
+                                vacation.write({'state': 'locked'})
+                                
+                                employees = vacation.line_ids.mapped('employee_id')
+                                if vacation.month:
+                                    employees.write({'last_vacation_salary_date': vacation.month})
+
+
+
     def action_payment_request(self):
         self.ensure_one()
         action = self.env.ref('llp_payroll.action_llp_payroll_payment_request').read()[0]
@@ -248,6 +267,16 @@ class LLPPayroll(models.Model):
                             )
                         )
 
+                        is_vacation_rule = (
+                            line.rule_id.object_type == 'vacation'
+                            and any(
+                                x in python_code
+                                for x in (
+                                    'object.total_vacation_amount',
+                                )
+                            )
+                        )
+
                         rules.append((0, 0, {
                             'payroll_rule_id': line.rule_id.id,
                             'show_in_payroll': line.rule_id.show_in_payroll,
@@ -257,6 +286,7 @@ class LLPPayroll(models.Model):
                             'value': 0,
                             'is_edit': is_edit,
                             'is_debt_rule': is_debt_rule,
+                            'is_vacation_rule': is_vacation_rule,
                         }))
 
                     lines.append((0, 0, {
@@ -619,6 +649,12 @@ class LLPPayrollRuleValue(models.Model):
 
     is_debt_rule = fields.Boolean(
         string='Is Debt Rule',
+        default=False,
+        index=True,
+    )
+
+    is_vacation_rule = fields.Boolean(
+        string='Is Vacation Rule',
         default=False,
         index=True,
     )
