@@ -34,6 +34,9 @@ class LLPPayrollRule(models.Model):
 											('salary_late','Salary late'),
 											('by_partner','By partner'),
 										], string="Transaction type")
+	need_highlight = fields.Boolean("Тодруулах шаардлагатай")
+	
+	send_mail = fields.Boolean(string='Send E-Mail', default=False)
 
 	company_id = fields.Many2one('res.company', string="Company",default=lambda self: self.env.company,)
 	object_type = fields.Selection([('attendance','Attendance'),

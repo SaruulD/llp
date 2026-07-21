@@ -53,6 +53,7 @@
                     <button name="action_verify" invisible="state != 'pending'" string="Verify" type="object" class="btn-primary"/>
                     <button name="action_return" invisible="state != 'pending'" string="Return" type="object" class="btn-primary"/>
                     <button name="action_confirm" invisible="state != 'verify'" string="Confirm" type="object" class="btn-primary"/>
+                    <button name="send_mail_to_employees" string="Имэйл илгээх" type="object" class="btn-primary" invisible="state != 'confirmed'"/>
 
                     <xpath expr="//header" position="inside">
                         <button name="action_open_edit_wizard" string="Импорт / Экспорт" type="object" class="oe_highlight"/>

@@ -71,6 +71,8 @@
                             <group>
                                 <field name="parent_id" options="{'no_create': True}" />
                                 <field name="transaction_type" />
+                                <field name="send_mail" />
+                                <field name="need_highlight"/>
                             </group>
                         </group>
                     </group>

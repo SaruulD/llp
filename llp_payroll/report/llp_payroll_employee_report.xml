@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_payroll_employee" model="ir.actions.report">
+        <field name="name">Payroll Employee PDF</field>
+        <field name="model">llp.payroll</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">llp_payroll.report_payroll_employee_document</field>
+        <field name="report_file">llp_payroll.report_payroll_employee_document</field>
+    </record>
+
+    <template id="report_payroll_employee_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <h2>Цалингийн мэдээлэл - <span t-esc="o.name"/></h2>
+                        <p>Ажилтан: <span t-esc="o._context.get('employee_name')"/></p>
+                        <p>
+                            Хугацаа: <span t-esc="o.start_date"/> - <span t-esc="o.end_date"/>
+                        </p>
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Код</th>
+                                    <th>Нэр</th>
+                                    <th class="text-right">Дүн</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="o._context.get('employee_values', [])" t-as="line">
+                                    <tr>
+                                        <td><span t-esc="line['code']"/></td>
+                                        <td><span t-esc="line['name']"/></td>
+                                        <td class="text-right"><span t-esc="line['value']"/></td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

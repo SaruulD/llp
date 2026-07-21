@@ -7,6 +7,7 @@ import re
 _logger = logging.getLogger(__name__)
 from operator import itemgetter
 from odoo.tools.safe_eval import safe_eval # type: ignore
+import base64
 
 class LLPPayroll(models.Model):
     _name = 'llp.payroll'
@@ -44,7 +45,236 @@ class LLPPayroll(models.Model):
     history_ids = fields.One2many('request.history','payroll_id',string="State History")
     payment_history_ids = fields.One2many('payroll.payment.history', 'payroll_id', string="Payment history")
 
+
+    def send_mail_to_employees(self):
+        self._send_payroll_rule_mail()
+ 
+    def _send_payroll_rule_mail(self):
+        self.ensure_one()
+ 
+        # Тухайн payroll-ийн struct-д хамаарах, send_mail=True рулиудыг
+        # structure дэх дараалал (sequence)-аар нь авна
+        struct_lines = self.struct_id.line_ids.filtered(
+            lambda l: l.rule_id.send_mail
+        ).sorted(key=lambda l: l.sequence)
+ 
+        if not struct_lines:
+            return
+ 
+        for line in self.line_ids:
+            employee = line.employee_id
+ 
+            if not employee.work_email:
+                continue
+ 
+            values = []
+ 
+            for struct_line in struct_lines:
+                rule = struct_line.rule_id
+ 
+                rule_value = line.rule_value_ids.filtered(
+                    lambda r: r.payroll_rule_id == rule
+                )
+ 
+                if not rule_value:
+                    continue
+ 
+                # sign төрлийн утга char_value дотор, бусад нь value дотор хадгалагдана
+                if rule_value.rulefield_type == 'sign':
+                    val = rule_value.char_value
+                else:
+                    val = rule_value.value
+ 
+                values.append({
+                    'name': rule.name,
+                    'code': rule.code,
+                    'value': val,
+                    'need_highlight': rule.need_highlight,
+                })
+ 
+            if not values:
+                continue
+ 
+            self._send_employee_mail(employee, values)
+ 
+ 
+    def _send_employee_mail(self, employee, values):
+        self.ensure_one()
+ 
+        # PDF/attachment үүсгэхгүй, задаргааг зөвхөн мэйлийн body дотор
+        # (mail_template_payroll-ийн body_html) шууд харуулна. employee_id /
+        # employee_values-ийг context-оор дамжуулснаар body_html доторх
+        # doc._get_employee_header_html(...) / doc._get_employee_report_html(...)
+        # тухайн ажилтны өөрийнх нь мэдээллийг зурна.
+        template = self.env.ref('llp_payroll.mail_template_payroll')  # module нэрээ тохируулна
+        template.with_context(
+            employee_id=employee.id,
+            employee_values=values,
+        ).send_mail(
+            self.id,
+            force_send=True,
+            email_values={
+                'email_to': employee.work_email,
+            },
+        )
+ 
+ 
+    def _get_employee_header_html(self, employee):
+        """Ажилтны нэр / хэлтэс / регистрийн дугаар / албан тушаалыг
+        xlsx загварын A5:D6 layout-той адил 2 мөр, 4 баганаар харуулна.
+        Ашиглалт: report/mail template дотор
+        `t-raw="doc._get_employee_header_html(employee)"`.
+        """
+        label = "padding: 4px 8px; font-size: 12pt; font-family: 'Arial'; font-weight: bold;"
+        value = "padding: 4px 8px; font-size: 12pt; font-family: 'Arial';"
+ 
+        return """
+            <table style="border: 1px solid black; border-collapse: collapse;" width="100%%">
+                <tr>
+                    <td style="%s" width="20%%">Ажилтны нэр</td>
+                    <td style="%s" width="30%%">%s</td>
+                    <td style="%s" width="20%%">Газар, хэлтэс</td>
+                    <td style="%s" width="30%%">%s</td>
+                </tr>
+                <tr>
+                    <td style="%s">Регистрийн дугаар</td>
+                    <td style="%s">%s</td>
+                    <td style="%s">Албан тушаал</td>
+                    <td style="%s">%s</td>
+                </tr>
+            </table>
+        """ % (
+            label, value, employee.name or '',
+            label, value, employee.department_id.name or '',
+            label, value, employee.identification_id or '',
+            label, value, employee.job_id.name or '',
+        )
+  
+    def _get_employee_report_html(self, values):
+        """`values` жагсаалт (`_send_payroll_rule_mail`-с ирнэ, [{'name','code','value'}, ...])-ыг
+        Код | Нэр | Дүн гэсэн бүрэн хүрээтэй (bordered) хүснэгт болгоно.
+        Захын 2 багана (зүүн/баруун 10%) хүрээгүй, зөвхөн хоосон зай тул
+        доторх хүрээтэй хүснэгт хуудасны голд харагдана. QWeb report/mail
+        template дотор `t-raw="doc._get_employee_report_html(...)"` байдлаар
+        дуудна.
+        """
+        cell = "border: 1px solid black; border-collapse: collapse; padding: 4px 8px; font-size: 11pt; font-family: 'Arial';"
+        head = cell + "background-color: #333369; color: white; font-weight: bold; text-align: center;"
+ 
+        inner = """
+            <table style="border: 1px solid black; border-collapse: collapse;" width="100%%">
+                <tr>
+                    <td style="%s" width="15%%">Код</td>
+                    <td style="%s" width="55%%">Нэр</td>
+                    <td style="%s" width="30%%">Дүн</td>
+                </tr>
+        """ % (head, head, head)
+ 
+        highlight = cell + "background-color: #A8ECFF;"  # тодруулах мөрийн өнгө
+ 
+        for val in values or []:
+            amount = val.get('value')
+            if isinstance(amount, (int, float)):
+                amount_display = '{:,.2f}'.format(amount)
+            else:
+                amount_display = amount or ''
+ 
+            row_style = highlight if val.get('need_highlight') else cell
+ 
+            inner += """
+                <tr>
+                    <td style="%s text-align: center;">%s</td>
+                    <td style="%s text-align: left;">%s</td>
+                    <td style="%s text-align: right;">%s</td>
+                </tr>
+            """ % (
+                row_style, val.get('code') or '',
+                row_style, val.get('name') or '',
+                row_style, amount_display,
+            )
+ 
+        inner += "</table>"
+ 
+        # Гаднах хүснэгт хүрээгүй (spacer); зүүн/баруун 10% хоосон,
+        # дунд 80%-д дээрх хүрээтэй хүснэгтийг байрлуулна.
+        return """
+            <table width="100%%" style="border-collapse: collapse; margin-top: 8px;">
+                <tr>
+                    <td width="10%%"></td>
+                    <td width="80%%">%s</td>
+                    <td width="10%%"></td>
+                </tr>
+            </table>
+        """ % inner
+
     
+    def get_company_logo_mail(self, ids):
+        """Мэйлийн body_html-д зориулсан лого.
+        `get_company_logo_*`-ийн base64 `data:` URI-г Outlook зэрэг
+        зарим мэйл клиент дэмждэггүй тул (зураг ачаалахгүй, зөвхөн
+        alt текст нь харагдана) үүний оронд Odoo-ийн стандарт
+        `/web/image/res.company/<id>/logo` URL ашиглана.
+ 
+        АНХААРАХ: 'web.base.url' систем параметр (Тохиргоо > Техникийн
+        > Системийн параметрүүд) нь гадна талаас (хүлээн авагчийн
+        мэйл клиентээс) хүрэх боломжтой жинхэнэ домэйн/IP байх ёстой,
+        localhost биш.
+        """
+        report_id = self.browse(ids).exists()
+        if not report_id or not report_id.company_id or not report_id.company_id.logo:
+            return ''
+ 
+        company = report_id.company_id
+        base_url = report_id.get_base_url()
+ 
+        return (
+            '<img alt="%s" width="300" src="%s/web/image/res.company/%s/logo" />'
+        ) % (company.name or '', base_url, company.id)
+ 
+ 
+    def get_company_logo_small(self, ids):
+        report_id = self.browse(ids)
+        image_buf = report_id.company_id.logo_web.decode('utf-8')
+        image_str = ''
+        if len(image_buf)>10:
+            image_str = '<img alt="Embedded Image" width="128" src="data:image/png;base64,%s" />'%(image_buf)
+        return image_str
+    def get_company_logo_medium(self, ids):
+        report_id = self.browse(ids).exists()
+
+        if not report_id:
+            return ''
+        logo = report_id.company_id.logo_web
+        if not logo:
+            return ''
+
+        image_buf = logo.decode('utf-8') if isinstance(logo, bytes) else logo
+
+        return (
+            '<img alt="Embedded Image" width="300" '
+            'src="data:image/png;base64,%s" />'
+        ) % image_buf
+    def get_company_logo_big(self, ids):
+        report_id = self.browse(ids).exists()
+
+        if not report_id or not report_id.company_id:
+            return ''
+
+        logo = report_id.company_id.logo_web
+        if not logo:
+            return ''
+
+        # Odoo binary field нь ихэнхдээ base64 bytes/string хэлбэртэй ирдэг
+        image_buf = logo.decode('utf-8') if isinstance(logo, bytes) else logo
+
+        return (
+            '<img alt="Company Logo" width="1024" '
+            'src="data:image/png;base64,%s" />'
+        ) % image_buf
+        
+    
+ 
+
     @api.model
     def create(self, vals):
         seq_code = 'llp.payroll.seq'

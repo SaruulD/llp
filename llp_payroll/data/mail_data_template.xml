@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ==========================================================
+         PDF report action
+         report_name/report_file: <module>.<template_id>
+         ========================================================== -->
+    <record id="llp_payroll_employee_report" model="ir.actions.report">
+        <field name="name">Цалингийн хуудас</field>
+        <field name="model">llp.payroll</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">llp_payroll.llp_payroll_employee_report_template</field>
+        <field name="report_file">llp_payroll.llp_payroll_employee_report_template</field>
+        <field name="binding_model_id" ref="model_llp_payroll"/>
+        <field name="binding_type">report</field>
+        <field name="print_report_name">'Цалингийн хуудас - %s' % (object.name)</field>
+    </record>
+
+    <!-- ==========================================================
+         QWeb template
+         `doc` = llp.payroll record passed to _render_qweb_pdf([self.id])
+         `doc.env.context` carries employee_id / employee_values, since
+         _send_employee_mail() calls .with_context(...) before rendering.
+         Layout follows Цалингийн_загвар_-Уранган_ХХК.xlsx:
+         лого -> мэндчилгээ -> сарын мэдээлэл -> ажилтны толгой хэсэг -> задаргаа
+         ========================================================== -->
+    <template id="llp_payroll_employee_report_template">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-set="employee" t-value="doc.env['hr.employee'].browse(doc.env.context.get('employee_id'))"/>
+                <t t-call="web.external_layout">
+                    <div class="page" style="font-family: Arial, sans-serif;">
+                        <div style="text-align: left; margin-bottom: 10px;">
+                            <t t-raw="doc.get_company_logo_medium(doc.ids)"/>
+                        </div>
+
+                        <p style="font-size: 12pt; text-align: center;">
+                            <strong t-esc="doc.company_id.name"/> Сайн байна уу
+                        </p>
+                        <p style="font-size: 12pt; text-align: center;">
+                            Таны "<span t-esc="doc.start_date.strftime('%Y оны %m-р сар')"/>"-ын
+                            цалингийн мэдээллийг илгээж байна.
+                        </p>
+
+                        <t t-raw="doc._get_employee_header_html(employee)"/>
+                        <t t-raw="doc._get_employee_report_html(doc.env.context.get('employee_values', []))"/>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <!-- ==========================================================
+         Mail template
+         email_to is overridden per-employee in _send_employee_mail()
+         via email_values, so the value below is just a safe fallback.
+         body_html reuses the same doc._get_employee_header_html /
+         doc._get_employee_report_html helpers as the PDF, so the mail
+         body and the attached PDF stay visually consistent.
+         ========================================================== -->
+    <record id="mail_template_payroll" model="mail.template">
+        <field name="name">LLP Payroll - Цалингийн хуудас</field>
+        <field name="model_id" ref="model_llp_payroll"/>
+        <field name="subject">Цалингийн хуудас - {{ object.name }}</field>
+        <field name="email_from">{{ (object.company_id.email or user.email) }}</field>
+        <field name="email_to">{{ object.line_ids[0].employee_id.work_email if object.line_ids else '' }}</field>
+        <field name="body_html" type="html">
+            <div style="font-family: Arial, sans-serif; font-size: 12pt; color:#222;">
+                <t t-set="employee" t-value="object.env['hr.employee'].browse(object.env.context.get('employee_id'))"/>
+
+                <div style="text-align: center; margin-bottom: 10px;">
+                    <t t-raw="object.get_company_logo_mail(object.ids)"/>
+                </div>
+
+                <p style="text-align: center;">
+                    <strong t-esc="object.company_id.name"/> Сайн байна уу
+                </p>
+                <p style="text-align: center;">
+                    Таны "<span t-esc="object.start_date.strftime('%Y оны %m-р сар')"/>"-ын
+                    цалингийн мэдээллийг илгээж байна.
+                </p>
+
+                <t t-raw="object._get_employee_header_html(employee)"/>
+                <t t-raw="object._get_employee_report_html(object.env.context.get('employee_values', []))"/>
+
+                <p>Хүндэтгэсэн,<br/>Цалингийн баг</p>
+            </div>
+        </field>
+        <field name="auto_delete" eval="True"/>
+        <field name="lang">{{ object.company_id.partner_id.lang }}</field>
+    </record>
+
+</odoo>

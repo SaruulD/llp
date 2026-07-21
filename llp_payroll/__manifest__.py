@@ -13,6 +13,7 @@
     'data': [
         'security/security.xml',    
         'security/ir.model.access.csv',
+        'data/mail_data_template.xml',
         'views/llp_payroll_rule_views.xml',
         'views/llp_payroll_structure_views.xml',
         'views/llp_payroll_report_config_views.xml',
@@ -29,6 +30,7 @@
         'report/llp_payroll_insurance_import_views.xml',
         'report/llp_payroll_insurance_tax_report_views.xml',
         'report/llp_payroll_income_tax_import_views.xml',
+        # 'report/llp_payroll_employee_report.xml',
         'views/menu_views.xml',
     ],
     'installable': True,
