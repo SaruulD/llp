@@ -577,14 +577,14 @@ msgstr "Томьёо"
 #. module: llp_payroll
 #: model_terms:ir.ui.view,arch_db:llp_payroll.view_llp_payroll_form
 msgid "Get Data"
-msgstr ""
+msgstr "Мэдээлэл татах"
 
 #. module: llp_payroll
 #: model_terms:ir.ui.view,arch_db:llp_payroll.view_llp_payroll_employee_debt_form
 #: model_terms:ir.ui.view,arch_db:llp_payroll.view_llp_payroll_employee_vacation_form
 #: model_terms:ir.ui.view,arch_db:llp_payroll.view_llp_payroll_form
 msgid "Get data"
-msgstr ""
+msgstr "Мэдээлэл татах"
 
 #. module: llp_payroll
 #: model:ir.model.fields.selection,name:llp_payroll.selection__llp_payroll_rule__rulefield_type__from_previous_payroll
@@ -778,6 +778,13 @@ msgstr ""
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_rule__is_net_amount
 msgid "Is net amount"
 msgstr "Гарт олгох дүн эсэх"
+
+
+#. module: llp_payroll
+#: model_terms:ir.ui.view,arch_db:llp_payroll.view_llp_payroll_form
+msgid "Compute"
+msgstr "Тооцоолох"
+
 
 #. module: llp_payroll
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_rule_value__is_show
@@ -1608,6 +1615,16 @@ msgstr "Эхлэх огноо"
 #: model_terms:ir.ui.view,arch_db:llp_payroll.view_llp_payroll_employee_vacation_filter
 msgid "State"
 msgstr "Төлөв"
+
+#. module: llp_payroll
+#: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll__state_log_ids
+msgid "State Log"
+msgstr "Төлөвийн түүх"
+
+#. module: llp_payroll
+#: model_terms:ir.ui.view,arch_db:llp_payroll.view_llp_payroll_form
+msgid "State log"
+msgstr "Төлөвийн түүх"
 
 #. module: llp_payroll
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll__history_ids

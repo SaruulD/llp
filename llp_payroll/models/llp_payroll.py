@@ -22,15 +22,16 @@ class LLPPayroll(models.Model):
     name = fields.Char(string='Code',tracking=True, readonly=True)
     start_date = fields.Date(string="Start Date", required=True, tracking=True)
     end_date = fields.Date(string="End Date", required=True, tracking=True)
-    dynamic_workflow_id = fields.Many2one(
-        'dynamic.workflow',
-        string="Dynamic workflow",
-        domain=_model_id_domain,
-    )
+    # dynamic_workflow_id = fields.Many2one(
+    #     'dynamic.workflow',
+    #     string="Dynamic workflow",
+    #     domain=_model_id_domain,
+    # )
 
     company_id = fields.Many2one('res.company', string="Company",default=lambda self: self.env.company,)
 	
-    department_id = fields.Many2many('hr.department',string="Department",tracking=True)
+    department_id = fields.Many2many('hr.department',string="Department",tracking=True,
+        domain="['|', ('company_id', '=', company_id), ('company_id', '=', False)]")
     struct_id = fields.Many2one('llp.payroll.structure',string="Stucture", domain="[('state','=','done')]",tracking=True)
     line_ids = fields.One2many('llp.payroll.line','payroll_id',string="Lines")
     state = fields.Selection([
@@ -45,6 +46,7 @@ class LLPPayroll(models.Model):
     history_ids = fields.One2many('request.history','payroll_id',string="State History")
     payment_history_ids = fields.One2many('payroll.payment.history', 'payroll_id', string="Payment history")
 
+    
 
     def send_mail_to_employees(self):
         self._send_payroll_rule_mail()
@@ -469,6 +471,74 @@ class LLPPayroll(models.Model):
 
     def action_get_data(self):
         for pay in self:
+            emp_domain = [('active', '=', True)]
+ 
+            # Хэлтэс сонгосон бол зөвхөн тэдгээр хэлтсийн ажилтныг,
+            # сонгоогүй бол тухайн компанийн бүх ажилтныг авна.
+            if pay.department_id:
+                emp_domain.append(('department_id', 'in', pay.department_id.ids))
+ 
+            if pay.company_id:
+                emp_domain.append(('company_id', '=', pay.company_id.id))
+ 
+            employee_ids = self.env['hr.employee'].search(emp_domain)
+ 
+            # Дахин татахад өмнөх мөрүүд (болон cascade-аар устах
+            # rule_value_ids)-ийг устгаад, шинээр татсан мэдээллээр
+            # дахин үүсгэнэ.
+            pay.line_ids.unlink()
+ 
+            lines = []
+            number = 1
+ 
+            for employee in employee_ids:
+                rules = []
+ 
+                for line in pay.struct_id.line_ids:
+                    is_edit = line.rule_id.ruleview_type == 'edit'
+                    python_code = line.rule_id.python_code or ''
+ 
+                    is_debt_rule = (
+                        line.rule_id.object_type == 'debt'
+                        and any(
+                            x in python_code
+                            for x in (
+                                'object.sum_total',
+                                'object.withholding_amount',
+                                'object.sum_loan_amount',
+                            )
+                        )
+                    )
+ 
+                    rules.append((0, 0, {
+                        'payroll_rule_id': line.rule_id.id,
+                        'show_in_payroll': line.rule_id.show_in_payroll,
+                        'decimal_point': line.rule_id.decimal_point,
+                        'rulefield_type': line.rule_id.rulefield_type,
+                        'sequence': line.sequence,
+                        'value': 0,
+                        'is_edit': is_edit,
+                        'is_debt_rule': is_debt_rule,
+                    }))
+ 
+                lines.append((0, 0, {
+                    'number': number,
+                    'rule_value_ids': rules,
+                    'employee_id': employee.id,
+                }))
+ 
+                number += 1
+ 
+            if lines:
+                pay.write({'line_ids': lines})
+ 
+            pay.action_computebyQUERY()
+ 
+        return {'type': 'ir.actions.client', 'tag': 'reload'}
+
+    
+    def action_compute(self):
+        for pay in self:
             employee_ids = self.env['hr.employee'].search([
                 ('department_id', 'in', pay.department_id.ids),
                 ('active', '=', True)
@@ -534,6 +604,8 @@ class LLPPayroll(models.Model):
 
         return {'type': 'ir.actions.client', 'tag': 'reload'}
 
+ 
+ 
     def action_computebyQUERY(self):
         self.env.cr.commit()
         query = "select C.id as rule_value_id,D.rule_type as rule_type, D.rulefield_type as rulefield_type, D.object_type as object_type, \
@@ -754,7 +826,7 @@ class LLPPayrollLine(models.Model):
     payroll_id = fields.Many2one('llp.payroll',string="Payroll", ondelete='cascade', index=True)
     rule_value_ids = fields.One2many('llp.payroll.rule.value','line_id', string="Value")
     number = fields.Integer(string='№')
-
+    payroll_state = fields.Selection(related='payroll_id.state', string="Payroll State", store=False)
     def action_computebyQUERY(self):
         return
 

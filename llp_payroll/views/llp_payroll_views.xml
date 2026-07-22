@@ -44,40 +44,65 @@
 
                 <header>
                     <button name="action_get_data" invisible="state != 'draft'" string="Get Data" type="object" class="btn-primary"/>
+                    <button name="action_compute" invisible="state != 'draft'" string="Compute" type="object" class="btn-primary"/>
                     <button name="action_payment_request" invisible="state != 'confirmed'" string="Create Payment Request" type="object" class="btn-primary"/>
                     <button name="action_account_move" invisible="state != 'confirmed'" string="Create Account Move" type="object" class="btn-primary"/>
 
                     <!-- WORKFLOW -->
-                    <button name="action_send" invisible="state != 'draft'" string="Send" type="object" class="btn-primary"/>
-                    <button name="action_approve" invisible="state != 'sent'" string="Approve" type="object" class="btn-primary"/>
+                    <button name="action_sent" invisible="state != 'draft'" string="Send" type="object" class="btn-primary"/>
+                    <!-- <button name="action_approve" invisible="state != 'sent'" string="Approve" type="object" class="btn-primary"/> -->
                     <button name="action_verify" invisible="state != 'pending'" string="Verify" type="object" class="btn-primary"/>
                     <button name="action_return" invisible="state != 'pending'" string="Return" type="object" class="btn-primary"/>
                     <button name="action_confirm" invisible="state != 'verify'" string="Confirm" type="object" class="btn-primary"/>
                     <button name="send_mail_to_employees" string="Имэйл илгээх" type="object" class="btn-primary" invisible="state != 'confirmed'"/>
+                    
 
                     <xpath expr="//header" position="inside">
-                        <button name="action_open_edit_wizard" string="Импорт / Экспорт" type="object" class="oe_highlight"/>
+                        <button name="action_open_edit_wizard" string="Импорт / Экспорт" type="object" class="oe_highlight" invisible="state != 'draft'"/>
                     </xpath>
 
-                    <field name="state" widget="statusbar" statusbar_visible="draft,sent,pending,verify,confirmed"/>
+                    <field name="is_super" invisible="1" />
+                    <field name="waiting_user_ids" invisible="1" />
+
+                    <field name="state" widget="statusbar" statusbar_visible="draft,sent,confirmed"/>
                 </header>
+
+                <form style="padding-right:0; padding-left:0" invisible="state == 'draft'">
+                    <header style="background-color: #E46E78">
+                        <label string="Confirm process" for="line_state"
+                            invisible="state == 'sent' or not line_state or uid not in waiting_user_ids" />
+                    </header>
+                    <header style="border: 0.3px solid #dee2e6;">
+                        <field name="workflow_active_line_ids" invisible="1"
+                            style="background-color: #c891aa" />
+                        <field name="allowed_workflow_ids" invisible="1"/>
+                        <field name="line_state" widget="statusbar" invisible="state != 'sent'"/>
+                        <button name="confirm_state" type="object" string="Confirm"
+                            invisible="not line_state or uid not in waiting_user_ids" class="btn-success"/>
+                        <button name="return_state" type="object" string="Return"
+                            invisible="not line_state or uid not in waiting_user_ids" class="btn-secondary"/>
+                    </header>
+                </form>
 
                 <sheet>
                     <h1>
                         <label for="name"/>
                         <field name="name"/>
                     </h1>
-
+                    <group>
                     <group>
                         <field name="dynamic_workflow_id" options="{'no_create':True}" required="1" readonly="state != 'draft'"/>
                         <field name="start_date" readonly="state != 'draft'"/>
                         <field name="end_date" readonly="state != 'draft'"/>
                     </group>
+                    </group>
                     <group>
-                        <field name="department_id" readonly="state != 'draft'" widget="many2many_tags"/>
+                    <group>
                         <field name="company_id" readonly="state != 'draft'"/>
+                        <field name="department_id" readonly="state != 'draft'" widget="many2many_tags"/>
                         <field name="struct_id" required="1" readonly="state != 'draft'" 
                                         domain="[('company_id', '=', company_id)]"/>
+                    </group>
                     </group>
 
                     <notebook>
@@ -89,10 +114,12 @@
                                 <list>
                                     <field name="number" readonly="1"/>
                                     <field name="employee_id" options="{'no_create': True}" required="1" />
-                                    <button name="action_computebyQUERY" groups="llp_payroll.group_payroll_accountant" string="Get data" type="object"/>
+                                    <field name="payroll_state" column_invisible="1" />
+                                    <button name="action_computebyQUERY" groups="llp_payroll.group_payroll_accountant" string="Get data" type="object" invisible="payroll_state != 'draft'"/>
                                 </list>
                                 <form>
-                                    <button name="action_computebyQUERY" groups="llp_payroll.group_payroll_accountant" string="Get data" type="object"/>
+                                    <field name="payroll_state" invisible="1"/>
+                                    <button name="action_computebyQUERY" groups="llp_payroll.group_payroll_accountant" string="Get data" type="object" invisible="payroll_state != 'draft'"/>
                                     <field name="employee_id"/>
                                     <field name="rule_value_ids" readonly="1">
                                         <list>
@@ -141,7 +168,7 @@
                                 </field>
                             </group>
                         </page>
-                        <page string="State history">
+                        <!-- <page string="State history">
                             <field name="history_ids" readonly="1" nolabel="1">
                                 <list string="History">
                                     <field name="user_id" />
@@ -157,6 +184,18 @@
                                         <field name="comment" />
                                     </group>
                                 </form>
+                            </field>
+                        </page> -->
+                        <page string="State log" name="stat log">
+                            <field name="state_log_ids" readonly="1">
+                                <list>
+                                    <field name="created_user_id" />
+                                    <field name="state_str" />
+                                    <field name="content" />
+                                    <field name="action_text" />
+                                    <field name="modified_date" />
+                                    <field name="elapsed_time" widget="float_time" sum="total" />
+                                </list>
                             </field>
                         </page>
                     </notebook>
