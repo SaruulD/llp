@@ -45,20 +45,31 @@
                     <group>
                         <group>
                             <group>
-                                <field name="civil_number" invisible="type not in ['insurance_tax_import', 'insurance_tax_report']"/>
+                                <!-- <field name="civil_number" invisible="type not in ['insurance_tax_import', 'insurance_tax_report']"/> -->
                                 <field name="register_number" invisible="type != 'insurance_tax_import'"/>
                                 <field name="family_name" invisible="type != 'insurance_tax_import'"/>
-                                <field name="last_name" invisible="type not in ['insurance_tax_import', 'insurance_tax_report']"/>
-                                <field name="first_name" invisible="type not in ['insurance_tax_import', 'insurance_tax_report']"/>
-                                <field name="insurance_type" invisible="type not in ['insurance_tax_import', 'insurance_tax_report']"/>
+                                <field name="taxpayer_number" invisible="type != 'income_tax_import'"/>
+                                <field name="last_name" invisible="type not in ['insurance_tax_import', 'income_tax_import']"/>
+                                <field name="first_name" invisible="type not in ['insurance_tax_import', 'income_tax_import']"/>
+                                <field name="insurance_type" invisible="type != 'insurance_tax_import'"/>
                                 <field name="citizenship" invisible="type != 'insurance_tax_import'"/>
                                 <field name="wages_and_equivalent_income" invisible="type != 'insurance_tax_import'"/>
                                 <field name="base_and_additional_salary" invisible="type != 'insurance_tax_import'"/>
 
+                                <field name="income_7_1_1" invisible="type != 'income_tax_import'"/>
+                                <field name="income_7_1_2_7" invisible="type != 'income_tax_import'"/>
+                                <field name="income_7_1_6" invisible="type != 'income_tax_import'"/>
+                                <field name="total_income_1_2_3" invisible="type != 'income_tax_import'"/>
+                                <field name="insurance_rate" invisible="type != 'income_tax_import'"/>
+                                <field name="insurance_amount_main" invisible="type != 'income_tax_import'"/>
+                                <field name="insurance_amount_7_1_6" invisible="type != 'income_tax_import'"/>
+                                <field name="taxable_income" invisible="type != 'income_tax_import'"/>
+                                <field name="income_type" invisible="type != 'income_tax_import'"/>
+                                <field name="income_amount" invisible="type != 'income_tax_import'"/>
 
-                                <field name="job" invisible="type != 'insurance_tax_report'"/>
-                                <field name="wages_and_equivalent_income" invisible="type not in ['insurance_tax_import', 'insurance_tax_report']"/>
-                                <field name="is_limit_max" invisible="type != 'insurance_tax_report'"/>
+                                <!-- <field name="job" invisible="type != 'insurance_tax_report'"/> -->
+                                <!-- <field name="wages_and_equivalent_income" invisible="type not in ['insurance_tax_import', 'insurance_tax_report']"/> -->
+                                <!-- <field name="is_limit_max" invisible="type != 'insurance_tax_report'"/> -->
                             </group>
                         </group>
                         <group>
@@ -71,9 +82,20 @@
                                 <field name="cellphone" invisible="type != 'insurance_tax_import'"/>
                                 <field name="email" invisible="type != 'insurance_tax_import'"/>
 
+                                <field name="total_taxable_income" invisible="type != 'income_tax_import'"/>
+                                <field name="tax_bracket" invisible="type != 'income_tax_import'"/>
+                                <field name="tax_calculated" invisible="type != 'income_tax_import'"/>
+                                <field name="months_worked" invisible="type != 'income_tax_import'"/>
+                                <field name="discount_monthly" invisible="type != 'income_tax_import'"/>
+                                <field name="discount_total" invisible="type != 'income_tax_import'"/>
+                                <field name="tax_after_discount_7_1_1" invisible="type != 'income_tax_import'"/>
+                                <field name="tax_7_1_6" invisible="type != 'income_tax_import'"/>
+                                <field name="total_tax_withheld" invisible="type != 'income_tax_import'"/>
+                                <field name="annual_discount_diff" invisible="type != 'income_tax_import'"/>
+                                <field name="insurance_type_2" invisible="type != 'income_tax_import'"/>
 
-                                <field name="insurance_tax_employer" invisible="type != 'insurance_tax_report'"/>
-                                <field name="insurance_tax_employee" invisible="type != 'insurance_tax_report'"/>
+                                <!-- <field name="insurance_tax_employer" invisible="type != 'insurance_tax_report'"/> -->
+                                <!-- <field name="insurance_tax_employee" invisible="type != 'insurance_tax_report'"/> -->
                             </group>
                         </group>
                     </group>
