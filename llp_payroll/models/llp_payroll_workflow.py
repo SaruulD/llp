@@ -190,6 +190,7 @@ class LLPPayroll(models.Model):
         if not self.line_state:
             self.action_confirmed()
             
+            
     def _return_state(self):
         self.line_state = self.line_state._return(self.create_uid,self.id, self.name, self._name, 'Орон тоо')
         #Буцаах батлах урсгал байхгүй бол
@@ -199,6 +200,7 @@ class LLPPayroll(models.Model):
     # #cancel хийдэг функцийг өргөжүүлэх
     def action_confirmed(self):
         self.state='confirmed'
+        self.action_confirm()
         self.action_notify_followers()
         self.confirmed_date = fields.Date.today()
         

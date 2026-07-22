@@ -337,8 +337,8 @@ class LLPPayroll(models.Model):
     #             })
     def action_confirm(self):
         for payroll in self:
-            payroll.write({'state': 'confirmed'})
-            payroll.create_history('confirmed')
+            # payroll.write({'state': 'confirmed'})
+            # payroll.create_history('confirmed')
 
             for line in payroll.line_ids:
                 has_debt_rule = bool(line.rule_value_ids.filtered('is_debt_rule'))
@@ -492,42 +492,53 @@ class LLPPayroll(models.Model):
             number = 1
  
             for employee in employee_ids:
-                rules = []
- 
-                for line in pay.struct_id.line_ids:
-                    is_edit = line.rule_id.ruleview_type == 'edit'
-                    python_code = line.rule_id.python_code or ''
- 
-                    is_debt_rule = (
-                        line.rule_id.object_type == 'debt'
-                        and any(
-                            x in python_code
-                            for x in (
-                                'object.sum_total',
-                                'object.withholding_amount',
-                                'object.sum_loan_amount',
+                    rules = []
+
+                    for line in pay.struct_id.line_ids:
+                        is_edit = line.rule_id.ruleview_type == 'edit'
+                        python_code = line.rule_id.python_code or ''
+
+                        is_debt_rule = (
+                            line.rule_id.object_type == 'debt'
+                            and any(
+                                x in python_code
+                                for x in (
+                                    'object.sum_total',
+                                    'object.withholding_amount',
+                                    'object.sum_loan_amount',
+                                )
                             )
                         )
-                    )
- 
-                    rules.append((0, 0, {
-                        'payroll_rule_id': line.rule_id.id,
-                        'show_in_payroll': line.rule_id.show_in_payroll,
-                        'decimal_point': line.rule_id.decimal_point,
-                        'rulefield_type': line.rule_id.rulefield_type,
-                        'sequence': line.sequence,
-                        'value': 0,
-                        'is_edit': is_edit,
-                        'is_debt_rule': is_debt_rule,
+
+                        is_vacation_rule = (
+                            line.rule_id.object_type == 'vacation'
+                            and any(
+                                x in python_code
+                                for x in (
+                                    'object.total_vacation_amount',
+                                )
+                            )
+                        )
+
+                        rules.append((0, 0, {
+                            'payroll_rule_id': line.rule_id.id,
+                            'show_in_payroll': line.rule_id.show_in_payroll,
+                            'decimal_point': line.rule_id.decimal_point,
+                            'rulefield_type': line.rule_id.rulefield_type,
+                            'sequence': line.sequence,
+                            'value': 0,
+                            'is_edit': is_edit,
+                            'is_debt_rule': is_debt_rule,
+                            'is_vacation_rule': is_vacation_rule,
+                        }))
+
+                    lines.append((0, 0, {
+                        'number': number,
+                        'rule_value_ids': rules,
+                        'employee_id': employee.id,
                     }))
- 
-                lines.append((0, 0, {
-                    'number': number,
-                    'rule_value_ids': rules,
-                    'employee_id': employee.id,
-                }))
- 
-                number += 1
+
+                    number += 1
  
             if lines:
                 pay.write({'line_ids': lines})
