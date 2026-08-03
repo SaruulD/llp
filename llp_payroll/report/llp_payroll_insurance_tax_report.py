@@ -253,7 +253,12 @@ class LLPPayrollInsuranceTaxReport(models.TransientModel):
         params = [self.start_date, self.end_date]
 
         if self.department_ids:
-            query += " AND A.department_id IN %s"
+            # The join above already resolves the employee's department via
+            # hr_employee.department_id (N -> O), so filter on that (O.id)
+            # instead of the non-existent llp_payroll.department_id column
+            # (department_id on llp.payroll is a Many2many with no physical
+            # column on the table).
+            query += " AND O.id IN %s"
             params.append(tuple(self.department_ids.ids))
 
         self.env.cr.execute(query, tuple(params))

@@ -733,15 +733,20 @@ class LLPPayroll(models.Model):
                                     where = where + " and B.code in %s"%(str(tuple(rule_codes)))
                                 else:				
                                     where = where + " and B.code = '%s'"%(str(rule_codes[0]))
-                                query = "select A.value as value, B.code as code from llp_payroll_rule_value A \
+                                query = "select A.value as value, A.char_value as char_value, B.code as code, B.rulefield_type as rulefield_type from llp_payroll_rule_value A \
                                     inner join llp_payroll_rule B ON A.payroll_rule_id = B.id " + where
  
                                 self.env.cr.execute(query)
                                 fetchedAll = self.env.cr.dictfetchall()
  
                                 if fetchedAll:
-                                    for fetched in fetchedAll:											
-                                        python_code = python_code.replace(fetched['code'],str(fetched['value']))											
+                                    for fetched in fetchedAll:
+                                        if fetched['rulefield_type'] == 'sign':
+                                            # текст (sign) төрлийн дүрмийг зөв quote хийсэн string literal
+                                            # болгож орлуулна, ингэснээр "if in1 == 'foo':" гэх мэт код зөв ажиллана
+                                            python_code = python_code.replace(fetched['code'], repr(fetched['char_value'] or ''))
+                                        else:
+                                            python_code = python_code.replace(fetched['code'],str(fetched['value']))
                                     
                                     rule_codes = re.findall('n\d+',str(python_code))			
                                     if rule_codes:
@@ -772,15 +777,18 @@ class LLPPayroll(models.Model):
                                         value = 0
                                     if emp['is_edited'] == False:
                                         self.env.cr.execute('update llp_payroll_rule_value set value = %s where id = %s'%(value,emp['rule_value_id']))
-                                elif ruled['rulefield_type'] == 'sign':									
-                                    self.env.cr.execute("update llp_payroll_rule_value set char_value = '%s' where id = %s"%(value,emp['rule_value_id']))									
+                                elif ruled['rulefield_type'] == 'sign':
+                                    if emp['is_edited'] == False:
+                                        self.env.cr.execute("update llp_payroll_rule_value set char_value = '%s' where id = %s"%(value,emp['rule_value_id']))
                                 
                                 self.env.cr.commit()
                             except Exception as e:
                                 if ruled['rulefield_type'] == 'digit':
-                                    self.env.cr.execute('update llp_payroll_rule_value set value = %s where id = %s'%(0,emp['rule_value_id']))
+                                    if emp['is_edited'] == False:
+                                        self.env.cr.execute('update llp_payroll_rule_value set value = %s where id = %s'%(0,emp['rule_value_id']))
                                 elif ruled['rulefield_type'] == 'sign':
-                                    self.env.cr.execute("update llp_payroll_rule_value set char_value = '%s' where id = %s"%(False,emp['rule_value_id']))
+                                    if emp['is_edited'] == False:
+                                        self.env.cr.execute("update llp_payroll_rule_value set char_value = '%s' where id = %s"%(False,emp['rule_value_id']))
                                 pass
  
                         elif ruled['rule_type'] == 'regular':
@@ -933,7 +941,12 @@ class LLPPayrollLine(models.Model):
     @api.model
     def update_value(self, rule_value_id, value):
         rule_value = self.env['llp.payroll.rule.value'].browse(rule_value_id)
-        rule_value.write({'value': value, 'is_edited': True })
+        # digit / from_previous_payroll -> тоон 'value' талбарт,
+        # бусад (жишээ нь 'sign') -> текст 'char_value' талбарт хадгална
+        if rule_value.rulefield_type in ('digit', 'from_previous_payroll'):
+            rule_value.write({'value': value, 'is_edited': True})
+        else:
+            rule_value.write({'char_value': value, 'is_edited': True})
         return True
 
 class LLPPayrollRuleValue(models.Model):

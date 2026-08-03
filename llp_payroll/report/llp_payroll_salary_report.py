@@ -24,10 +24,20 @@ class LLPPayrollSalaryReport(models.TransientModel):
     def _get_report_data(self):
         self.ensure_one()
 
-        query = """
+        # department_id on llp.payroll is a Many2many field, so it has no
+        # physical column on llp_payroll - it lives in an auto-generated
+        # relation table. Look that table/columns up dynamically instead of
+        # referencing A.department_id directly (same pattern used in
+        # llp_payroll_employee_vacation.py action_get_data()).
+        m2m_field = self.env['llp.payroll']._fields['department_id']
+        rel_table = m2m_field.relation
+        rel_col1 = m2m_field.column1
+        rel_col2 = m2m_field.column2
+
+        query = f"""
             SELECT
                 A.id AS payroll_id,
-                A.department_id AS department_id,
+                H.id AS department_id,
                 H.complete_name AS department_name,
                 B.employee_id AS employee_id,
                 G.firstname AS firstname,
@@ -51,7 +61,8 @@ class LLPPayrollSalaryReport(models.TransientModel):
                 LEFT JOIN llp_payroll_rule_value F
                     ON F.payroll_rule_id = E.id AND B.id = F.line_id
                 LEFT JOIN hr_employee G ON G.id = B.employee_id
-                LEFT JOIN hr_department H ON H.id = A.department_id
+                LEFT JOIN {rel_table} REL ON REL.{rel_col1} = A.id
+                LEFT JOIN hr_department H ON H.id = REL.{rel_col2}
             WHERE A.state = 'confirmed'
             AND A.start_date = %s
             AND A.end_date   = %s
@@ -61,7 +72,7 @@ class LLPPayrollSalaryReport(models.TransientModel):
 
         # Only add department filter when selected
         if self.department_ids:
-            query += " AND A.department_id IN %s"
+            query += " AND H.id IN %s"
             params.append(tuple(self.department_ids.ids))
 
         query += " ORDER BY H.complete_name, G.name, D.sequence"
@@ -122,10 +133,18 @@ class LLPPayrollSalaryReport(models.TransientModel):
     def action_export(self):
         self.ensure_one()
 
-        query = """
+        # department_id on llp.payroll is a Many2many field - no physical
+        # column on llp_payroll, so look up its relation table/columns
+        # dynamically rather than referencing A.department_id directly.
+        m2m_field = self.env['llp.payroll']._fields['department_id']
+        rel_table = m2m_field.relation
+        rel_col1 = m2m_field.column1
+        rel_col2 = m2m_field.column2
+
+        query = f"""
             SELECT
                 A.id AS payroll_id,
-                A.department_id AS department_id,
+                H.id AS department_id,
                 H.complete_name AS department_name,
 
                 B.employee_id AS employee_id,
@@ -151,7 +170,8 @@ class LLPPayrollSalaryReport(models.TransientModel):
                 LEFT JOIN llp_payroll_rule_value F
                     ON F.payroll_rule_id = E.id AND B.id = F.line_id
                 LEFT JOIN hr_employee G ON G.id = B.employee_id
-                LEFT JOIN hr_department H ON H.id = A.department_id
+                LEFT JOIN {rel_table} REL ON REL.{rel_col1} = A.id
+                LEFT JOIN hr_department H ON H.id = REL.{rel_col2}
             WHERE A.state = 'confirmed'
             AND A.start_date = %s
             AND A.end_date   = %s
@@ -160,7 +180,7 @@ class LLPPayrollSalaryReport(models.TransientModel):
         params = [self.start_date, self.end_date, self.struct_id.id]
 
         if self.department_ids:
-            query += " AND A.department_id IN %s"
+            query += " AND H.id IN %s"
             params.append(tuple(self.department_ids.ids))
 
         query += " ORDER BY H.complete_name, G.name, D.sequence"

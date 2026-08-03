@@ -26,11 +26,21 @@ class LLPPayrollBankReport(models.TransientModel):
     def action_export(self):
         self.ensure_one()
 
-        query = """
+        # department_id on llp.payroll is a Many2many field - it has no
+        # physical column on llp_payroll, so look up its relation
+        # table/columns dynamically instead of referencing A.department_id
+        # directly (same pattern used in llp_payroll_employee_vacation.py
+        # action_get_data() and llp_payroll_salary_report.py).
+        m2m_field = self.env['llp.payroll']._fields['department_id']
+        rel_table = m2m_field.relation
+        rel_col1 = m2m_field.column1
+        rel_col2 = m2m_field.column2
+
+        query = f"""
             SELECT
                 C.name AS struct_name,
                 A.id AS payroll_id,
-                A.department_id AS department_id,
+                H.id AS department_id,
                 H.complete_name AS department_name,
                 B.employee_id AS employee_id,
                 G.firstname AS firstname,
@@ -49,7 +59,8 @@ class LLPPayrollBankReport(models.TransientModel):
                 LEFT JOIN llp_payroll_rule_value F
                     ON F.payroll_rule_id = E.id AND B.id = F.line_id
                 LEFT JOIN hr_employee G ON G.id = B.employee_id
-                LEFT JOIN hr_department H ON H.id = A.department_id
+                LEFT JOIN {rel_table} REL ON REL.{rel_col1} = A.id
+                LEFT JOIN hr_department H ON H.id = REL.{rel_col2}
                 LEFT JOIN res_partner_bank I ON I.id = G.bank_account_id
                 LEFT JOIN res_bank J ON J.id = I.bank_id
             WHERE A.state = 'confirmed'
@@ -60,7 +71,7 @@ class LLPPayrollBankReport(models.TransientModel):
         params = [self.start_date, self.end_date, self.struct_id.id]
 
         if self.department_ids:
-            query += " AND A.department_id IN %s"
+            query += " AND H.id IN %s"
             params.append(tuple(self.department_ids.ids))
 
         query += " ORDER BY J.name, G.lastname, G.firstname"
@@ -194,4 +205,4 @@ class LLPPayrollBankReport(models.TransientModel):
             'type': 'ir.actions.act_url',
             'url': f'/web/content/{attachment.id}?download=true',
             'target': 'self',
-        }
+        }   
