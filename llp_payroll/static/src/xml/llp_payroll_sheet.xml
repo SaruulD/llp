@@ -6,7 +6,8 @@
                 <table class="o_payroll_table table table-sm">
                     <thead>
                         <tr>
-                            <th>Employee</th>
+                            <th class="o_pf_col1">№</th>
+                            <th class="o_pf_col2">Employee</th>
                             <t t-foreach="state.rules" t-as="rule" t-key="rule[0]">
                                 <th>
                                     <a t-on-click="() => goToRule(rule[0])" href="javascript:void(0)">
@@ -19,7 +20,8 @@
                     <tbody>
                         <t t-foreach="state.employees" t-as="emp" t-key="emp[0]">
                             <tr>
-                                <td>
+                                <td class="o_pf_col1"><t t-esc="emp_index + 1"/></td>
+                                <td class="o_pf_col2">
                                     <a t-on-click="() => goToEmployee(emp[0])" href="javascript:void(0)">
                                         <t t-esc="emp[1]"/>
                                     </a>

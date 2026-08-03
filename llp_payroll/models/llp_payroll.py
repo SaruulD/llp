@@ -783,6 +783,20 @@ class LLPPayroll(models.Model):
                                 
                                 self.env.cr.commit()
                             except Exception as e:
+                                # ЗАСВАР: өмнө нь энэ алдааг юу ч log хийлгүй
+                                # чимээгүйхэн залгиад, тухайн дүрмийн утгыг
+                                # бүх ажилтан дээр 0/False-оор дарж бичдэг
+                                # байсан тул аль дүрэм яагаад унаж байгааг
+                                # олж мэдэх боломжгүй байсан. Одоо алдааг
+                                # дүрмийн код, ажилтны id, орлуулалт хийгдсэн
+                                # python_code-той хамт log-д бичнэ.
+                                _logger.error(
+                                    "llp.payroll action_computebyQUERY: "
+                                    "payroll_id=%s employee_id=%s rule_code=%s "
+                                    "rule_value_id=%s python_code=%r алдаа: %s",
+                                    self.id, emp.get('employee'), ruled.get('code'),
+                                    emp.get('rule_value_id'), python_code, e,
+                                )
                                 if ruled['rulefield_type'] == 'digit':
                                     if emp['is_edited'] == False:
                                         self.env.cr.execute('update llp_payroll_rule_value set value = %s where id = %s'%(0,emp['rule_value_id']))
