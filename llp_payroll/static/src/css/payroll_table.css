@@ -2,7 +2,7 @@
 .o_form_view .o_inner_group,
 .o_field_widget.o_field_payroll_sheet,
 .o_payroll_sheet {
-  min-width: 0 !important;     /* ← this stops the 3720px expansion /
+  min-width: 0 !important;     /* ← this stops the 3720px expansion */
   width: 100%;
 }
 
@@ -15,8 +15,8 @@
 }
 
 .o_payroll_scroll .o_payroll_table.table {
-  width: auto !important;       / override Bootstrap .table { width:100% } /
-  min-width: max-content;       / key: grow to content width so it overflows */
+  width: auto !important;       /* override Bootstrap .table { width:100% } */
+  min-width: max-content;       /* key: grow to content width so it overflows */
   table-layout: auto;
   border-collapse: separate;
   border-spacing: 0;

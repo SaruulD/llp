@@ -118,7 +118,7 @@ class LLPPayroll(models.Model):
             if rec.line_state.is_external:
                 rec.waiting_user_ids = False
             else:
-                rec.waiting_user_ids = rec.line_state._get_users_waiting(rec.create_uid) if rec.line_state else False
+                rec.waiting_user_ids = rec.line_state._get_users_waiting(rec.create_uid,record=rec) if rec.line_state else False
 
         
                 
@@ -130,7 +130,7 @@ class LLPPayroll(models.Model):
             else:
                 approve_user_ids = []
                 for line in self.workflow_active_line_ids:
-                    approve_user_ids += line._get_users_waiting(self.create_uid)
+                    approve_user_ids += line._get_users_waiting(self.create_uid, record=self)
                 self.approve_ids = list(set(approve_user_ids)) if approve_user_ids else []
 
         # if not self.name:
@@ -151,7 +151,7 @@ class LLPPayroll(models.Model):
             'default_approve_code': 2,
             'default_comment_required': True
         })
-        if self.line_state._check_user_access(self.create_uid):
+        if self.line_state._check_user_access(self.create_uid, record=self):
             return {
                 'name': _('Return'),
                 'type': 'ir.actions.act_window',
@@ -169,7 +169,7 @@ class LLPPayroll(models.Model):
         ctx['default_llp_payroll_id'] = self.id
         ctx['default_approve_code'] = 3
         ctx['default_comment_required'] = True
-        if self.line_state._check_user_access(self.create_uid):
+        if self.line_state._check_user_access(self.create_uid, record=self):
             return {
                 'name': _('Cancel'),
                 'type': 'ir.actions.act_window',
@@ -183,7 +183,7 @@ class LLPPayroll(models.Model):
                 raise UserError('Танд энэ үйлдлийг хийх эрх байхгүй байна.')
         
     def _confirm_state(self, no_access = False):
-        self.line_state = self.line_state._approve(self.create_uid,self.id, self.name, self._name, 'Орон тоо', no_access=no_access)
+        self.line_state = self.line_state._approve(self.create_uid,self.id, self.name, self._name, 'Орон тоо', no_access=no_access, record=self)
         if self.line_state:
             self.confirmed_notification()
         # Цаашаа батлах урсгал байхгүй бол
@@ -192,7 +192,7 @@ class LLPPayroll(models.Model):
             
             
     def _return_state(self):
-        self.line_state = self.line_state._return(self.create_uid,self.id, self.name, self._name, 'Орон тоо')
+        self.line_state = self.line_state._return(self.create_uid,self.id, self.name, self._name, 'Орон тоо', record=self)
         #Буцаах батлах урсгал байхгүй бол
         if not self.line_state:
             self.action_draft()
@@ -222,7 +222,7 @@ class LLPPayroll(models.Model):
     def _cancel_state(self, no_access = False):
         if no_access:
             return self.button_cancel()
-        if self.line_state._check_user_access(self.create_uid):
+        if self.line_state._check_user_access(self.create_uid, record=self):
             return self.button_cancel()
         
 
@@ -262,7 +262,7 @@ class LLPPayroll(models.Model):
                 rec.waiting_user_ids = False
                 if vals["line_state"] != False:
                     # tus tuluw deer batlah humuus deer huleegdej bui tuluw nemeh
-                    for id in line_state_id._get_users_waiting(rec.create_uid):
+                    for id in line_state_id._get_users_waiting(rec.create_uid, record=rec):
                         values = {
                             'llp_payroll_id': rec.id,
                             'created_user_id': id,
