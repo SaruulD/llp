@@ -201,10 +201,10 @@ class LLPPayrollEditWizard(models.TransientModel):
                     continue
 
                 rule = rule_by_code[code]
-
+# action_import дотор:
                 rv = RV.search([('payroll_rule_id', '=', rule.id), ('line_id', '=', pline.id)], limit=1)
                 if rv:
-                    rv.write({'value': val})
+                    rv.write({'value': val, 'is_edited': True})
                     updates += 1
 
         return {
