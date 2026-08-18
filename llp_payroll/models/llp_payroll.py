@@ -719,6 +719,14 @@ class LLPPayroll(models.Model):
  
                             elif object_base_type == 'attendance':
                                 object = {}
+                                query = "select tbl.id from time_balance tb \
+                                    inner join time_balance_line tbl ON tb.id=tbl.balance_id \
+                                    where tb.state = 'accountant' and tbl.employee_id = %s and tb.date_from='%s' \
+                                    AND tb.date_to='%s'"%(emp['employee'],self.start_date, self.end_date,)
+                                self.env.cr.execute(query)
+                                fetch = self.env.cr.fetchone()
+                                if fetch and fetch[0]:
+                                    object = self.env['time.balance.line'].browse(fetch[0])
                             elif object_base_type == 'kpi':
                                 object = {}
                             elif ruled['object_type'] == 'employee':
