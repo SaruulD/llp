@@ -52,7 +52,7 @@
                     </tbody>
                     <tfoot>
                         <tr>
-                            <td style="width:auto; background-color:#fff; font-weight:700;" class="john oe_payroll_employee">
+                            <td colspan="2" style="width:auto; background-color:#fff; font-weight:700;" class="john oe_payroll_employee">
                                 <strong>Нийт дүн</strong>
                             </td>
 
@@ -63,7 +63,7 @@
                                             .reduce((acc, empVals) => acc + (empVals?.[rule[0]] || 0), 0)"/>
                                         <span>
                                             <strong>
-                                                <t t-esc="formatMoney(total, rule, decimals)"/>
+                                                <t t-esc="formatMoney(total, rule, state.decimals?.[rule[0]])"/>
                                             </strong>
                                         </span>
                                     </t>

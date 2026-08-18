@@ -18,6 +18,7 @@ class PayrollSheetField extends Component {
     this.action = useService("action");
 
     // 1234567.5 -> "1'234'567.50" (3 оронгоор бүлэглэж, '-аар тусгаарлана)
+
     this.formatNumber = (val, decimals = 2) => {
       if (val === null || val === undefined || val === false || val === "") {
         return "";
@@ -28,7 +29,7 @@ class PayrollSheetField extends Component {
       const fixed = n.toFixed(decimals);
       const negative = fixed.startsWith("-");
       const [intPart, decPart] = (negative ? fixed.slice(1) : fixed).split(".");
-      const grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, "'");
+      const grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
       const sign = negative ? "-" : "";
 
       return decPart !== undefined ? `${sign}${grouped}.${decPart}` : `${sign}${grouped}`;
