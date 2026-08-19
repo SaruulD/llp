@@ -12,6 +12,10 @@ except ImportError:
 
 import xlsxwriter # type: ignore
 
+# Тоон утга бичдэг дүрмийн төрлүүд. Бусад (жишээ нь 'sign') текст утгатай.
+NUMERIC_RULEFIELD_TYPES = ('digit', 'from_previous_payroll')
+
+
 
 class LLPPayrollEditWizard(models.TransientModel):
     _name = 'llp.payroll.edit.wizard'
@@ -37,7 +41,9 @@ class LLPPayrollEditWizard(models.TransientModel):
                 D.id as rule_id,
                 D.name as rule_name,
                 D.code as rule_code,
+                D.rulefield_type as rulefield_type,
                 COALESCE(F.value, 0) as value,
+                F.char_value as char_value,
                 C.sequence as seq
             FROM llp_payroll A
                 LEFT JOIN llp_payroll_structure B ON B.id = A.struct_id
@@ -55,23 +61,33 @@ class LLPPayrollEditWizard(models.TransientModel):
             raise UserError(_("Засах боломжтой өгөгдөл олдсонгүй."))
 
         employees = {}
-        rules = []          # list of (rule_id, name, code) in order
-        rule_index = {}     # rule_id -> index
+        rules = []          # list of (rule_id, name, code, rulefield_type)
+        rule_index = {}      # rule_id -> index
+        rule_type_by_id = {} # rule_id -> rulefield_type
 
-        for emp_id, last, first, identification, rule_id, rule_name, rule_code, value, seq in rows:
+        for (emp_id, last, first, identification, rule_id, rule_name,
+            rule_code, rulefield_type, value, char_value, seq) in rows:
+
             if rule_id not in rule_index:
                 rule_index[rule_id] = len(rules)
-                rules.append((rule_id, rule_name or '', rule_code or ''))
+                rules.append((rule_id, rule_name or '', rule_code or '', rulefield_type))
+                rule_type_by_id[rule_id] = rulefield_type
 
             if emp_id not in employees:
                 employees[emp_id] = {
                     'last': last or '',
                     'first': first or '',
                     'identification': identification or '',
-                    'values': defaultdict(float)
+                    'values': defaultdict(float),
+                    'text_values': {},
                 }
 
-            employees[emp_id]['values'][rule_id] += float(value or 0.0)
+            if rulefield_type in NUMERIC_RULEFIELD_TYPES:
+                employees[emp_id]['values'][rule_id] += float(value or 0.0)
+            else:
+                # Текст (sign) төрлийн утгыг нэмэхгүй, зөвхөн хадгална
+                if char_value:
+                    employees[emp_id]['text_values'][rule_id] = char_value
 
         # ---- Excel
         output = BytesIO()
@@ -81,10 +97,7 @@ class LLPPayrollEditWizard(models.TransientModel):
         header_fmt = workbook.add_format({'bold': True, 'border': 1, 'align': 'center', 'valign': 'vcenter'})
         text_fmt = workbook.add_format({'border': 1})
         num_fmt = workbook.add_format({'border': 1, 'align': 'right', 'num_format': '#,##0.00'})
-        total_lbl_fmt = workbook.add_format({'border': 1, 'bold': True, 'align': 'right'})
-        total_num_fmt = workbook.add_format({'border': 1, 'bold': True, 'align': 'right', 'num_format': '#,##0.00'})
 
-        # Fixed cols
         sheet.set_column(0, 0, 16)
         sheet.set_column(1, 1, 16)
         sheet.set_column(2, 2, 18)
@@ -94,13 +107,12 @@ class LLPPayrollEditWizard(models.TransientModel):
         sheet.merge_range(0, 2, 1, 2, "Регистрийн дугаар", header_fmt)
 
         start_rule_col = 3
-        for i, (rid, rname, rcode) in enumerate(rules):
+        for i, (rid, rname, rcode, rtype) in enumerate(rules):
             col = start_rule_col + i
             sheet.write(0, col, rname, header_fmt)
             sheet.write(1, col, rcode, header_fmt)
             sheet.set_column(col, col, 18)
 
-        # Data
         row = 2
         column_totals = [0.0] * len(rules)
 
@@ -110,9 +122,16 @@ class LLPPayrollEditWizard(models.TransientModel):
             sheet.write(row, 2, emp['identification'], text_fmt)
 
             for rule_id, idx in rule_index.items():
-                val = emp['values'].get(rule_id, 0.0)
-                sheet.write_number(row, start_rule_col + idx, val, num_fmt)
-                column_totals[idx] += val
+                col = start_rule_col + idx
+                rtype = rule_type_by_id.get(rule_id)
+
+                if rtype in NUMERIC_RULEFIELD_TYPES:
+                    val = emp['values'].get(rule_id, 0.0)
+                    sheet.write_number(row, col, val, num_fmt)
+                    column_totals[idx] += val
+                else:
+                    text_val = emp['text_values'].get(rule_id, '')
+                    sheet.write(row, col, text_val, text_fmt)
 
             row += 1
 
@@ -130,7 +149,6 @@ class LLPPayrollEditWizard(models.TransientModel):
         })
 
         return {'type': 'ir.actions.act_url', 'url': f'/web/content/{attachment.id}?download=true', 'target': 'self'}
-
     def action_import(self):
         self.ensure_one()
 
@@ -175,6 +193,7 @@ class LLPPayrollEditWizard(models.TransientModel):
         RV = self.env['llp.payroll.rule.value'].sudo()
 
         updates = 0
+        skipped = []
 
         for r in range(data_start_row, ws.max_row + 1):
             ident = ws.cell(row=r, column=ident_col).value
@@ -195,19 +214,41 @@ class LLPPayrollEditWizard(models.TransientModel):
                 if cell_val is None or cell_val == '':
                     continue
 
-                try:
-                    val = float(cell_val)
-                except Exception:
+                rule = rule_by_code[code]
+
+                rv = RV.search([('payroll_rule_id', '=', rule.id), ('line_id', '=', pline.id)], limit=1)
+                if not rv:
                     continue
 
-                rule = rule_by_code[code]
-# action_import дотор:
-                rv = RV.search([('payroll_rule_id', '=', rule.id), ('line_id', '=', pline.id)], limit=1)
-                if rv:
+                if rule.rulefield_type in NUMERIC_RULEFIELD_TYPES:
+                    # Тоон талбар (digit / from_previous_payroll) -> value
+                    try:
+                        val = float(cell_val)
+                    except Exception:
+                        skipped.append(_("Мөр %s, багана '%s': '%s' тоон утга биш тул алгаслаа") % (
+                            r, code, cell_val
+                        ))
+                        continue
                     rv.write({'value': val, 'is_edited': True})
-                    updates += 1
+                else:
+                    # Текст (sign) талбар -> char_value
+                    val = str(cell_val).strip()
+                    rv.write({'char_value': val, 'is_edited': True})
+
+                updates += 1
+
+        message = _("%s мөр амжилттай импортлогдлоо.") % updates
+        if skipped:
+            message += "\n\n" + _("Алгассан мөрүүд (%s):") % len(skipped) + "\n" + "\n".join(skipped[:20])
 
         return {
             'type': 'ir.actions.client',
-            'tag': 'reload'
+            'tag': 'display_notification',
+            'params': {
+                'title': _("Импорт дууслаа"),
+                'message': message,
+                'type': 'warning' if skipped else 'success',
+                'sticky': bool(skipped),
+                'next': {'type': 'ir.actions.client', 'tag': 'reload'},
+            },
         }
