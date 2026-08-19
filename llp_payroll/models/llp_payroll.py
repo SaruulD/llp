@@ -691,13 +691,8 @@ class LLPPayroll(models.Model):
                                 fetchedAll = self.env.cr.dictfetchall()
  
                                 if fetchedAll:
-                                    for fetched in fetchedAll:
-                                        if fetched['rulefield_type'] == 'sign':
-                                            # текст (sign) төрлийн дүрмийг зөв quote хийсэн string literal
-                                            # болгож орлуулна, ингэснээр "if in1 == 'foo':" гэх мэт код зөв ажиллана
-                                            python_code = python_code.replace(fetched['code'], repr(fetched['char_value'] or ''))
-                                        else:
-                                            python_code = python_code.replace(fetched['code'],str(fetched['value']))
+                                    for fetched in fetchedAll:											
+                                        python_code = python_code.replace(fetched['code'],str(fetched['value']))											
                                     
                                     rule_codes = re.findall('n\d+',str(python_code))			
                                     if rule_codes:
@@ -731,23 +726,7 @@ class LLPPayroll(models.Model):
                                 elif ruled['rulefield_type'] == 'sign':
                                     if emp['is_edited'] == False:
                                         self.env.cr.execute("update llp_payroll_rule_value set char_value = '%s' where id = %s"%(value,emp['rule_value_id']))
-                                
-                                self.env.cr.commit()
                             except Exception as e:
-                                # ЗАСВАР: өмнө нь энэ алдааг юу ч log хийлгүй
-                                # чимээгүйхэн залгиад, тухайн дүрмийн утгыг
-                                # бүх ажилтан дээр 0/False-оор дарж бичдэг
-                                # байсан тул аль дүрэм яагаад унаж байгааг
-                                # олж мэдэх боломжгүй байсан. Одоо алдааг
-                                # дүрмийн код, ажилтны id, орлуулалт хийгдсэн
-                                # python_code-той хамт log-д бичнэ.
-                                _logger.error(
-                                    "llp.payroll action_computebyQUERY: "
-                                    "payroll_id=%s employee_id=%s rule_code=%s "
-                                    "rule_value_id=%s python_code=%r алдаа: %s",
-                                    self.id, emp.get('employee'), ruled.get('code'),
-                                    emp.get('rule_value_id'), python_code, e,
-                                )
                                 if ruled['rulefield_type'] == 'digit':
                                     if emp['is_edited'] == False:
                                         self.env.cr.execute('update llp_payroll_rule_value set value = %s where id = %s'%(0,emp['rule_value_id']))
@@ -760,6 +739,8 @@ class LLPPayroll(models.Model):
                             if emp['is_edited'] == False:
                                 value = ruled['regular_number']
                                 self.env.cr.execute('update llp_payroll_rule_value set value = %s where id = %s'%(value,emp['rule_value_id']))
+
+            self.env.cr.commit()
 
     def get_from_previous_payroll(self,employee_id,code,start_date, end_date):
         value = 0.0
@@ -906,8 +887,6 @@ class LLPPayrollLine(models.Model):
     @api.model
     def update_value(self, rule_value_id, value):
         rule_value = self.env['llp.payroll.rule.value'].browse(rule_value_id)
-        # digit / from_previous_payroll -> тоон 'value' талбарт,
-        # бусад (жишээ нь 'sign') -> текст 'char_value' талбарт хадгална
         if rule_value.rulefield_type in ('digit', 'from_previous_payroll'):
             rule_value.write({'value': value, 'is_edited': True})
         else:
