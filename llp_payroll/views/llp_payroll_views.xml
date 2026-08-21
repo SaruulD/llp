@@ -49,21 +49,21 @@
                     <button name="action_account_move" invisible="state != 'confirmed'" string="Create Account Move" type="object" class="btn-primary"/>
 
                     <!-- WORKFLOW -->
-                    <button name="action_sent" invisible="state != 'draft'" string="Send" type="object" class="btn-primary"/>
                     <!-- <button name="action_approve" invisible="state != 'sent'" string="Approve" type="object" class="btn-primary"/> -->
                     <button name="action_verify" invisible="state != 'pending'" string="Verify" type="object" class="btn-primary"/>
                     <button name="action_return" invisible="state != 'pending'" string="Return" type="object" class="btn-primary"/>
                     <button name="action_confirm" invisible="state != 'verify'" string="Confirm" type="object" class="btn-primary"/>
                     <button name="send_mail_to_employees" string="Имэйл илгээх" type="object" class="btn-primary" invisible="state != 'confirmed'"/>
                     
-
-                    <xpath expr="//header" position="inside">
-                        <button name="action_open_edit_wizard" string="Импорт / Экспорт" type="object" class="oe_highlight" invisible="state != 'draft'"/>
-                    </xpath>
-
+                    
+                    
+                    <button name="action_open_edit_wizard" string="Импорт / Экспорт" type="object" class="oe_highlight" invisible="state != 'draft'"/>
+                    
+                    <button name="action_sent" invisible="state != 'draft'" string="Send" type="object" class="btn-success"/>
+                    
                     <field name="is_super" invisible="1" />
                     <field name="waiting_user_ids" invisible="1" />
-
+                    
                     <field name="state" widget="statusbar" statusbar_visible="draft,sent,confirmed"/>
                 </header>
 

@@ -111,8 +111,16 @@ class LLPPayroll(models.Model):
 
     #             rec.name = f'{month_range}-{department_code}'
 
-
-    @api.depends('line_state', 'state')
+    @api.depends(
+        'line_state',
+        'line_state.confirm_by',
+        'line_state.user_ids',
+        'line_state.group_ids.users',
+        'line_state.job_ids',
+        'line_state.is_external',
+        'line_state.deputy_user_email',
+        'state',
+    )
     def _compute_waiting_user_ids(self):
         for rec in self:
             if rec.line_state.is_external:
