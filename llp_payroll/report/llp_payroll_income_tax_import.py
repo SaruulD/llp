@@ -22,9 +22,10 @@ class LLPPayrollIncomeTaxImport(models.TransientModel):
         self.ensure_one()
 
         has_department = bool(self.department_ids)
+        lang = self.env.lang or 'en_US'
 
         department_select = """
-            COALESCE(HD.name->>'mn_MN', HD.name->>'en_US', '') AS department_name,
+            COALESCE(HD.name->>%s, HD.name->>'en_US', '') AS department_name,
         """
 
         query = f"""
@@ -164,11 +165,11 @@ class LLPPayrollIncomeTaxImport(models.TransientModel):
                 LEFT JOIN llp_payroll_structure T ON T.id = A.struct_id
             WHERE A.state = 'confirmed'
             AND T.struct_type = 'salary_late'
-            AND A.start_date = %s
-            AND A.end_date   = %s
+            AND A.start_date >= %s
+            AND A.end_date   <= %s
             AND A.company_id = %s
         """
-        params = [self.start_date, self.end_date, self.company_id.id]
+        params = [lang, self.start_date, self.end_date, self.company_id.id]
 
         if has_department:
             query += " AND EMP.department_id IN %s"
