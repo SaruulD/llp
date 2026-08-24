@@ -24,12 +24,25 @@
   table-layout: auto;
   border-collapse: separate;
   border-spacing: 0;
+  border: 1px solid rgba(0, 0, 0, .12);
+  box-sizing: border-box;
 }
 
 .o_payroll_scroll .o_payroll_table th,
 .o_payroll_scroll .o_payroll_table td {
   width: 40px;
   padding: 4px 8px;
+  border-right: 1px solid rgba(0, 0, 0, .12);
+  border-bottom: 1px solid rgba(0, 0, 0, .12);
+}
+
+.o_payroll_scroll .o_payroll_table th:first-child,
+.o_payroll_scroll .o_payroll_table td:first-child {
+  border-left: 1px solid rgba(0, 0, 0, .12);
+}
+
+.o_payroll_scroll .o_payroll_table thead th {
+  border-top: 1px solid rgba(0, 0, 0, .12);
 }
 
 .o_payroll_table tbody tr.is-even {
