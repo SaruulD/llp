@@ -606,7 +606,8 @@ class LLPPayroll(models.Model):
                 formulas[group]['rules'][group1]['employees'][group2]['is_edited'] = dic['is_edited']
 
         # ★ Алдааг цуглуулах жагсаалт
-        errors_by_rule = {}  # {rule_code: {'error': str, 'python_code': str, 'count': int}}
+        errors_by_rule = {}  # {rule_code: {'error': str, 'python_code': str, 'count': int}} 
+        employee_errors = []
 
         if formulas:
             object_type_base_map = self.env['llp.payroll.rule']._get_object_type_base_map()
@@ -755,19 +756,55 @@ class LLPPayroll(models.Model):
                                                 (value if value is not None else False, emp['rule_value_id'])
                                             )
                             except Exception as e:
-                                if ruled['code'] not in errors_by_rule:
-                                    errors_by_rule[ruled['code']] = {
+                                if isinstance(e, ZeroDivisionError):
+                                    # ★ Хуваагч тухайн ажилтан дээр 0 байх нь хэвийн
+                                    #   тохиолдол (жишээ нь тоо ширхэг, өдөр гэх мэт
+                                    #   утга 0 байж болно). Алдаа биш тул хэрэглэгчид
+                                    #   огт харуулахгүй, зөвхөн log-д тэмдэглээд өнгөрнө.
+                                    _logger.info(
+                                        "Payroll: zero division (хэвийн, харуулахгүй) - rule: %s, employee: %s",
+                                        ruled['code'], emp['employee']
+                                    )
+
+                                elif isinstance(e, (NameError, SyntaxError, TypeError, UserError)):
+                                    # ★ Дүрмийн python_code өөрөө буруу (илэрхийлэлд
+                                    #   тодорхойлогдоогүй нэр, syntax алдаа, tuple/list
+                                    #   буцаасан гэх мэт) — бүх ажилтанд адилхан
+                                    #   давтагдах тул rule-ээр нэг л удаа харуулна.
+                                    if ruled['code'] not in errors_by_rule:
+                                        errors_by_rule[ruled['code']] = {
+                                            'error': str(e),
+                                            'python_code': ruled['python_code'],
+                                        }
+                                    _logger.error(
+                                        "Payroll compute error (rule) - rule: %s, employee: %s, error: %s\npython_code: %s",
+                                        ruled['code'], emp['employee'], e, ruled['python_code']
+                                    )
+
+                                else:
+                                    # ★ Бусад алдаа (AttributeError, KeyError, ValueError
+                                    #   гэх мэт) — ихэвчлэн тухайн ажилтны өгөгдөл
+                                    #   дутуу/буруутай холбоотой (жишээ нь холбогдох
+                                    #   contract/insurance гэх мэт record олдоогүй),
+                                    #   тиймээс ажилтнаар тусад нь харуулна.
+                                    try:
+                                        emp_rec = self.env['hr.employee'].browse(emp['employee'])
+                                        emp_name = emp_rec.name or ('ID %s' % emp['employee'])
+                                    except Exception:
+                                        emp_name = 'ID %s' % emp['employee']
+
+                                    employee_errors.append({
+                                        'rule': ruled['code'],
+                                        'employee': emp_name,
                                         'error': str(e),
                                         'python_code': ruled['python_code'],
-                                    }
+                                    })
+                                    _logger.error(
+                                        "Payroll compute error (employee) - rule: %s, employee: %s, error: %s",
+                                        ruled['code'], emp_name, e
+                                    )
 
-                                _logger.error(
-                                    "Payroll compute error - rule: %s, employee: %s, error: %s\npython_code: %s",
-                                    ruled['code'], emp['employee'], e, ruled['python_code']
-                                )
-
-                                # Алдаатай утгыг 0/False болгоно (savepoint дотор,
-                                # энэ update ч бас алдаа өгвөл дараагийн rule рүү дамжина)
+                                # Алдаатай утгыг 0/False болгоно (бүх төрлийн алдааны хувьд адилхан)
                                 try:
                                     with self.env.cr.savepoint():
                                         if ruled['rulefield_type'] == 'digit':
@@ -787,7 +824,6 @@ class LLPPayroll(models.Model):
                                         "Fallback update ч бас алдаа гаргалаа - rule: %s, employee: %s, error: %s",
                                         ruled['code'], emp['employee'], e2
                                     )
-
                         elif ruled['rule_type'] == 'regular':
                             if emp['is_edited'] == False:
                                 try:
@@ -811,35 +847,80 @@ class LLPPayroll(models.Model):
                                         ruled['code'], emp['employee'], e
                                     )
             self.env.cr.commit()
+        # ★ Амжилттай тооцоологдсон утгуудыг ХАДГАЛСАН ХЭВЭЭР (commit хийгдсэн)
+        #    үлдээгээд, дүрмийн алдаа болон ажилтны алдааг тусад нь харуулна.
+        #    ZeroDivisionError аль алинд нь ороогүй — зөвхөн log-д бичигдэнэ.
+        if errors_by_rule or employee_errors:
+            # ★ Ижил дүрэм дээр олон ажилтанд яг адилхан алдааны текст давтагдвал,
+            #    энэ нь ихэвчлэн тухайн ажилтны өгөгдлийн асуудал биш, харин
+            #    дүрмийн python_code өөрөө буруу бичигдсэнээс болсон байдаг тул
+            #    дүрмийн алдааны хэсэг рүү нэгтгэж шилжүүлнэ (олон давхардсан
+            #    ажилтны мөр биш, 1 мөрөөр л харуулна).
+            DUPLICATE_THRESHOLD = 3
+            grouped = {}
+            for item in employee_errors:
+                key = (item['rule'], item['error'])
+                grouped.setdefault(key, []).append(item)
 
-        # ★ Амжилттай тооцоологдсон утгуудыг ХАДГАЛСАН ХЭВЭЭР (commit хийгдсэн)
-        #    үлдээгээд, алдаатай байсан дүрмүүдийн жагсаалтыг хэрэглэгчид харуулна.
-        # ★ Амжилттай тооцоологдсон утгуудыг ХАДГАЛСАН ХЭВЭЭР (commit хийгдсэн)
-        #    үлдээгээд, алдаатай байсан дүрмүүдийн жагсаалтыг хэрэглэгчид харуулна.
-        if errors_by_rule:
-            max_show = 20
-            error_lines = []
-            for code, info in list(errors_by_rule.items())[:max_show]:
-                error_lines.append(
-                    "Дүрэм: %s | Алдаа: %s | Томьёо: %s" % (
-                        code, info['error'], info['python_code']
+            remaining_employee_errors = []
+            for (rule_code, error_text), items in grouped.items():
+                if len(items) >= DUPLICATE_THRESHOLD:
+                    if rule_code not in errors_by_rule:
+                        errors_by_rule[rule_code] = {
+                            'error': "%s (%s ажилтан дээр адилхан давтагдсан)" % (error_text, len(items)),
+                            'python_code': items[0].get('python_code', ''),
+                        }
+                else:
+                    remaining_employee_errors.extend(items)
+
+            employee_errors = remaining_employee_errors
+            message_parts = []
+
+            if errors_by_rule:
+                max_show = 10
+                error_lines = []
+                for code, info in list(errors_by_rule.items())[:max_show]:
+                    error_lines.append(
+                        "Дүрэм: %s | Алдаа: %s | Томьёо: %s" % (
+                            code, info['error'], info['python_code']
+                        )
                     )
+                extra = ''
+                if len(errors_by_rule) > max_show:
+                    extra = _("\n... болон бусад %s дүрэм дээр алдаа гарсан. Дэлгэрэнгүйг server log-оос харна уу.") % (
+                        len(errors_by_rule) - max_show
+                    )
+                message_parts.append(
+                    _("Доорх %(count)s дүрэм дээр алдаа гарсан тул тухайн утгыг 0 болгов:\n\n%(details)s%(extra)s") % {
+                        'count': len(errors_by_rule),
+                        'details': '\n'.join(error_lines),
+                        'extra': extra,
+                    }
                 )
-            details = '\n'.join(error_lines)
 
-            extra = ''
-            if len(errors_by_rule) > max_show:
-                extra = _("\n... болон бусад %s дүрэм дээр алдаа гарсан. Дэлгэрэнгүйг server log-оос харна уу.") % (
-                    len(errors_by_rule) - max_show
+            if employee_errors:
+                max_show_emp = 10
+                emp_lines = []
+                for item in employee_errors[:max_show_emp]:
+                    emp_lines.append(
+                        "Дүрэм: %s | Ажилтан: %s | Алдаа: %s" % (
+                            item['rule'], item['employee'], item['error']
+                        )
+                    )
+                extra_emp = ''
+                if len(employee_errors) > max_show_emp:
+                    extra_emp = _("\n... болон бусад %s ажилтан дээр алдаа гарсан. Дэлгэрэнгүйг server log-оос харна уу.") % (
+                        len(employee_errors) - max_show_emp
+                    )
+                message_parts.append(
+                    _("Доорх ажилтнуудын өгөгдлөөс шалтгаалж утгыг 0 болгов:\n\n%(details)s%(extra)s") % {
+                        'details': '\n'.join(emp_lines),
+                        'extra': extra_emp,
+                    }
                 )
 
-            raise UserError(_(
-                "Тооцоолол дуусав. Доорх %(count)s дүрэм дээр алдаа гарсан тул тухайн утгыг 0 болгов:\n\n%(details)s%(extra)s"
-            ) % {
-                'count': len(errors_by_rule),
-                'details': details,
-                'extra': extra,
-            })
+            raise UserError(_("Тооцоолол дуусав.\n\n") + '\n\n'.join(message_parts))
+
     def get_from_previous_payroll(self,employee_id,code,start_date, end_date):
         value = 0.0
 
