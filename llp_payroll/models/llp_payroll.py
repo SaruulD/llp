@@ -783,6 +783,18 @@ class LLPPayroll(models.Model):
                                         ruled['code'], emp['employee']
                                     )
 
+                                elif object_type_base_map.get(ruled['object_type'], ruled['object_type']) == 'attendance':
+                                    # ★ 'attendance' төрлийн дүрэгт тухайн ажилтанд
+                                    #   time_balance/цагийн бүртгэл record олдоогүй үед
+                                    #   object нь хоосон dict ({}) болдог тул
+                                    #   object.xxx хандалт хийхэд AttributeError гэх
+                                    #   мэт алдаа гарах нь хэвийн тохиолдол. Попап
+                                    #   дээр огт харуулахгүй, зөвхөн log-д тэмдэглэнэ.
+                                    _logger.info(
+                                        "Payroll: attendance object error (хэвийн, харуулахгүй) - rule: %s, employee: %s, error: %s",
+                                        ruled['code'], emp['employee'], e
+                                    )
+
                                 elif isinstance(e, (NameError, SyntaxError, TypeError, UserError)):
                                     # ★ Дүрмийн python_code өөрөө буруу (илэрхийлэлд
                                     #   тодорхойлогдоогүй нэр, syntax алдаа, tuple/list
@@ -794,7 +806,11 @@ class LLPPayroll(models.Model):
                                             'python_code': ruled['python_code'],
                                         }
                                     _logger.error(
-                                        "Payroll compute error (rule) - rule: %s, employee: %s, error: %s\npython_code: %s",
+                                        "Payroll compute error (rule)\n"
+                                        "  Дүрэм: %s\n"
+                                        "  Ажилтан: %s\n"
+                                        "  Алдаа: %s\n"
+                                        "  Томьёо: %s",
                                         ruled['code'], emp['employee'], e, ruled['python_code']
                                     )
 
@@ -880,15 +896,19 @@ class LLPPayroll(models.Model):
             DUPLICATE_THRESHOLD = 3
             grouped = {}
             for item in employee_errors:
-                key = (item['rule'], item['error'])
+                key = item['rule']
                 grouped.setdefault(key, []).append(item)
 
             remaining_employee_errors = []
-            for (rule_code, error_text), items in grouped.items():
+            for rule_code, items in grouped.items():
                 if len(items) >= DUPLICATE_THRESHOLD:
                     if rule_code not in errors_by_rule:
+                        # ★ Ижил дүрэм дээр 3+ ажилтанд алдаа гарсан тул
+                        #   (алдааны текст ялгаатай ч гэсэн) rule-ийн
+                        #   алдаа гэж үзнэ. Илэрхийлэл болгож эхний
+                        #   алдааны текстийг жишээ болгон хадгална.
                         errors_by_rule[rule_code] = {
-                            'error': error_text,
+                            'error': items[0]['error'],
                             'python_code': items[0].get('python_code', ''),
                         }
                 else:

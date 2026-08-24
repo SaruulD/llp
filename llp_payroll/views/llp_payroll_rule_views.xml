@@ -31,6 +31,7 @@
                 <field name="rulefield_type"/>
                 <field name="transaction_type"/>
                 <field name="company_id"/>
+                <field name="structure_ids" widget="many2many_tags"/>
             </list>
         </field>
     </record>
@@ -73,6 +74,7 @@
                                 <field name="transaction_type" />
                                 <field name="send_mail" />
                                 <field name="need_highlight"/>
+                                <field name="structure_ids" widget="many2many_tags" readonly="1"/>
                             </group>
                         </group>
                     </group>

@@ -48,6 +48,22 @@ class LLPPayrollRule(models.Model):
 								 ('part_time_work_additional_salary','Contract - Хавсран ажлын нэмэгдэл цалин'),
 								 ('part_time_work_additional_salary_percent','Contract - Хавсран ажлын нэмэгдэл цалингийн хувь'),
 								 ],string="Object type",tracking=True)	
+	structure_line_ids = fields.One2many(
+		'llp.payroll.structure.line', 'rule_id',
+		string="Structure lines", readonly=True,
+	)
+
+	structure_ids = fields.Many2many(
+		'llp.payroll.structure',
+		string="Ашиглагдаж буй бүтцүүд",
+		compute='_compute_structure_ids',
+		store=True,
+	)
+
+	@api.depends('structure_line_ids.struct_id')
+	def _compute_structure_ids(self):
+		for rec in self:
+			rec.structure_ids = rec.structure_line_ids.mapped('struct_id')
 	
 	_sql_constraints = [
 		('code_uniq', 'unique(code)',
