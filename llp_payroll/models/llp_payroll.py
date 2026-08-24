@@ -663,8 +663,8 @@ class LLPPayroll(models.Model):
                                         object = {}
                                         query = "select tbl.id from time_balance tb \
                                             inner join time_balance_line tbl ON tb.id=tbl.balance_id \
-                                            where tb.state = 'accountant' and tbl.employee_id = %s and tb.date_from='%s' \
-                                            AND tb.date_to='%s'"%(emp['employee'],self.start_date, self.end_date,)
+                                            where tb.state = 'accountant' and tbl.employee_id = %s and tb.date_from<='%s' \
+                                            AND tb.date_to>='%s'"%(emp['employee'],self.start_date, self.end_date,)
                                         self.env.cr.execute(query)
                                         fetch = self.env.cr.fetchone()
                                         if fetch and fetch[0]:
@@ -715,46 +715,63 @@ class LLPPayroll(models.Model):
                                                     python_code = python_code.replace(code, str(0))
 
                                     if ruled['rulefield_type'] == 'from_previous_payroll':
-                                        value = self.get_from_previous_payroll(emp['employee'], python_code, self.start_date, self.end_date)
-                                        if value is None:
+                                        try:
+                                            value = self.get_from_previous_payroll(emp['employee'], python_code, self.start_date, self.end_date)
+                                            if value is None:
+                                                value = 0
+                                        except Exception as e_prev:
+                                            # ★ Попап дээр огт харуулахгүй — зөвхөн log
+                                            _logger.info(
+                                                "Payroll: from_previous_payroll error (харуулахгүй) - rule: %s, employee: %s, error: %s",
+                                                ruled['code'], emp['employee'], e_prev
+                                            )
                                             value = 0
+
+                                        # ★ Амжилттай эсэхээс үл хамааран (0 ч бай, бодит
+                                        #   утга ч бай) DB рүү нэг л удаа бичнэ.
                                         if emp['is_edited'] == False:
                                             self.env.cr.execute(
                                                 "update llp_payroll_rule_value set value=%s where id=%s",
                                                 (value, emp['rule_value_id'])
                                             )
 
-                                    if rule:
-                                        local_dict = {
-                                            'rule': rule,
-                                            'object': object,
-                                            'payroll_start_date': self.start_date,
-                                            'payroll_end_date': self.end_date,
-                                        }
-                                        safe_eval(python_code, local_dict, mode="exec", nocopy=True)
-                                        value = local_dict.get('result')
                                     else:
-                                        value = eval(python_code)
+                                        # ★ Зөвхөн 'from_previous_payroll' биш дүрмүүд л
+                                        #   safe_eval/eval-ээр тооцоологдоно. Эсрэг тохиолдолд
+                                        #   дээрх get_from_previous_payroll-ийн python_code
+                                        #   (жишээ нь зүгээр л 'SA1' гэсэн нэр) энд дахин
+                                        #   eval хийгдэж NameError өгдөг байсныг засав.
+                                        if rule:
+                                            local_dict = {
+                                                'rule': rule,
+                                                'object': object,
+                                                'payroll_start_date': self.start_date,
+                                                'payroll_end_date': self.end_date,
+                                            }
+                                            safe_eval(python_code, local_dict, mode="exec", nocopy=True)
+                                            value = local_dict.get('result')
+                                        else:
+                                            value = eval(python_code)
 
-                                    if isinstance(value, (tuple, list)):
-                                        raise UserError(_(
-                                            "Томьёо tuple/list утга буцаалаа: %r"
-                                        ) % (value,))
+                                        if isinstance(value, (tuple, list)):
+                                            raise UserError(_(
+                                                "Томьёо tuple/list утга буцаалаа: %r"
+                                            ) % (value,))
 
-                                    if ruled['rulefield_type'] == 'digit':
-                                        if not value:
-                                            value = 0
-                                        if emp['is_edited'] == False:
-                                            self.env.cr.execute(
-                                                'update llp_payroll_rule_value set value = %s where id = %s',
-                                                (value, emp['rule_value_id'])
-                                            )
-                                    elif ruled['rulefield_type'] == 'sign':
-                                        if emp['is_edited'] == False:
-                                            self.env.cr.execute(
-                                                "update llp_payroll_rule_value set char_value = %s where id = %s",
-                                                (value if value is not None else False, emp['rule_value_id'])
-                                            )
+                                        if ruled['rulefield_type'] == 'digit':
+                                            if not value:
+                                                value = 0
+                                            if emp['is_edited'] == False:
+                                                self.env.cr.execute(
+                                                    'update llp_payroll_rule_value set value = %s where id = %s',
+                                                    (value, emp['rule_value_id'])
+                                                )
+                                        elif ruled['rulefield_type'] == 'sign':
+                                            if emp['is_edited'] == False:
+                                                self.env.cr.execute(
+                                                    "update llp_payroll_rule_value set char_value = %s where id = %s",
+                                                    (value if value is not None else False, emp['rule_value_id'])
+                                                )
                             except Exception as e:
                                 if isinstance(e, ZeroDivisionError):
                                     # ★ Хуваагч тухайн ажилтан дээр 0 байх нь хэвийн
@@ -800,8 +817,12 @@ class LLPPayroll(models.Model):
                                         'python_code': ruled['python_code'],
                                     })
                                     _logger.error(
-                                        "Payroll compute error (employee) - rule: %s, employee: %s, error: %s",
-                                        ruled['code'], emp_name, e
+                                        "Payroll compute error (employee)\n"
+                                        "  Дүрэм: %s\n"
+                                        "  Ажилтан: %s\n"
+                                        "  Алдаа: %s\n"
+                                        "  Томьёо: %s",
+                                        ruled['code'], emp_name, e, ruled['python_code']
                                     )
 
                                 # Алдаатай утгыг 0/False болгоно (бүх төрлийн алдааны хувьд адилхан)
@@ -867,24 +888,21 @@ class LLPPayroll(models.Model):
                 if len(items) >= DUPLICATE_THRESHOLD:
                     if rule_code not in errors_by_rule:
                         errors_by_rule[rule_code] = {
-                            'error': "%s (%s ажилтан дээр адилхан давтагдсан)" % (error_text, len(items)),
+                            'error': error_text,
                             'python_code': items[0].get('python_code', ''),
                         }
                 else:
                     remaining_employee_errors.extend(items)
 
             employee_errors = remaining_employee_errors
+        if errors_by_rule or employee_errors:
             message_parts = []
 
             if errors_by_rule:
-                max_show = 10
-                error_lines = []
-                for code, info in list(errors_by_rule.items())[:max_show]:
-                    error_lines.append(
-                        "Дүрэм: %s | Алдаа: %s | Томьёо: %s" % (
-                            code, info['error'], info['python_code']
-                        )
-                    )
+                max_show = 20
+                rule_codes = list(errors_by_rule.keys())[:max_show]
+                error_lines = ["Дүрэм: %s" % code for code in rule_codes]
+
                 extra = ''
                 if len(errors_by_rule) > max_show:
                     extra = _("\n... болон бусад %s дүрэм дээр алдаа гарсан. Дэлгэрэнгүйг server log-оос харна уу.") % (
@@ -897,21 +915,24 @@ class LLPPayroll(models.Model):
                         'extra': extra,
                     }
                 )
-
             if employee_errors:
-                max_show_emp = 10
+                max_show_emp = 30
                 emp_lines = []
                 for item in employee_errors[:max_show_emp]:
                     emp_lines.append(
-                        "Дүрэм: %s | Ажилтан: %s | Алдаа: %s" % (
-                            item['rule'], item['employee'], item['error']
+                        "Дүрэм: %s | Ажилтан: %s |" % (
+                            item['rule'], item['employee']
                         )
                     )
+                    # ★ Энд дахин log хийхгүй — доор exception барих цэг дээр
+                    #   (rule/employee/error) аль хэдийн бүрэн бичигдсэн байдаг.
+
                 extra_emp = ''
                 if len(employee_errors) > max_show_emp:
                     extra_emp = _("\n... болон бусад %s ажилтан дээр алдаа гарсан. Дэлгэрэнгүйг server log-оос харна уу.") % (
                         len(employee_errors) - max_show_emp
                     )
+
                 message_parts.append(
                     _("Доорх ажилтнуудын өгөгдлөөс шалтгаалж утгыг 0 болгов:\n\n%(details)s%(extra)s") % {
                         'details': '\n'.join(emp_lines),
@@ -920,7 +941,6 @@ class LLPPayroll(models.Model):
                 )
 
             raise UserError(_("Тооцоолол дуусав.\n\n") + '\n\n'.join(message_parts))
-
     def get_from_previous_payroll(self,employee_id,code,start_date, end_date):
         value = 0.0
 
