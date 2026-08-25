@@ -480,7 +480,18 @@ class LLPPayroll(models.Model):
  
             if pay.company_id:
                 emp_domain.append(('company_id', '=', pay.company_id.id))
- 
+
+            contracts = self.env['hr.contract'].search([
+                ('employee_id', '!=', False),
+                ('date_start', '<=', pay.end_date),
+                ('state', 'in', ['open','close']),
+                '|',
+                    ('date_end', '=', False),
+                    ('date_end', '>=', pay.start_date),
+                    ('state', 'in', ['open','close']),
+            ])
+            emp_domain.append(('id', 'in', contracts.employee_id.ids))
+
             employee_ids = self.env['hr.employee'].search(emp_domain)
  
             # Дахин татахад өмнөх мөрүүд (болон cascade-аар устах
@@ -631,8 +642,13 @@ class LLPPayroll(models.Model):
                                     object_base_type = object_type_base_map.get(ruled['object_type'], ruled['object_type'])
 
                                     if object_base_type == 'contract':
-                                        object = self.env['hr.contract'].search([('employee_id', '=', emp['employee']),('state','=','open')], limit=1)
-
+                                        object = self.env['hr.contract'].search([
+                                                ('employee_id', '=', emp['employee']),
+                                                ('date_start', '<=', self.end_date),
+                                                '|',
+                                                    ('date_end', '=', False),
+                                                    ('date_end', '>=', self.start_date),
+                                            ], limit=1)
                                     elif object_base_type == 'vacation':
                                         self.env.cr.execute(
                                             "select B.id from llp_payroll_employee_vacation A "
