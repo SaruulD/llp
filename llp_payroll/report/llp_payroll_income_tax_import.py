@@ -4,10 +4,12 @@ from odoo.tools.translate import _ # type: ignore
 from odoo import api, fields, models, _, modules # type: ignore
 import xlsxwriter # type: ignore
 from io import BytesIO
+from collections import OrderedDict
 import base64
 import logging
 from odoo.exceptions import UserError # type: ignore
 _logger = logging.getLogger(__name__)
+
 
 class LLPPayrollIncomeTaxImport(models.TransientModel):
     _name = 'llp.payroll.income.tax.import'
@@ -17,6 +19,111 @@ class LLPPayrollIncomeTaxImport(models.TransientModel):
     company_id = fields.Many2one('res.company',string="Company",default=lambda self: self.env.company)
     department_ids = fields.Many2many('hr.department', string="Departments", domain="[('company_id','=',company_id)]", tracking=True)
     export_type = fields.Selection([('excel','Excel')],string="Export type",default="excel")
+
+    # --------------------------------------------------------------------
+    # 24 талбарын дотор ЭМД/НДШ хувь ба "сард ногдох" баганын байрлал
+    # (0-ээс эхэлсэн индекс). Хэрэв тайлангийн баганын дараалал өөрчлөгдвөл
+    # эдгээр индексийг мөн тохируулж өгнө.
+    # --------------------------------------------------------------------
+    INSURANCE_RATE_INDEX = 7      # 'ЭМД, НДШ Хувь' -> дундажаар бодно
+    DISCOUNT_MONTHLY_INDEX = 17   # 'Хуулийн 23.1-т заасан хөнгөлөлт сард ногдох' -> хайлт (lookup)
+    DISCOUNT_TOTAL_INDEX = 18     # 'Хуулийн 23.1-т заасан хөнгөлөлт нийт' -> нийлбэрээр, мөн lookup-д ашиглана
+
+    # Зурган дээрх "нийт" -> "сард ногдох" харгалзаа
+    DISCOUNT_MONTHLY_MAP = {
+        0: '0-0',
+        10000: '10000-1',
+        12000: '12000-2',
+        14000: '14000-3',
+        16000: '16000-4',
+        18000: '18000-5',
+        20000: '20000-6',
+    }
+    DISCOUNT_MONTHLY_OTHER = '999-Бусад'
+
+    @staticmethod
+    def _norm(value):
+        """Decimal/float утгыг харьцуулахад найдвартай болгох."""
+        if value is None:
+            return None
+        return round(float(value), 2)
+
+    def _aggregate_rows(self, raw_rows):
+        """
+        raw_rows бүтэц: (department_name, employee_id, val0_num, val0_char, val1_num, val1_char, ...)
+        Буцаах утга: анхны 'rows' хувьсагчтай яг адилхан бүтэцтэй жагсаалт
+        (department_name, val0_num, val0_char, val1_num, val1_char, ...)
+        гэхдээ мөр бүр нэг ажилтны нэгтгэсэн үр дүн байна.
+        """
+        field_count = 24
+        raw_offset = 2  # 0=department_name, 1=employee_id, 2-с эхлээд талбарын хос эхэлнэ
+
+        grouped = OrderedDict()
+        for row in raw_rows:
+            dept_name = row[0]
+            emp_id = row[1]
+            key = emp_id if emp_id is not None else id(row)
+            if key not in grouped:
+                grouped[key] = {'department_name': dept_name, 'rows': []}
+            grouped[key]['rows'].append(row)
+
+        aggregated_rows = []
+        for key, data in grouped.items():
+            rows_for_emp = data['rows']
+            n = len(rows_for_emp)
+            dept_name = data['department_name']
+
+            # "сард ногдох" баганыг тодорхойлохын тулд "нийт" баганын
+            # анхны (мөр бүрийн) утгуудыг цуглуулна
+            discount_total_raw = [
+                self._norm(r[raw_offset + self.DISCOUNT_TOTAL_INDEX * 2])
+                for r in rows_for_emp
+            ]
+
+            flat = [dept_name]
+            for i in range(field_count):
+                num_values = [r[raw_offset + i * 2] for r in rows_for_emp]
+                char_values = [r[raw_offset + i * 2 + 1] for r in rows_for_emp]
+                has_num = any(v is not None for v in num_values)
+
+                if i == self.INSURANCE_RATE_INDEX:
+                    # ЭМД, НДШ Хувь -> дундаж (нийлбэр / мөрний тоо)
+                    if has_num:
+                        total = sum(float(v) for v in num_values if v is not None)
+                        flat.append(total / n)
+                        flat.append(None)
+                    else:
+                        flat.append(None)
+                        flat.append('')
+
+                elif i == self.DISCOUNT_MONTHLY_INDEX:
+                    # Хуулийн 23.1-т заасан хөнгөлөлт сард ногдох ->
+                    # "нийт" баганын мөр бүрийн утга бүгд адилхан эсэхээс хамаарна
+                    non_null = [v for v in discount_total_raw if v is not None]
+                    if non_null and len(non_null) == n and all(v == non_null[0] for v in non_null):
+                        common_val = non_null[0]
+                        key_val = int(common_val) if float(common_val).is_integer() else common_val
+                        label = self.DISCOUNT_MONTHLY_MAP.get(key_val, self.DISCOUNT_MONTHLY_OTHER)
+                    else:
+                        label = self.DISCOUNT_MONTHLY_OTHER
+                    flat.append(None)
+                    flat.append(label)
+
+                else:
+                    # Бусад бүх багана -> нийлбэрээр (тоон утгатай бол),
+                    # эсвэл текст утга бол эхний хоосон биш утгыг авна
+                    if has_num:
+                        total = sum(float(v) for v in num_values if v is not None)
+                        flat.append(total)
+                        flat.append(None)
+                    else:
+                        first_char = next((c for c in char_values if c), '')
+                        flat.append(None)
+                        flat.append(first_char)
+
+            aggregated_rows.append(tuple(flat))
+
+        return aggregated_rows
 
     def action_export(self):
         self.ensure_one()
@@ -31,6 +138,7 @@ class LLPPayrollIncomeTaxImport(models.TransientModel):
         query = f"""
             SELECT 
                 {department_select}
+                EMP.id AS employee_id,
                 CASE WHEN RA.rulefield_type = 'digit' THEN COALESCE(VA.value, 0) END AS taxpayer_number_num,
                 CASE WHEN RA.rulefield_type != 'digit' THEN COALESCE(VA.char_value, '') END AS taxpayer_number_char,
 
@@ -175,13 +283,16 @@ class LLPPayrollIncomeTaxImport(models.TransientModel):
             query += " AND EMP.department_id IN %s"
             params.append(tuple(self.department_ids.ids))
 
-        query += " ORDER BY department_name, A.id"
+        query += " ORDER BY department_name, EMP.id, A.id"
 
         self.env.cr.execute(query, tuple(params))
-        rows = self.env.cr.fetchall()
+        raw_rows = self.env.cr.fetchall()
 
-        if not rows:
+        if not raw_rows:
             raise UserError("Өгөгдөл олдсонгүй.")
+
+        # Ажилтан бүрийн олон сарын мөрүүдийг 1 мөр болгон нэгтгэнэ
+        rows = self._aggregate_rows(raw_rows)
 
         output = BytesIO()
         workbook = xlsxwriter.Workbook(output, {'in_memory': True})
@@ -306,7 +417,7 @@ class LLPPayrollIncomeTaxImport(models.TransientModel):
         workbook.close()
 
         data = base64.b64encode(output.getvalue())
-        file_name = u'ХХОАТ-ын импорт хийх загвар'
+        file_name = u'ХХОАТ-ын импорт хийх загвар'
         attachment = self.env['ir.attachment'].create({
             'name': f"{file_name}.xlsx",
             'type': 'binary',

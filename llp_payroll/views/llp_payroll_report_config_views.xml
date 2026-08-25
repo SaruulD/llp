@@ -86,7 +86,7 @@
                                 <field name="tax_bracket" invisible="type != 'income_tax_import'"/>
                                 <field name="tax_calculated" invisible="type != 'income_tax_import'"/>
                                 <field name="months_worked" invisible="type != 'income_tax_import'"/>
-                                <field name="discount_monthly" invisible="type != 'income_tax_import'"/>
+                                <!-- <field name="discount_monthly" invisible="type != 'income_tax_import'"/> -->
                                 <field name="discount_total" invisible="type != 'income_tax_import'"/>
                                 <field name="tax_after_discount_7_1_1" invisible="type != 'income_tax_import'"/>
                                 <field name="tax_7_1_6" invisible="type != 'income_tax_import'"/>
