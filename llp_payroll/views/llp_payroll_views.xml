@@ -91,15 +91,19 @@
                     </h1>
                     <group>
                         <group>
-                            <field name="dynamic_workflow_id" options="{'no_create':True}" required="1" readonly="state != 'draft'"/>
-                            <field name="start_date" readonly="state != 'draft'"/>
-                            <field name="end_date" readonly="state != 'draft'"/>
+                            <group>
+                                <field name="dynamic_workflow_id" options="{'no_create':True}" required="1" readonly="state != 'draft'"/>
+                                <field name="start_date" readonly="state != 'draft'"/>
+                                <field name="end_date" readonly="state != 'draft'"/>
+                            </group>
                         </group>
                         <group>
-                            <field name="company_id" readonly="state != 'draft'"/>
-                            <field name="department_id" readonly="state != 'draft'" widget="many2many_tags"/>
-                            <field name="struct_id" required="1" readonly="state != 'draft'" 
-                                            domain="[('company_id', '=', company_id)]"/>
+                            <group>
+                                <field name="company_id" readonly="state != 'draft'"/>
+                                <field name="department_id" readonly="state != 'draft'" widget="many2many_tags"/>
+                                <field name="struct_id" required="1" readonly="state != 'draft'" 
+                                                domain="[('company_id', '=', company_id)]"/>
+                            </group>
                         </group>
                     </group>
 
