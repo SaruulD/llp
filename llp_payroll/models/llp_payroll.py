@@ -573,7 +573,7 @@ class LLPPayroll(models.Model):
  
     def action_computebyQUERY(self):
         query = "select C.id as rule_value_id,D.rule_type as rule_type, D.rulefield_type as rulefield_type, D.object_type as object_type, \
-                    G.id as employee , D.ruleview_type as ruleview_type, D.code as code, D.regular_number as regular_number, B.id as line_id, D.python_code as python_code, F.exp_sequence as exp_sequence, C.is_edited as is_edited\
+                    G.id as employee , D.ruleview_type as ruleview_type, D.code as code, D.name as rule_name, D.regular_number as regular_number, B.id as line_id, D.python_code as python_code, F.exp_sequence as exp_sequence, C.is_edited as is_edited\
                     from llp_payroll A inner join llp_payroll_line B ON A.id= B.payroll_id \
                         inner join llp_payroll_rule_value C on B.id=C.line_id \
                         inner join llp_payroll_rule D on D.id=C.payroll_rule_id \
@@ -581,7 +581,7 @@ class LLPPayroll(models.Model):
                         inner join llp_payroll_structure_line F ON F.struct_id= E.id and F.rule_id=D.id\
                         inner join hr_employee G ON G.id=B.employee_id \
                 where A.id=%s \
-                group by rule_value_id, rule_type, D.rulefield_type, object_type, employee, ruleview_type, code,B.id,\
+                group by rule_value_id, rule_type, D.rulefield_type, object_type, employee, ruleview_type, code, D.name, B.id,\
                     python_code, regular_number, exp_sequence, is_edited \
                 order by F.exp_sequence asc "%(self.id)
         self.env.cr.execute(query)
@@ -597,10 +597,11 @@ class LLPPayroll(models.Model):
                 group1 = dic['code']
                 if group1 not in formulas[group]['rules']:
                     formulas[group]['rules'][group1] = {
-                        'code': '', 'python_code': '', 'rule_type': '',
+                        'code': '', 'name': '', 'python_code': '', 'rule_type': '',
                         'object_type': '', 'rulefield_type': '', 'employees': {}
                     }
                 formulas[group]['rules'][group1]['code'] = group1
+                formulas[group]['rules'][group1]['name'] = dic.get('rule_name') or ''
                 formulas[group]['rules'][group1]['python_code'] = dic['python_code']
                 formulas[group]['rules'][group1]['regular_number'] = dic['regular_number']
                 formulas[group]['rules'][group1]['rule_type'] = dic['rule_type']
@@ -791,35 +792,33 @@ class LLPPayroll(models.Model):
                             except Exception as e:
                                 if isinstance(e, ZeroDivisionError):
                                     # ★ Хуваагч тухайн ажилтан дээр 0 байх нь хэвийн
-                                    #   тохиолдол (жишээ нь тоо ширхэг, өдөр гэх мэт
-                                    #   утга 0 байж болно). Алдаа биш тул хэрэглэгчид
-                                    #   огт харуулахгүй, зөвхөн log-д тэмдэглээд өнгөрнө.
+                                    #   тохиолдол. Алдаа биш тул хэрэглэгчид огт
+                                    #   харуулахгүй, зөвхөн log-д тэмдэглээд өнгөрнө.
                                     _logger.info(
                                         "Payroll: zero division (хэвийн, харуулахгүй) - rule: %s, employee: %s",
                                         ruled['code'], emp['employee']
                                     )
 
-                                elif object_type_base_map.get(ruled['object_type'], ruled['object_type']) == 'attendance':
-                                    # ★ 'attendance' төрлийн дүрэгт тухайн ажилтанд
-                                    #   time_balance/цагийн бүртгэл record олдоогүй үед
-                                    #   object нь хоосон dict ({}) болдог тул
-                                    #   object.xxx хандалт хийхэд AttributeError гэх
-                                    #   мэт алдаа гарах нь хэвийн тохиолдол. Попап
-                                    #   дээр огт харуулахгүй, зөвхөн log-д тэмдэглэнэ.
+                                elif object_type_base_map.get(ruled['object_type'], ruled['object_type']) in ('attendance', 'vacation', 'debt'):
+                                    # ★ 'attendance'/'vacation'/'debt' төрлийн дүрэгт
+                                    #   тухайн ажилтанд харгалзах бичлэг (цагийн
+                                    #   бүртгэл, амралт, зээл) олдоогүй үед object
+                                    #   нь хоосон dict ({}) болдог тул object.xxx
+                                    #   хандалт хийхэд AttributeError гэх мэт алдаа
+                                    #   гарах нь хэвийн тохиолдол. Попап дээр огт
+                                    #   харуулахгүй, зөвхөн log-д тэмдэглэнэ.
                                     _logger.info(
-                                        "Payroll: attendance object error (хэвийн, харуулахгүй) - rule: %s, employee: %s, error: %s",
+                                        "Payroll: %s object error (хэвийн, харуулахгүй) - rule: %s, employee: %s, error: %s",
+                                        object_type_base_map.get(ruled['object_type'], ruled['object_type']),
                                         ruled['code'], emp['employee'], e
                                     )
 
                                 elif isinstance(e, (NameError, SyntaxError, TypeError, UserError)):
-                                    # ★ Дүрмийн python_code өөрөө буруу (илэрхийлэлд
-                                    #   тодорхойлогдоогүй нэр, syntax алдаа, tuple/list
-                                    #   буцаасан гэх мэт) — бүх ажилтанд адилхан
-                                    #   давтагдах тул rule-ээр нэг л удаа харуулна.
                                     if ruled['code'] not in errors_by_rule:
                                         errors_by_rule[ruled['code']] = {
                                             'error': str(e),
                                             'python_code': ruled['python_code'],
+                                            'name': ruled.get('name') or '',
                                         }
                                     _logger.error(
                                         "Payroll compute error (rule)\n"
@@ -844,6 +843,7 @@ class LLPPayroll(models.Model):
 
                                     employee_errors.append({
                                         'rule': ruled['code'],
+                                        'rule_name': ruled.get('name') or '',
                                         'employee': emp_name,
                                         'error': str(e),
                                         'python_code': ruled['python_code'],
@@ -893,8 +893,8 @@ class LLPPayroll(models.Model):
                                         errors_by_rule[ruled['code']] = {
                                             'error': str(e),
                                             'python_code': '',
+                                            'name': ruled.get('name') or '',
                                         }
-
                                     _logger.error(
                                         "Payroll regular-rule update error - rule: %s, employee: %s, error: %s",
                                         ruled['code'], emp['employee'], e
@@ -914,18 +914,14 @@ class LLPPayroll(models.Model):
             for item in employee_errors:
                 key = item['rule']
                 grouped.setdefault(key, []).append(item)
-
             remaining_employee_errors = []
             for rule_code, items in grouped.items():
                 if len(items) >= DUPLICATE_THRESHOLD:
                     if rule_code not in errors_by_rule:
-                        # ★ Ижил дүрэм дээр 3+ ажилтанд алдаа гарсан тул
-                        #   (алдааны текст ялгаатай ч гэсэн) rule-ийн
-                        #   алдаа гэж үзнэ. Илэрхийлэл болгож эхний
-                        #   алдааны текстийг жишээ болгон хадгална.
                         errors_by_rule[rule_code] = {
                             'error': items[0]['error'],
                             'python_code': items[0].get('python_code', ''),
+                            'name': items[0].get('rule_name', ''),
                         }
                 else:
                     remaining_employee_errors.extend(items)
@@ -937,8 +933,13 @@ class LLPPayroll(models.Model):
             if errors_by_rule:
                 max_show = 20
                 rule_codes = list(errors_by_rule.keys())[:max_show]
-                error_lines = ["Дүрэм: %s" % code for code in rule_codes]
-
+                error_lines = []
+                for code in rule_codes:
+                    name = errors_by_rule[code].get('name') or ''
+                    if name:
+                        error_lines.append("Дүрэм: %s (%s)" % (code, name))
+                    else:
+                        error_lines.append("Дүрэм: %s" % code)
                 extra = ''
                 if len(errors_by_rule) > max_show:
                     extra = _("\n... болон бусад %s дүрэм дээр алдаа гарсан. Дэлгэрэнгүйг server log-оос харна уу.") % (
@@ -955,9 +956,11 @@ class LLPPayroll(models.Model):
                 max_show_emp = 30
                 emp_lines = []
                 for item in employee_errors[:max_show_emp]:
+                    rule_name = item.get('rule_name') or ''
+                    rule_display = "%s (%s)" % (item['rule'], rule_name) if rule_name else item['rule']
                     emp_lines.append(
                         "Дүрэм: %s | Ажилтан: %s |" % (
-                            item['rule'], item['employee']
+                            rule_display, item['employee']
                         )
                     )
                     # ★ Энд дахин log хийхгүй — доор exception барих цэг дээр
@@ -977,6 +980,18 @@ class LLPPayroll(models.Model):
                 )
 
             raise UserError(_("Тооцоолол дуусав.\n\n") + '\n\n'.join(message_parts))
+            # full_message = _("Тооцоолол дуусав.\n\n") + '\n\n'.join(message_parts)
+            # return {
+            #     'type': 'ir.actions.client',
+            #     'tag': 'display_notification',
+            #     'params': {
+            #         'title': _('Анхаар'),
+            #         'message': full_message,
+            #         'type': 'warning',
+            #         'sticky': True,  # гараар хаах хүртэл дэлгэц дээр үлдэнэ
+            #         'next': {'type': 'ir.actions.client', 'tag': 'reload'},
+            #     }
+            # }
     def get_from_previous_payroll(self,employee_id,code,start_date, end_date):
         value = 0.0
 
