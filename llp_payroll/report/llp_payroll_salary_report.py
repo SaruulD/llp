@@ -94,7 +94,7 @@ class LLPPayrollSalaryReport(models.TransientModel):
                 'name': dic.get('rule_name') or '',
                 'value': float(dic.get('value') or 0.0),
                 'char_value': dic.get('char_value') or '',
-                'rulefield_type': dic.get('rulefield_type') or 'float',
+                'rulefield_type': dic.get('rulefield_type') or 'digit',
                 'sequence': int(dic.get('sequence') or 999999),
                 'is_show_sum': bool(dic.get('is_show_sum')),
             }
@@ -202,7 +202,7 @@ class LLPPayrollSalaryReport(models.TransientModel):
                 'code': dic.get('rule_code') or u'Тодорхойгүй',
                 'value': float(dic.get('value') or 0.0),
                 'char_value': dic.get('char_value') or '',
-                'rulefield_type': dic.get('rulefield_type') or 'float',
+                'rulefield_type': dic.get('rulefield_type') or 'digit',
                 'sequence': int(dic.get('sequence') or 999999),
                 'is_show_sum': bool(dic.get('is_show_sum')),
             }
@@ -300,7 +300,7 @@ class LLPPayrollSalaryReport(models.TransientModel):
                         continue
 
                     rtype = rule.get('rulefield_type')
-                    if rtype == 'char':
+                    if rtype == 'sign':
                         sheet.write(row, start_col + i, rule.get('char_value', ''), left_fmt)
                     else:
                         val = float(rule.get('value') or 0.0)
@@ -313,7 +313,7 @@ class LLPPayrollSalaryReport(models.TransientModel):
             sheet.write(row, start_col, u"Албаны нийт дүн", total_lbl_fmt)
             for i, rid in enumerate(rule_ids_sorted, start=1):
                 seq, rname, rtype, show_sum = rules_map[rid]
-                if show_sum and rtype != 'char':
+                if show_sum and rtype != 'sign':
                     sheet.write_number(row, start_col + i, dept_rule_totals[rid], total_num_fmt)
                     grand_rule_totals[rid] += dept_rule_totals[rid]
                 else:
@@ -323,7 +323,7 @@ class LLPPayrollSalaryReport(models.TransientModel):
         sheet.write(row, start_col, u"НИЙТ ДҮН", total_lbl_fmt)
         for i, rid in enumerate(rule_ids_sorted, start=1):
             seq, rname, rtype, show_sum = rules_map[rid]
-            if show_sum and rtype != 'char':
+            if show_sum and rtype != 'sign':
                 sheet.write_number(row, start_col + i, grand_rule_totals[rid], total_num_fmt)
             else:
                 sheet.write(row, start_col + i, '', total_num_fmt)
