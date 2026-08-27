@@ -43,17 +43,17 @@
             <form string="Payroll">
 
                 <header>
-                    <button name="action_get_data" invisible="state != 'draft'" string="Get Data" type="object" class="btn-primary"/>
-                    <button name="action_compute" invisible="state != 'draft'" string="Compute" type="object" class="btn-primary"/>
-                    <button name="action_payment_request" invisible="state != 'confirmed'" string="Create Payment Request" type="object" class="btn-primary"/>
-                    <button name="action_account_move" invisible="state != 'confirmed'" string="Create Account Move" type="object" class="btn-primary"/>
+                    <button name="action_get_data" invisible="state != 'draft'" string="Get Data" type="object" class="btn-info"/>
+                    <button name="action_compute" invisible="state != 'draft'" string="Compute" type="object" class="btn-info"/>
+                    <button name="action_payment_request" invisible="state != 'confirmed'" string="Create Payment Request" type="object" class="btn-info"/>
+                    <button name="action_account_move" invisible="state != 'confirmed'" string="Create Account Move" type="object" class="btn-info"/>
 
                     <!-- WORKFLOW -->
-                    <!-- <button name="action_approve" invisible="state != 'sent'" string="Approve" type="object" class="btn-primary"/> -->
-                    <button name="action_verify" invisible="state != 'pending'" string="Verify" type="object" class="btn-primary"/>
-                    <button name="action_return" invisible="state != 'pending'" string="Return" type="object" class="btn-primary"/>
-                    <button name="action_confirm" invisible="state != 'verify'" string="Confirm" type="object" class="btn-primary"/>
-                    <button name="send_mail_to_employees" string="Имэйл илгээх" type="object" class="btn-primary" invisible="state != 'confirmed'"/>
+                    <!-- <button name="action_approve" invisible="state != 'sent'" string="Approve" type="object" class="btn-info"/> -->
+                    <button name="action_verify" invisible="state != 'pending'" string="Verify" type="object" class="btn-info"/>
+                    <button name="action_return" invisible="state != 'pending'" string="Return" type="object" class="btn-info"/>
+                    <button name="action_confirm" invisible="state != 'verify'" string="Confirm" type="object" class="btn-info"/>
+                    <button name="send_mail_to_employees" string="Имэйл илгээх" type="object" class="btn-info" invisible="state != 'confirmed'"/>
                     
                     
                     
@@ -77,10 +77,10 @@
                             style="background-color: #c891aa" />
                         <field name="allowed_workflow_ids" invisible="1"/>
                         <field name="line_state" widget="statusbar" invisible="state != 'sent'"/>
+                        <button name="return_state" type="object" string="Return"
+                        invisible="not line_state or uid not in waiting_user_ids" class="btn-warning"/>
                         <button name="confirm_state" type="object" string="Confirm"
                             invisible="not line_state or uid not in waiting_user_ids" class="btn-success"/>
-                        <button name="return_state" type="object" string="Return"
-                            invisible="not line_state or uid not in waiting_user_ids" class="btn-secondary"/>
                     </header>
                 </form>
 
