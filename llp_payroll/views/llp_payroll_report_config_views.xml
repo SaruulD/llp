@@ -52,7 +52,7 @@
                                 <field name="last_name" invisible="type not in ['insurance_tax_import', 'income_tax_import']"/>
                                 <field name="first_name" invisible="type not in ['insurance_tax_import', 'income_tax_import']"/>
                                 <field name="insurance_type" invisible="type != 'insurance_tax_import'"/>
-                                <field name="citizenship" invisible="type != 'insurance_tax_import'"/>
+                                <field name="career_classification" invisible="type != 'insurance_tax_import'"/>
                                 <field name="wages_and_equivalent_income" invisible="type != 'insurance_tax_import'"/>
                                 <field name="base_and_additional_salary" invisible="type != 'insurance_tax_import'"/>
 
@@ -78,7 +78,7 @@
                                 <field name="other_additional_salary" invisible="type != 'insurance_tax_import'"/>
                                 <field name="food_transportation_cost" invisible="type != 'insurance_tax_import'"/>
                                 <field name="firewood_discount" invisible="type != 'insurance_tax_import'"/>
-                                <field name="career_classification" invisible="type != 'insurance_tax_import'"/>
+                                <field name="citizenship" invisible="type != 'insurance_tax_import'"/>
                                 <field name="cellphone" invisible="type != 'insurance_tax_import'"/>
                                 <field name="email" invisible="type != 'insurance_tax_import'"/>
 
