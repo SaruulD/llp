@@ -64,6 +64,17 @@ class LLPPayrollReportConfig(models.Model):
     total_tax_withheld = fields.Many2one('llp.payroll.rule', string='Нийт суутгуулсан албан татварын дүн', tracking=True)
     annual_discount_diff = fields.Many2one('llp.payroll.rule', string='Жилийн ХХОАТ-ын хөнгөлөлтийн зөрүү', tracking=True)
     insurance_type_2 = fields.Many2one('llp.payroll.rule', string='Даатгалын төрөл', tracking=True)
+    name = fields.Char(
+        string="Name",
+        compute='_compute_name',
+        store=True,
+    )
+
+    @api.depends('type')
+    def _compute_name(self):
+        selection_dict = dict(self._fields['type'].selection)
+        for rec in self:
+            rec.name = selection_dict.get(rec.type) or ''
 
     _sql_constraints = [
         ('unique_type_company', 'unique(type, company_id)', 'Type must be unique per company.'),
