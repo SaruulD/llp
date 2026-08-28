@@ -18,7 +18,8 @@ class LLPPayrollSalaryReport(models.TransientModel):
     start_date = fields.Date(string="Start date")
     end_date = fields.Date(string="End date")
     department_ids = fields.Many2many('hr.department', string="Departments", tracking=True)
-    export_type = fields.Selection([('excel','Excel'),('pdf','PDF')],string="Export type",default="excel")
+    export_type = fields.Selection([('excel','Excel')],string="Export type",default="excel")
+    # export_type = fields.Selection([('excel','Excel'),('pdf','PDF')],string="Export type",default="excel")
     struct_id = fields.Many2one('llp.payroll.structure',string="Stucture", domain="[('state','=','done')]",tracking=True)
         
     def _get_report_data(self):
