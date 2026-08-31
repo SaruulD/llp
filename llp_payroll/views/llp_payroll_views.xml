@@ -7,12 +7,13 @@
         <field name="model">llp.payroll</field>
         <field name="arch" type="xml">
             <search string="Search payroll">
-                <field name="name"/>
-                <field name="department_id"/>
+                <field name="name" />
+                <field name="department_id" />
                 <group expand="0" string="Group By">
-                    <filter string="Name" name="name" context="{'group_by': 'name'}"/>
-                    <filter string="Department" name="department_id" context="{'group_by': 'department_id'}"/>
-                    <filter string="Company" name="company_id" context="{'group_by': 'company_id'}"/>
+                    <filter string="Name" name="name" context="{'group_by': 'name'}" />
+                    <filter string="Department" name="department_id"
+                        context="{'group_by': 'department_id'}" />
+                    <filter string="Company" name="company_id" context="{'group_by': 'company_id'}" />
                 </group>
             </search>
         </field>
@@ -24,13 +25,13 @@
         <field name="model">llp.payroll</field>
         <field name="arch" type="xml">
             <list string="Payroll">
-                <field name="name"/>
-                <field name="start_date"/>
-                <field name="end_date"/>
-                <field name="department_id" widget="many2many_tags"/>
-                <field name="struct_id"/>
-                <field name="state"/>
-                <field name="company_id"/>
+                <field name="name" />
+                <field name="start_date" />
+                <field name="end_date" />
+                <field name="department_id" widget="many2many_tags" />
+                <field name="struct_id" />
+                <field name="state" />
+                <field name="company_id" />
             </list>
         </field>
     </record>
@@ -43,28 +44,38 @@
             <form string="Payroll">
 
                 <header>
-                    <button name="action_get_data" invisible="state != 'draft'" string="Get Data" type="object" class="btn-info"/>
-                    <button name="action_compute" invisible="state != 'draft'" string="Compute" type="object" class="btn-info"/>
-                    <button name="action_payment_request" invisible="state != 'confirmed'" string="Create Payment Request" type="object" class="btn-info"/>
-                    <button name="action_account_move" invisible="state != 'confirmed'" string="Create Account Move" type="object" class="btn-info"/>
+                    <button name="action_get_data" invisible="state != 'draft'" string="Get Data"
+                        type="object" class="btn-info" />
+                    <button name="action_compute" invisible="state != 'draft'" string="Compute"
+                        type="object" class="btn-info" />
+                    <button name="action_payment_request" invisible="state != 'confirmed'"
+                        string="Create Payment Request" type="object" class="btn-info" />
+                    <button name="action_account_move" invisible="state != 'confirmed'"
+                        string="Create Account Move" type="object" class="btn-info" />
 
                     <!-- WORKFLOW -->
-                    <!-- <button name="action_approve" invisible="state != 'sent'" string="Approve" type="object" class="btn-info"/> -->
-                    <button name="action_verify" invisible="state != 'pending'" string="Verify" type="object" class="btn-info"/>
-                    <button name="action_return" invisible="state != 'pending'" string="Return" type="object" class="btn-info"/>
-                    <button name="action_confirm" invisible="state != 'verify'" string="Confirm" type="object" class="btn-info"/>
-                    <button name="send_mail_to_employees" string="Имэйл илгээх" type="object" class="btn-info" invisible="state != 'confirmed'"/>
-                    
-                    
-                    
-                    <button name="action_open_edit_wizard" string="Импорт / Экспорт" type="object" class="oe_highlight" invisible="state != 'draft'"/>
-                    
-                    <button name="action_sent" invisible="state != 'draft'" string="Send" type="object" class="btn-success"/>
-                    
+                    <!-- <button name="action_approve" invisible="state != 'sent'" string="Approve"
+                    type="object" class="btn-info"/> -->
+                    <button name="action_verify" invisible="state != 'pending'" string="Verify"
+                        type="object" class="btn-info" />
+                    <button name="action_return" invisible="state != 'pending'" string="Return"
+                        type="object" class="btn-info" />
+                    <button name="action_confirm" invisible="state != 'verify'" string="Confirm"
+                        type="object" class="btn-info" />
+                    <button name="send_mail_to_employees" string="Имэйл илгээх" type="object"
+                        class="btn-info" invisible="state != 'confirmed'" />
+
+
+                    <button name="action_open_edit_wizard" string="Импорт / Экспорт" type="object"
+                        class="oe_highlight" invisible="state != 'draft'" />
+
+                    <button name="action_sent" invisible="state != 'draft'" string="Send"
+                        type="object" class="btn-success" />
+
                     <field name="is_super" invisible="1" />
                     <field name="waiting_user_ids" invisible="1" />
-                    
-                    <field name="state" widget="statusbar" statusbar_visible="draft,sent,confirmed"/>
+
+                    <field name="state" widget="statusbar" statusbar_visible="draft,sent,confirmed" />
                 </header>
 
                 <form style="padding-right:0; padding-left:0" invisible="state == 'draft'">
@@ -75,78 +86,127 @@
                     <header style="border: 0.3px solid #dee2e6;">
                         <field name="workflow_active_line_ids" invisible="1"
                             style="background-color: #c891aa" />
-                        <field name="allowed_workflow_ids" invisible="1"/>
-                        <field name="line_state" widget="statusbar" invisible="state != 'sent'"/>
+                        <field name="allowed_workflow_ids" invisible="1" />
+                        <field name="line_state" widget="statusbar" invisible="state != 'sent'" />
                         <button name="return_state" type="object" string="Return"
-                        invisible="not line_state or uid not in waiting_user_ids" class="btn-warning"/>
+                            invisible="not line_state or uid not in waiting_user_ids"
+                            class="btn-warning" />
                         <button name="confirm_state" type="object" string="Confirm"
-                            invisible="not line_state or uid not in waiting_user_ids" class="btn-success"/>
+                            invisible="not line_state or uid not in waiting_user_ids"
+                            class="btn-success" />
                     </header>
                 </form>
 
                 <sheet>
                     <h1>
-                        <label for="name"/>
-                        <field name="name"/>
+                        <label for="name" />
+                        <field name="name" />
                     </h1>
                     <group>
                         <group>
                             <group>
-                                <field name="dynamic_workflow_id" options="{'no_create':True}" required="1" readonly="state != 'draft'"/>
-                                <field name="start_date" readonly="state != 'draft'"/>
-                                <field name="end_date" readonly="state != 'draft'"/>
+                                <field name="dynamic_workflow_id" options="{'no_create':True}"
+                                    required="1" readonly="state != 'draft'" />
+                                <field name="start_date" readonly="state != 'draft'" />
+                                <field name="end_date" readonly="state != 'draft'" />
                             </group>
                         </group>
                         <group>
                             <group>
-                                <field name="company_id" readonly="state != 'draft'"/>
-                                <field name="department_id" readonly="state != 'draft'" widget="many2many_tags"/>
-                                <field name="struct_id" required="1" readonly="state != 'draft'" 
-                                                domain="[('company_id', '=', company_id)]"/>
+                                <field name="company_id" readonly="state != 'draft'" />
+                                <field name="department_id" readonly="state != 'draft'"
+                                    widget="many2many_tags" />
+                                <field name="struct_id" required="1" readonly="state != 'draft'"
+                                    domain="[('company_id', '=', company_id)]" />
                             </group>
                         </group>
                     </group>
 
                     <notebook>
                         <page string="Salary detail">
-                            <field name="line_ids" widget="payroll_sheet" readonly="1"/>
+                            <field name="line_ids" widget="payroll_sheet" readonly="1" />
                         </page>
                         <page string="Employee">
                             <field name="line_ids" readonly="state != 'draft'">
                                 <list>
-                                    <field name="number" readonly="1"/>
-                                    <field name="employee_id" options="{'no_create': True}" required="1" />
+                                    <field name="number" readonly="1" />
+                                    <field name="employee_id" options="{'no_create': True}"
+                                        required="1" />
                                     <field name="payroll_state" column_invisible="1" />
-                                    <button name="action_computebyQUERY" groups="llp_payroll.group_payroll_accountant" string="Get data" type="object" invisible="payroll_state != 'draft'"/>
-                                </list>
-                                <form>
-                                    <field name="payroll_state" invisible="1"/>
-                                    <button name="action_computebyQUERY" groups="llp_payroll.group_payroll_accountant" string="Get data" type="object" invisible="payroll_state != 'draft'"/>
-                                    <field name="employee_id"/>
-                                    <field name="rule_value_ids" readonly="1">
+                                    <field name="line_ids" readonly="1">
                                         <list>
-                                            <field name="payroll_rule_id"/>
-                                            <field name="rulefield_type" />
-                                            <field name="value"/>
-                                            <field name="char_value"/>
-                                            <field name="is_edit" invisible="1"/>
-                                            <field name="is_sum_view" invisible="1"/>
-                                            <field name="show_in_payroll" invisible="1"/>
-                                            <field name="sequence" invisible="1"/>
-                                            <field name="decimal_point" readonly="1"/>
-                                            <field name="is_debt_rule" readonly="1"/>
-                                            <field name="is_vacation_rule" readonly="1"/>
+                                            <field name="contract_id" options="{'no_create': True}" />
+                                            <field name="contract_start_date" readonly="1" />
+                                            <field name="contract_end_date" readonly="1" />
+                                            <field name="balance_lines" readonly="1" />
+                                            <field name="planing_lines" readonly="1" />
+
                                         </list>
                                         <form>
-                                            <field name="decimal_point" readonly='1'/>
-                                            <field name="payroll_rule_id"/>
-                                            <field name="show_in_payroll" invisible="1"/>
+                                            <field name="contract_id" options="{'no_create': True}" />
+                                            <field name="balance_lines" readonly="1" />
+                                            <field name="planing_lines" readonly="1" />
+                                        </form>
+                                    </field>
+                                    <button name="action_computebyQUERY"
+                                        groups="llp_payroll.group_payroll_accountant"
+                                        string="Get data" type="object"
+                                        invisible="payroll_state != 'draft'" />
+                                </list>
+                                <form>
+                                    <field name="payroll_state" invisible="1" />
+                                    <button name="action_computebyQUERY"
+                                        groups="llp_payroll.group_payroll_accountant"
+                                        string="Get data" type="object"
+                                        invisible="payroll_state != 'draft'" />
+                                    <field name="employee_id" />
+                                    <field name="employee_id" options="{'no_create': True}"
+                                        required="1" />
+                                    <field name="payroll_state" column_invisible="1" />
+                                    <field name="line_ids" readonly="1">
+                                        <list>
+                                            <field name="contract_id" options="{'no_create': True}" />
+                                            <field name="contract_start_date" readonly="1" />
+                                            <field name="contract_end_date" readonly="1" />
+                                            <field name="balance_lines" readonly="1" />
+                                            <field name="planing_lines" readonly="1" />
+
+                                        </list>
+                                        <form>
+                                            <field name="contract_id" options="{'no_create': True}" />
+                                            <field name="balance_lines" readonly="1">
+
+                                            </field>
+                                            <field name="planing_lines" readonly="1">
+                                            </field>
+                                        </form>
+                                    </field>
+                                    <field name="rule_value_ids" readonly="1">
+                                        <list>
+                                            <field name="payroll_rule_id" />
                                             <field name="rulefield_type" />
-                                            <field name="value"/>
-                                            <field name="char_value"/>
-                                            <field name="is_edit" invisible="1"/>
-                                            <field name="is_sum_view" invisible="1"/>
-                                            <field name="sequence" invisible="1"/>
+                                            <field name="value" />
+                                            <field name="char_value" />
+                                            <field name="is_edit" readonly="1" force_save="1" />
+                                            <field name="is_edited" readonly="1" force_save="1" />
+                                            <field name="is_sum_view" invisible="1" />
+                                            <field name="show_in_payroll" invisible="1" />
+                                            <field name="sequence" invisible="1" />
+                                            <field name="decimal_point" readonly="1" />
+                                            <field name="is_debt_rule" readonly="1" />
+                                            <field name="is_vacation_rule" readonly="1" />
+                                        </list>
+                                        <form>
+                                            <field name="decimal_point" readonly='1' />
+                                            <field name="payroll_rule_id" />
+                                            <field name="show_in_payroll" invisible="1" />
+                                            <field name="rulefield_type" />
+                                            <field name="value" />
+                                            <field name="char_value" />
+                                            <field name="is_edit" readonly="1" force_save="1" />
+                                            <field name="is_edited" readonly="1" force_save="1" />
+                                            <field name="is_sum_view" invisible="1" />
+                                            <field name="sequence" invisible="1" />
                                         </form>
                                     </field>
                                 </form>
@@ -202,7 +262,7 @@
                         </page>
                     </notebook>
                 </sheet>
-                <chatter reload_on_follower="True"/>
+                <chatter reload_on_follower="True" />
             </form>
         </field>
     </record>
