@@ -9,6 +9,20 @@ import logging
 from odoo.exceptions import UserError # type: ignore
 _logger = logging.getLogger(__name__)
 
+
+def _clean_value(val):
+    """
+    None, boolean False, эсвэл 'False' гэсэн текст (str) утга ирвэл
+    бүгдийг нь хоосон мөр болгож буцаана. Ингэснээр Excel руу export хийхэд
+    хоосон байх ёстой нүд 'False' гэж харагдахгүй.
+    """
+    if val is None or val is False:
+        return ''
+    if isinstance(val, str) and val.strip().lower() == 'false':
+        return ''
+    return val
+
+
 class LLPPayrollInsuranceImport(models.TransientModel):
     _name = 'llp.payroll.insurance.import'
 
@@ -205,7 +219,8 @@ class LLPPayrollInsuranceImport(models.TransientModel):
         field_count = 15
 
         for row_idx, row in enumerate(rows, start=1):
-            sheet.write(row_idx, 0, row[0] or '', cell_fmt)
+            # ЗАСВАР: хэлтэсийн нэр хоосон/None/'False' ирвэл '' болгож бичнэ
+            sheet.write(row_idx, 0, _clean_value(row[0]), cell_fmt)
 
             for i in range(field_count):
                 num_val = row[dept_offset + i * 2]
@@ -214,7 +229,8 @@ class LLPPayrollInsuranceImport(models.TransientModel):
                 if num_val is not None:
                     sheet.write_number(row_idx, col_idx, float(num_val), num_fmt)
                 else:
-                    sheet.write(row_idx, col_idx, char_val or '', cell_fmt)
+                    # ЗАСВАР: char утга None/False/'False' ирвэл '' болгож бичнэ
+                    sheet.write(row_idx, col_idx, _clean_value(char_val), cell_fmt)
 
         # 2. Дараа нь "Нийт" мөрийг ГАДНА, ТУСДАА нэг л удаа бичнэ
         total_row_idx = len(rows) + 1
@@ -235,7 +251,8 @@ class LLPPayrollInsuranceImport(models.TransientModel):
         current_dept = rows[0][0]
 
         def write_dept_block(s_row, e_row, dept_value):
-            dept_value = dept_value or ''
+            # ЗАСВАР: None/False/'False' ирвэл '' болгож бичнэ
+            dept_value = _clean_value(dept_value)
             if e_row > s_row:
                 sheet.merge_range(s_row, dept_col, e_row, dept_col, dept_value, dept_fmt)
             else:

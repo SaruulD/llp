@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <!-- ============================================================= -->
+    <!-- ЭРХИЙН БҮЛГҮҮД (res.groups)                                    -->
+    <!-- ============================================================= -->
     <record model="ir.module.category" id="module_llp_payroll">
         <field name="name">LLP Payroll</field>
         <field name="description">Helps you handle your payrolls.</field>
@@ -11,60 +14,223 @@
         <field name="category_id" ref="module_llp_payroll"/>
     </record>
 
-    <record id="group_payroll_admin" model="res.groups">
-        <field name="name">Цалин админ</field>
-        <field name="category_id" ref="module_llp_payroll"/>
-        <field name="implied_ids" eval="[(4, ref('llp_payroll.group_payroll_user'))]"/>
-    </record>
-
     <record id="group_payroll_accountant" model="res.groups">
         <field name="name">Цалин нягтлан</field>
         <field name="category_id" ref="module_llp_payroll"/>
         <field name="implied_ids" eval="[(4, ref('llp_payroll.group_payroll_user'))]"/>
     </record>
 
-    <record model="ir.rule" id="show_companys_payroll_debt">
-        <field name="name">Компанийхаа мэдээллийг харах - debt</field>
-        <field name="model_id" ref="model_llp_payroll_employee_debt"/>
-        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
-        <field name="groups" eval="[(4, ref('base.group_user'))]"/>
-    </record> 
+    <record id="group_payroll_exec_director" model="res.groups">
+        <field name="name">Гүйцэтгэх захирал</field>
+        <field name="category_id" ref="module_llp_payroll"/>
+        <field name="implied_ids" eval="[(4, ref('llp_payroll.group_payroll_user'))]"/>
+    </record>
 
-    <record model="ir.rule" id="show_companys_payroll">
-        <field name="name">Компанийхаа мэдээллийг харах</field>
+    <record id="group_payroll_hr_director" model="res.groups">
+        <field name="name">Хүний нөөцийн захирал</field>
+        <field name="category_id" ref="module_llp_payroll"/>
+        <field name="implied_ids" eval="[(4, ref('llp_payroll.group_payroll_user'))]"/>
+    </record>
+
+    <record id="group_payroll_admin" model="res.groups">
+        <field name="name">Цалин админ</field>
+        <field name="category_id" ref="module_llp_payroll"/>
+        <field name="implied_ids" eval="[(4, ref('llp_payroll.group_payroll_user'))]"/>
+    </record>
+
+    <record id="group_payroll_group_ceo" model="res.groups">
+        <field name="name">Группийн ГЗ</field>
+        <field name="category_id" ref="module_llp_payroll"/>
+        <field name="implied_ids" eval="[(4, ref('llp_payroll.group_payroll_user'))]"/>
+    </record>
+
+    <!-- ============================================================= -->
+    <!-- 1) ЦАЛИН БОДОЛТ, ТАЙЛАН (Цалин, Авлага, Зээл, Амралт, Тайлангууд) -->
+    <!--    з = зөвшөөрөгдсөн компанийхаа мэдээллийг харах                -->
+    <!--    б = бүх охин компанийн буюу бүх мэдээллийг харах              -->
+    <!-- ============================================================= -->
+    <record id="rule_payroll_payroll_assigned_company" model="ir.rule">
+        <field name="name">Цалин - зөвшөөрөгдсөн компани (з)</field>
         <field name="model_id" ref="model_llp_payroll"/>
-        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
-        <field name="groups" eval="[(4, ref('base.group_user'))]"/>
-    </record> 
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('llp_payroll.group_payroll_accountant')),
+                                     (4, ref('llp_payroll.group_payroll_exec_director'))]"/>
+    </record>
 
-    <record model="ir.rule" id="show_companys_payroll_vacation">
-        <field name="name">Компанийхаа мэдээллийг харах - vacaion</field>
+    <record id="rule_payroll_payroll_all_company" model="ir.rule">
+        <field name="name">Цалин - бүх компани (б)</field>
+        <field name="model_id" ref="model_llp_payroll"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('llp_payroll.group_payroll_admin')),
+                                     (4, ref('llp_payroll.group_payroll_hr_director')),
+                                     (4, ref('llp_payroll.group_payroll_group_ceo'))]"/>
+    </record>
+
+    <record id="rule_payroll_debt_assigned_company" model="ir.rule">
+        <field name="name">Авлага суутгал - зөвшөөрөгдсөн компани (з)</field>
+        <field name="model_id" ref="model_llp_payroll_employee_debt"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('llp_payroll.group_payroll_accountant')),
+                                     (4, ref('llp_payroll.group_payroll_exec_director'))]"/>
+    </record>
+
+    <record id="rule_payroll_debt_all_company" model="ir.rule">
+        <field name="name">Авлага суутгал - бүх компани (б)</field>
+        <field name="model_id" ref="model_llp_payroll_employee_debt"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('llp_payroll.group_payroll_admin')),
+                                     (4, ref('llp_payroll.group_payroll_hr_director')),
+                                     (4, ref('llp_payroll.group_payroll_group_ceo'))]"/>
+    </record>
+
+    <record id="rule_payroll_vacation_assigned_company" model="ir.rule">
+        <field name="name">Ээлжийн амралт - зөвшөөрөгдсөн компани (з)</field>
         <field name="model_id" ref="model_llp_payroll_employee_vacation"/>
-        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
-        <field name="groups" eval="[(4, ref('base.group_user'))]"/>
-    </record> 
-    <record model="ir.rule" id="show_companys_payroll_rule">
-        <field name="name">Компанийхаа мэдээллийг харах - rule</field>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('llp_payroll.group_payroll_accountant')),
+                                     (4, ref('llp_payroll.group_payroll_exec_director'))]"/>
+    </record>
+
+    <record id="rule_payroll_vacation_all_company" model="ir.rule">
+        <field name="name">Ээлжийн амралт - бүх компани (б)</field>
+        <field name="model_id" ref="model_llp_payroll_employee_vacation"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('llp_payroll.group_payroll_admin')),
+                                     (4, ref('llp_payroll.group_payroll_hr_director')),
+                                     (4, ref('llp_payroll.group_payroll_group_ceo'))]"/>
+    </record>
+
+    <record id="rule_payroll_salary_report_assigned_company" model="ir.rule">
+        <field name="name">Цалингийн тайлан - зөвшөөрөгдсөн компани (з)</field>
+        <field name="model_id" ref="model_llp_payroll_salary_report"/>
+        <field name="domain_force">['|', ('struct_id.company_id', '=', False), ('struct_id.company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('llp_payroll.group_payroll_accountant')),
+                                     (4, ref('llp_payroll.group_payroll_exec_director'))]"/>
+    </record>
+
+    <record id="rule_payroll_salary_report_all_company" model="ir.rule">
+        <field name="name">Цалингийн тайлан - бүх компани (б)</field>
+        <field name="model_id" ref="model_llp_payroll_salary_report"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('llp_payroll.group_payroll_admin')),
+                                     (4, ref('llp_payroll.group_payroll_hr_director')),
+                                     (4, ref('llp_payroll.group_payroll_group_ceo'))]"/>
+    </record>
+
+    <record id="rule_payroll_bank_report_assigned_company" model="ir.rule">
+        <field name="name">Банк руу өгөх тайлан - зөвшөөрөгдсөн компани (з)</field>
+        <field name="model_id" ref="model_llp_payroll_bank_report"/>
+        <field name="domain_force">['|', ('struct_id.company_id', '=', False), ('struct_id.company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('llp_payroll.group_payroll_accountant')),
+                                     (4, ref('llp_payroll.group_payroll_exec_director'))]"/>
+    </record>
+
+    <record id="rule_payroll_bank_report_all_company" model="ir.rule">
+        <field name="name">Банк руу өгөх тайлан - бүх компани (б)</field>
+        <field name="model_id" ref="model_llp_payroll_bank_report"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('llp_payroll.group_payroll_admin')),
+                                     (4, ref('llp_payroll.group_payroll_hr_director')),
+                                     (4, ref('llp_payroll.group_payroll_group_ceo'))]"/>
+    </record>
+
+    <record id="rule_payroll_insurance_import_assigned_company" model="ir.rule">
+        <field name="name">НД-руу импорт хийх - зөвшөөрөгдсөн компани (з)</field>
+        <field name="model_id" ref="model_llp_payroll_insurance_import"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('llp_payroll.group_payroll_accountant')),
+                                     (4, ref('llp_payroll.group_payroll_exec_director'))]"/>
+    </record>
+
+    <record id="rule_payroll_insurance_import_all_company" model="ir.rule">
+        <field name="name">НД-руу импорт хийх - бүх компани (б)</field>
+        <field name="model_id" ref="model_llp_payroll_insurance_import"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('llp_payroll.group_payroll_admin')),
+                                     (4, ref('llp_payroll.group_payroll_hr_director')),
+                                     (4, ref('llp_payroll.group_payroll_group_ceo'))]"/>
+    </record>
+
+    <record id="rule_payroll_income_tax_import_assigned_company" model="ir.rule">
+        <field name="name">ХХОАТ-руу импорт хийх - зөвшөөрөгдсөн компани (з)</field>
+        <field name="model_id" ref="model_llp_payroll_income_tax_import"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('llp_payroll.group_payroll_accountant')),
+                                     (4, ref('llp_payroll.group_payroll_exec_director'))]"/>
+    </record>
+
+    <record id="rule_payroll_income_tax_import_all_company" model="ir.rule">
+        <field name="name">ХХОАТ-руу импорт хийх - бүх компани (б)</field>
+        <field name="model_id" ref="model_llp_payroll_income_tax_import"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('llp_payroll.group_payroll_admin')),
+                                     (4, ref('llp_payroll.group_payroll_hr_director')),
+                                     (4, ref('llp_payroll.group_payroll_group_ceo'))]"/>
+    </record>
+
+    <!-- ============================================================= -->
+    <!-- 2) ТОХИРГОО (Цалингийн дүрэм, бүтэц, Дансны/Тайлангийн тохиргоо) -->
+    <!--    Гүйцэтгэх захирал, Группийн ГЗ энэ хэсэгт эрхгүй (хүснэгтэд   -->
+    <!--    хоосон байгаа тул)                                           -->
+    <!-- ============================================================= -->
+    <record id="rule_payroll_rule_assigned_company" model="ir.rule">
+        <field name="name">Цалингийн дүрэм - зөвшөөрөгдсөн компани (з)</field>
         <field name="model_id" ref="model_llp_payroll_rule"/>
-        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
-        <field name="groups" eval="[(4, ref('base.group_user'))]"/>
-    </record> 
-    <record model="ir.rule" id="show_companys_payroll_structure">
-        <field name="name">Компанийхаа мэдээллийг харах - structure</field>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('llp_payroll.group_payroll_accountant'))]"/>
+    </record>
+
+    <record id="rule_payroll_rule_all_company" model="ir.rule">
+        <field name="name">Цалингийн дүрэм - бүх компани (б)</field>
+        <field name="model_id" ref="model_llp_payroll_rule"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('llp_payroll.group_payroll_admin')),
+                                     (4, ref('llp_payroll.group_payroll_hr_director'))]"/>
+    </record>
+
+    <record id="rule_payroll_structure_assigned_company" model="ir.rule">
+        <field name="name">Цалингийн бүтэц - зөвшөөрөгдсөн компани (з)</field>
         <field name="model_id" ref="model_llp_payroll_structure"/>
-        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
-        <field name="groups" eval="[(4, ref('base.group_user'))]"/>
-    </record> 
-    <record model="ir.rule" id="show_companys_payroll_report">
-        <field name="name">Компанийхаа мэдээллийг харах - report</field>
-        <field name="model_id" ref="model_llp_payroll_report_config"/>
-        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
-        <field name="groups" eval="[(4, ref('base.group_user'))]"/>
-    </record> 
-    <record model="ir.rule" id="show_companys_payroll_unit">
-        <field name="name">Компанийхаа мэдээллийг харах - unit</field>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('llp_payroll.group_payroll_accountant'))]"/>
+    </record>
+
+    <record id="rule_payroll_structure_all_company" model="ir.rule">
+        <field name="name">Цалингийн бүтэц - бүх компани (б)</field>
+        <field name="model_id" ref="model_llp_payroll_structure"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('llp_payroll.group_payroll_admin')),
+                                     (4, ref('llp_payroll.group_payroll_hr_director'))]"/>
+    </record>
+
+    <record id="rule_payroll_unit_assigned_company" model="ir.rule">
+        <field name="name">Дансны тохиргоо - зөвшөөрөгдсөн компани (з)</field>
         <field name="model_id" ref="model_llp_payroll_unit"/>
-        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
-        <field name="groups" eval="[(4, ref('base.group_user'))]"/>
-    </record> 
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('llp_payroll.group_payroll_accountant'))]"/>
+    </record>
+
+    <record id="rule_payroll_unit_all_company" model="ir.rule">
+        <field name="name">Дансны тохиргоо - бүх компани (б)</field>
+        <field name="model_id" ref="model_llp_payroll_unit"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('llp_payroll.group_payroll_admin')),
+                                     (4, ref('llp_payroll.group_payroll_hr_director'))]"/>
+    </record>
+
+    <record id="rule_payroll_report_config_assigned_company" model="ir.rule">
+        <field name="name">Тайлангийн тохиргоо - зөвшөөрөгдсөн компани (з)</field>
+        <field name="model_id" ref="model_llp_payroll_report_config"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('llp_payroll.group_payroll_accountant'))]"/>
+    </record>
+
+    <record id="rule_payroll_report_config_all_company" model="ir.rule">
+        <field name="name">Тайлангийн тохиргоо - бүх компани (б)</field>
+        <field name="model_id" ref="model_llp_payroll_report_config"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('llp_payroll.group_payroll_admin')),
+                                     (4, ref('llp_payroll.group_payroll_hr_director'))]"/>
+    </record>
+
 </odoo>
