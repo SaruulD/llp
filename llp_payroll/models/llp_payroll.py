@@ -9,6 +9,28 @@ from operator import itemgetter
 from odoo.tools.safe_eval import safe_eval # type: ignore
 import base64
 
+
+class _SummedRecordset:
+    """Дүрмийн python_code дотор ганц мөр мэт (object.field) хандахад,
+    доор нь олон мөр (жишээ нь өдөр тутмын time.planing.lines) байвал
+    тоон талбаруудыг нийлбэрээр нь буцаана; бусад бүх хандалт (метод
+    дуудлага, ганц мөрийн үед талбарт хандах гэх мэт) шууд recordset
+    рүү дамжина."""
+
+    def __init__(self, records):
+        self._records = records
+
+    def __getattr__(self, name):
+        if len(self._records) > 1:
+            field = self._records._fields.get(name)
+            if field and field.type in ('integer', 'float', 'monetary'):
+                return sum(self._records.mapped(name))
+        return getattr(self._records, name)
+
+    def __bool__(self):
+        return bool(self._records)
+
+
 class LLPPayroll(models.Model):
     _name = 'llp.payroll'
     _inherit = ['mail.thread']
@@ -471,10 +493,8 @@ class LLPPayroll(models.Model):
 
     def action_get_data(self):
         for pay in self:
-            emp_domain = [('active', '=', True)]
+            emp_domain = []
  
-            # Хэлтэс сонгосон бол зөвхөн тэдгээр хэлтсийн ажилтныг,
-            # сонгоогүй бол тухайн компанийн бүх ажилтныг авна.
             if pay.department_id:
                 emp_domain.append(('department_id', 'in', pay.department_id.ids))
  
@@ -487,24 +507,128 @@ class LLPPayroll(models.Model):
                 ('state', 'in', ['open','close']),
                 '|',
                     ('date_end', '=', False),
-                    ('date_end', '>=', pay.start_date),
-                    ('state', 'in', ['open','close']),
+                    '&', ('date_end', '>=', pay.start_date), ('date_end', '<=', pay.end_date),
             ])
             emp_domain.append(('id', 'in', contracts.employee_id.ids))
 
-            employee_ids = self.env['hr.employee'].search(emp_domain)
- 
-            # Дахин татахад өмнөх мөрүүд (болон cascade-аар устах
-            # rule_value_ids)-ийг устгаад, шинээр татсан мэдээллээр
-            # дахин үүсгэнэ.
+            employee_ids = self.env['hr.employee'].with_context(active_test=False).search(emp_domain)
             pay.line_ids.unlink()
  
             lines = []
             number = 1
- 
+            additional_lines = []
             for employee in employee_ids:
                     rules = []
+                    additional_lines = []
+                    if pay.struct_id.struct_type == 'salary_late':
+                        emp_contracts = contracts.filtered(
+                            lambda c: c.employee_id.id == employee.id
+                        ).sorted('date_start')
+                        for contract in emp_contracts:
+                            if contract.state =='close':
+                                contract_vals = {'contract_id': contract.id}
+                                end_bound = contract.date_end or pay.end_date
+                                contract_dep = contract.department_id.id
+                                balance_lines = self.env['time.balance.line'].search([
+                                    ('employee_id', '=', employee.id),
+                                    ('date_from', '>=', pay.start_date),
+                                    ('date_to', '<=', pay.end_date),
+                                    ('department_id', '=', contract_dep),
+                                    ('type', '=', 'final'),
+                                    ('state','=','accountant'),
+                                ])
+                                contract_vals['balance_lines'] = [(6, 0, balance_lines.ids)]
+                                planing_start = max(contract.date_start, pay.start_date)
+                                planing_end = min(end_bound, pay.end_date)
+                                self.env.cr.execute(
+                                    "select tpls.id from time_planing_lines tpls "
+                                    "inner join time_planing_line tpl ON tpl.id = tpls.parent_id "
+                                    "where tpls.employee_id = %s "
+                                    "and tpls.date >= %s and tpls.date <= %s",
+                                    (employee.id, planing_start, planing_end)
+                                )
+                                contract_vals['planing_lines'] = [(6, 0, [row[0] for row in self.env.cr.fetchall()])]
 
+                                additional_lines.append((0, 0, contract_vals))
+
+                            else:
+                                contract_vals = {'contract_id': contract.id}
+                                contract_dep = contract.department_id.id
+                                balance_lines = self.env['time.balance.line'].search([
+                                    ('employee_id', '=', employee.id),
+                                    ('department_id', '=', contract_dep),
+                                    ('date_from', '>=', pay.start_date),
+                                    ('date_to', '<=', pay.end_date),
+                                    ('type', '=', 'final'),
+                                    ('state','=','accountant')
+                                ])
+                                contract_vals['balance_lines'] = [(6, 0, balance_lines.ids)]
+                                planing_start = max(contract.date_start, pay.start_date)
+                                planing_end = min(contract.date_end or pay.end_date, pay.end_date)
+                                self.env.cr.execute(
+                                    "select tpls.id from time_planing_lines tpls "
+                                    "inner join time_planing_line tpl ON tpl.id = tpls.parent_id "
+                                    "where tpls.employee_id = %s and tpl.state in ('done','lock') "
+                                    "and tpls.date >= %s and tpls.date <= %s",
+                                    (employee.id, planing_start, planing_end)
+                                )
+                                contract_vals['planing_lines'] = [(6, 0, [row[0] for row in self.env.cr.fetchall()])]
+                                additional_lines.append((0, 0, contract_vals))
+                    if self.struct_id.struct_type=='salary_advance':
+                        emp_contracts = contracts.filtered(
+                            lambda c: c.employee_id.id == employee.id
+                        ).sorted('date_start')
+                        print('emp_contracts',emp_contracts)
+                        for contract in emp_contracts:
+                            if contract.state =='close':
+                                contract_vals = {'contract_id': contract.id}
+                                end_bound = contract.date_end or pay.end_date
+                                contract_dep = contract.department_id.id
+                                balance_lines = self.env['time.balance.line'].search([
+                                    ('employee_id', '=', employee.id),
+                                    ('date_from', '>=', pay.start_date),
+                                    ('date_to', '<=', pay.end_date),
+                                    ('department_id', '=', contract_dep),
+                                    ('type', '=', 'advance'),
+                                    ('state','=','accountant'),
+                                ])
+                                contract_vals['balance_lines'] = [(6, 0, balance_lines.ids)]
+                                planing_start = max(contract.date_start, pay.start_date)
+                                planing_end = min(end_bound, pay.end_date)
+                                self.env.cr.execute(
+                                    "select tpls.id from time_planing_lines tpls "
+                                    "inner join time_planing_line tpl ON tpl.id = tpls.parent_id "
+                                    "where tpls.employee_id = %s "
+                                    "and tpls.date >= %s and tpls.date <= %s",
+                                    (employee.id, planing_start, planing_end)
+                                )
+                                contract_vals['planing_lines'] = [(6, 0, [row[0] for row in self.env.cr.fetchall()])]
+
+                                additional_lines.append((0, 0, contract_vals))
+
+                            else:
+                                contract_vals = {'contract_id': contract.id}
+                                contract_dep = contract.department_id.id
+                                balance_lines = self.env['time.balance.line'].search([
+                                    ('employee_id', '=', employee.id),
+                                    ('department_id', '=', contract_dep),
+                                    ('date_from', '>=', pay.start_date),
+                                    ('date_to', '<=', pay.end_date),
+                                    ('type', '=', 'advance'),
+                                    ('state','=','accountant')
+                                ])
+                                contract_vals['balance_lines'] = [(6, 0, balance_lines.ids)]
+                                planing_start = max(contract.date_start, pay.start_date)
+                                planing_end = min(contract.date_end or pay.end_date, pay.end_date)
+                                self.env.cr.execute(
+                                    "select tpls.id from time_planing_lines tpls "
+                                    "inner join time_planing_line tpl ON tpl.id = tpls.parent_id "
+                                    "where tpls.employee_id = %s and tpl.state in ('done','lock') "
+                                    "and tpls.date >= %s and tpls.date <= %s",
+                                    (employee.id, planing_start, planing_end)
+                                )
+                                contract_vals['planing_lines'] = [(6, 0, [row[0] for row in self.env.cr.fetchall()])]
+                                additional_lines.append((0, 0, contract_vals))
                     for line in pay.struct_id.line_ids:
                         is_edit = line.rule_id.ruleview_type == 'edit'
                         python_code = line.rule_id.python_code or ''
@@ -547,6 +671,7 @@ class LLPPayroll(models.Model):
                         'number': number,
                         'rule_value_ids': rules,
                         'employee_id': employee.id,
+                        'line_ids': additional_lines,
                     }))
 
                     number += 1
@@ -554,7 +679,7 @@ class LLPPayroll(models.Model):
             if lines:
                 pay.write({'line_ids': lines})
  
-            pay.action_computebyQUERY()
+            # pay.action_computebyQUERY()
  
         return {'type': 'ir.actions.client', 'tag': 'reload'}
 
@@ -617,7 +742,6 @@ class LLPPayroll(models.Model):
                 formulas[group]['rules'][group1]['employees'][group2]['line_id'] = dic['line_id']
                 formulas[group]['rules'][group1]['employees'][group2]['is_edited'] = dic['is_edited']
 
-        # ★ Алдааг цуглуулах жагсаалт
         errors_by_rule = {}  # {rule_code: {'error': str, 'python_code': str, 'count': int}} 
         employee_errors = []
 
@@ -632,24 +756,44 @@ class LLPPayroll(models.Model):
                             rule = self.env['llp.payroll.rule.value'].browse(emp['rule_value_id'])
 
                         if ruled['rule_type'] == 'code':
-                            # ★ Энэ ажилтан/дүрэм дээрх бүх SQL/eval-ийг savepoint дотор хийнэ.
-                            #   Алдаа гарвал зөвхөн энэ хэсэг rollback хийгдэж, гаднах
-                            #   transaction нь эвдрэлгүй үргэлжилнэ (InFailedSqlTransaction-оос сэргийлнэ).
                             try:
                                 with self.env.cr.savepoint():
                                     value = 0
                                     python_code = ruled['python_code']
                                     object = {}
+                                    iteration_objects = None
+                                    line_ids = []
+                                    balance_lines = self.env['time.balance.line']
                                     object_base_type = object_type_base_map.get(ruled['object_type'], ruled['object_type'])
 
                                     if object_base_type == 'contract':
-                                        object = self.env['hr.contract'].search([
-                                                ('employee_id', '=', emp['employee']),
-                                                ('date_start', '<=', self.end_date),
-                                                '|',
-                                                    ('date_end', '=', False),
-                                                    ('date_end', '>=', self.start_date),
-                                            ], limit=1)
+                                        addtl_lines = self.env['llp.payroll.line'].browse(emp['line_id']).line_ids.filtered('contract_id')
+                                        needs_per_contract = (
+                                            ruled['rulefield_type'] == 'digit'
+                                            and (
+                                                bool(re.search(r'\bplaning_lines\b', python_code))
+                                                or bool(re.search(r'\bbalance_lines\b', python_code))
+                                            )
+                                        )
+
+                                        if needs_per_contract and addtl_lines:
+                                            iteration_objects = [
+                                                (l.contract_id, l.planing_lines, l.planing_lines.ids, l.balance_lines)
+                                                for l in addtl_lines
+                                            ]
+                                        else:
+                                            open_lines = addtl_lines.filtered(lambda l: l.contract_id.state == 'open')
+                                            if open_lines:
+                                                object = _SummedRecordset(open_lines.mapped('contract_id'))
+                                            else:
+                                                object = self.env['hr.contract'].search([
+                                                    ('employee_id', '=', emp['employee']),
+                                                    ('date_start', '<=', self.end_date),
+                                                    '|',
+                                                        ('date_end', '=', False),
+                                                        ('date_end', '>=', self.start_date),
+                                                ], limit=1)
+
                                     elif object_base_type == 'vacation':
                                         self.env.cr.execute(
                                             "select B.id from llp_payroll_employee_vacation A "
@@ -678,26 +822,71 @@ class LLPPayroll(models.Model):
 
                                     elif object_base_type == 'attendance':
                                         object = {}
-                                        query = "select tbl.id from time_balance tb \
-                                            inner join time_balance_line tbl ON tb.id=tbl.balance_id \
-                                            where tb.state = 'accountant' and tbl.employee_id = %s and tb.date_from<='%s' \
-                                            AND tb.date_to>='%s'"%(emp['employee'],self.start_date, self.end_date,)
-                                        self.env.cr.execute(query)
-                                        fetch = self.env.cr.fetchone()
-                                        if fetch and fetch[0]:
-                                            object = self.env['time.balance.line'].browse(fetch[0])
+                                        if self.struct_id.struct_type=='salary_late':
+                                            self.env.cr.execute(
+                                                "select tpls.id from time_planing_lines tpls "
+                                                "inner join time_planing_line tpl ON tpl.id = tpls.parent_id "
+                                                "where tpls.employee_id = %s and tpl.state in ('done','lock') "
+                                                "and tpl.date_from <= %s and tpl.date_to >= %s",
+                                                (emp['employee'], self.end_date, self.start_date)
+                                            )
+                                            ids = [row[0] for row in self.env.cr.fetchall()]
+                                            line_ids = ids
+                                            # planing_lines-аас шууд бодохгүй, батлагдсан
+                                            # (state='accountant') time_balance-аас авна.
+                                            self.env.cr.execute(
+                                                "select tbl.id from time_balance tb "
+                                                "inner join time_balance_line tbl ON tb.id=tbl.balance_id "
+                                                "where tb.state = 'accountant' and tbl.employee_id = %s "
+                                                "and tb.date_from <= %s and tb.date_to >= %s",
+                                                (emp['employee'], self.start_date, self.end_date)
+                                            )
+                                            balance_line_ids = [row[0] for row in self.env.cr.fetchall()]
+                                            if not balance_line_ids:
+                                                # Бүтэн хугацааг хамарсан батлагдсан time_balance олдоогүй
+                                                # бол хугацаа давхацсан ямар ч батлагдсан time_balance-аас авна.
+                                                self.env.cr.execute(
+                                                    "select tbl.id from time_balance tb "
+                                                    "inner join time_balance_line tbl ON tb.id=tbl.balance_id "
+                                                    "where tb.state = 'accountant' and tbl.employee_id = %s "
+                                                    "and tb.date_from <= %s and tb.date_to >= %s",
+                                                    (emp['employee'], self.end_date, self.start_date)
+                                                )
+                                                balance_line_ids = [row[0] for row in self.env.cr.fetchall()]
+                                            if balance_line_ids:
+                                                balance_lines = self.env['time.balance.line'].browse(balance_line_ids)
+                                                object = _SummedRecordset(balance_lines)
+                                        if self.struct_id.struct_type=='salary_advance':
+                                            self.env.cr.execute(
+                                                "select tpls.id from time_planing_lines tpls "
+                                                "inner join time_planing_line tpl ON tpl.id = tpls.parent_id "
+                                                "where tpls.employee_id = %s and tpl.state in ('done','lock') "
+                                                "and tpl.date_from <= %s and tpl.date_to >= %s",
+                                                (emp['employee'], self.end_date, self.start_date)
+                                            )
+                                            ids = [row[0] for row in self.env.cr.fetchall()]
+                                            line_ids = ids
+                                            self.env.cr.execute(
+                                                "select tbl.id from time_balance tb "
+                                                "inner join time_balance_line tbl ON tb.id=tbl.balance_id "
+                                                "where tb.state = 'accountant' and tbl.employee_id = %s "
+                                                "and tb.type = 'advance' "
+                                                "and tb.date_from <= %s and tb.date_to >= %s",
+                                                (emp['employee'], self.end_date, self.start_date)
+                                            )
+                                            balance_line_ids = [row[0] for row in self.env.cr.fetchall()]
+                                            if balance_line_ids:
+                                                balance_lines = self.env['time.balance.line'].browse(balance_line_ids)
+                                                object = _SummedRecordset(balance_lines)
+
                                     elif object_base_type == 'kpi':
                                         object = {}
                                     elif ruled['object_type'] == 'employee':
                                         object = self.env['hr.employee'].browse(emp['employee'])
 
-                                    # ★ underscore-той код (жишээ нь OZ_E)-ийг таних болгож regex-ийг сайжруулав
                                     rule_codes = re.findall(r'\b[A-Za-z_][A-Za-z0-9_]*\b', str(python_code))
 
                                     if rule_codes:
-                                        # ★ Зөвхөн одоогийн structure-д ашиглагдаж буй rule-ийн
-                                        #    code-уудыг л орлуулна (өөр structure-ийн ижил
-                                        #    нэртэй rule-ийн утга орж ирэхээс сэргийлнэ)
                                         where = "where A.line_id = %s and F2.struct_id = %s " % (
                                             emp['line_id'], self.struct_id.id
                                         )
@@ -718,8 +907,6 @@ class LLPPayroll(models.Model):
                                         fetchedAll = self.env.cr.dictfetchall()
 
                                         if fetchedAll:
-                                            # ★ Урт кодыг эхэлж орлуулна (жиш: OZ_E, OZ хоёул байвал
-                                            #    OZ-г эхэлж орлуулбал OZ_E эвдэрнэ)
                                             for fetched in sorted(fetchedAll, key=lambda x: len(x['code']), reverse=True):
                                                 if fetched['rulefield_type'] == 'sign':
                                                     python_code = python_code.replace(fetched['code'], repr(fetched['char_value'] or ''))
@@ -737,15 +924,11 @@ class LLPPayroll(models.Model):
                                             if value is None:
                                                 value = 0
                                         except Exception as e_prev:
-                                            # ★ Попап дээр огт харуулахгүй — зөвхөн log
                                             _logger.info(
                                                 "Payroll: from_previous_payroll error (харуулахгүй) - rule: %s, employee: %s, error: %s",
                                                 ruled['code'], emp['employee'], e_prev
                                             )
                                             value = 0
-
-                                        # ★ Амжилттай эсэхээс үл хамааран (0 ч бай, бодит
-                                        #   утга ч бай) DB рүү нэг л удаа бичнэ.
                                         if emp['is_edited'] == False:
                                             self.env.cr.execute(
                                                 "update llp_payroll_rule_value set value=%s where id=%s",
@@ -753,17 +936,34 @@ class LLPPayroll(models.Model):
                                             )
 
                                     else:
-                                        # ★ Зөвхөн 'from_previous_payroll' биш дүрмүүд л
-                                        #   safe_eval/eval-ээр тооцоологдоно. Эсрэг тохиолдолд
-                                        #   дээрх get_from_previous_payroll-ийн python_code
-                                        #   (жишээ нь зүгээр л 'SA1' гэсэн нэр) энд дахин
-                                        #   eval хийгдэж NameError өгдөг байсныг засав.
-                                        if rule:
+                                        if iteration_objects is not None:
+                                            value = 0
+                                            for contract_obj, planing_lines_rs, contract_line_ids, contract_balance_lines in iteration_objects:
+                                                local_dict = {
+                                                    'rule': rule,
+                                                    'object': contract_obj,
+                                                    'planing_lines': planing_lines_rs,
+                                                    'payroll_start_date': self.start_date,
+                                                    'payroll_end_date': self.end_date,
+                                                    'line_ids': contract_line_ids,
+                                                    'balance_lines': contract_balance_lines,
+                                                }
+                                                safe_eval(python_code, local_dict, mode="exec", nocopy=True)
+                                                iter_value = local_dict.get('result')
+                                                if isinstance(iter_value, (tuple, list)):
+                                                    raise UserError(_(
+                                                        "Томьёо tuple/list утга буцаалаа: %r"
+                                                    ) % (iter_value,))
+                                                value += (iter_value or 0)
+                                        elif rule:
                                             local_dict = {
                                                 'rule': rule,
                                                 'object': object,
+                                                'planing_lines': self.env['time.planing.lines'],
                                                 'payroll_start_date': self.start_date,
                                                 'payroll_end_date': self.end_date,
+                                                'line_ids': line_ids,
+                                                'balance_lines': balance_lines,
                                             }
                                             safe_eval(python_code, local_dict, mode="exec", nocopy=True)
                                             value = local_dict.get('result')
@@ -791,22 +991,12 @@ class LLPPayroll(models.Model):
                                                 )
                             except Exception as e:
                                 if isinstance(e, ZeroDivisionError):
-                                    # ★ Хуваагч тухайн ажилтан дээр 0 байх нь хэвийн
-                                    #   тохиолдол. Алдаа биш тул хэрэглэгчид огт
-                                    #   харуулахгүй, зөвхөн log-д тэмдэглээд өнгөрнө.
                                     _logger.info(
                                         "Payroll: zero division (хэвийн, харуулахгүй) - rule: %s, employee: %s",
                                         ruled['code'], emp['employee']
                                     )
 
-                                elif object_type_base_map.get(ruled['object_type'], ruled['object_type']) in ('attendance', 'vacation', 'debt'):
-                                    # ★ 'attendance'/'vacation'/'debt' төрлийн дүрэгт
-                                    #   тухайн ажилтанд харгалзах бичлэг (цагийн
-                                    #   бүртгэл, амралт, зээл) олдоогүй үед object
-                                    #   нь хоосон dict ({}) болдог тул object.xxx
-                                    #   хандалт хийхэд AttributeError гэх мэт алдаа
-                                    #   гарах нь хэвийн тохиолдол. Попап дээр огт
-                                    #   харуулахгүй, зөвхөн log-д тэмдэглэнэ.
+                                elif object_type_base_map.get(ruled['object_type'], ruled['object_type']) == 'attendance':
                                     _logger.info(
                                         "Payroll: %s object error (хэвийн, харуулахгүй) - rule: %s, employee: %s, error: %s",
                                         object_type_base_map.get(ruled['object_type'], ruled['object_type']),
@@ -830,11 +1020,6 @@ class LLPPayroll(models.Model):
                                     )
 
                                 else:
-                                    # ★ Бусад алдаа (AttributeError, KeyError, ValueError
-                                    #   гэх мэт) — ихэвчлэн тухайн ажилтны өгөгдөл
-                                    #   дутуу/буруутай холбоотой (жишээ нь холбогдох
-                                    #   contract/insurance гэх мэт record олдоогүй),
-                                    #   тиймээс ажилтнаар тусад нь харуулна.
                                     try:
                                         emp_rec = self.env['hr.employee'].browse(emp['employee'])
                                         emp_name = emp_rec.name or ('ID %s' % emp['employee'])
@@ -857,7 +1042,6 @@ class LLPPayroll(models.Model):
                                         ruled['code'], emp_name, e, ruled['python_code']
                                     )
 
-                                # Алдаатай утгыг 0/False болгоно (бүх төрлийн алдааны хувьд адилхан)
                                 try:
                                     with self.env.cr.savepoint():
                                         if ruled['rulefield_type'] == 'digit':
@@ -900,15 +1084,7 @@ class LLPPayroll(models.Model):
                                         ruled['code'], emp['employee'], e
                                     )
             self.env.cr.commit()
-        # ★ Амжилттай тооцоологдсон утгуудыг ХАДГАЛСАН ХЭВЭЭР (commit хийгдсэн)
-        #    үлдээгээд, дүрмийн алдаа болон ажилтны алдааг тусад нь харуулна.
-        #    ZeroDivisionError аль алинд нь ороогүй — зөвхөн log-д бичигдэнэ.
         if errors_by_rule or employee_errors:
-            # ★ Ижил дүрэм дээр олон ажилтанд яг адилхан алдааны текст давтагдвал,
-            #    энэ нь ихэвчлэн тухайн ажилтны өгөгдлийн асуудал биш, харин
-            #    дүрмийн python_code өөрөө буруу бичигдсэнээс болсон байдаг тул
-            #    дүрмийн алдааны хэсэг рүү нэгтгэж шилжүүлнэ (олон давхардсан
-            #    ажилтны мөр биш, 1 мөрөөр л харуулна).
             DUPLICATE_THRESHOLD = 3
             grouped = {}
             for item in employee_errors:
@@ -963,8 +1139,6 @@ class LLPPayroll(models.Model):
                             rule_display, item['employee']
                         )
                     )
-                    # ★ Энд дахин log хийхгүй — доор exception барих цэг дээр
-                    #   (rule/employee/error) аль хэдийн бүрэн бичигдсэн байдаг.
 
                 extra_emp = ''
                 if len(employee_errors) > max_show_emp:
@@ -980,18 +1154,7 @@ class LLPPayroll(models.Model):
                 )
 
             raise UserError(_("Тооцоолол дуусав.\n\n") + '\n\n'.join(message_parts))
-            # full_message = _("Тооцоолол дуусав.\n\n") + '\n\n'.join(message_parts)
-            # return {
-            #     'type': 'ir.actions.client',
-            #     'tag': 'display_notification',
-            #     'params': {
-            #         'title': _('Анхаар'),
-            #         'message': full_message,
-            #         'type': 'warning',
-            #         'sticky': True,  # гараар хаах хүртэл дэлгэц дээр үлдэнэ
-            #         'next': {'type': 'ir.actions.client', 'tag': 'reload'},
-            #     }
-            # }
+        
     def get_from_previous_payroll(self,employee_id,code,start_date, end_date):
         value = 0.0
 
@@ -1042,6 +1205,8 @@ class LLPPayrollLine(models.Model):
     rule_value_ids = fields.One2many('llp.payroll.rule.value','line_id', string="Value")
     number = fields.Integer(string='№')
     payroll_state = fields.Selection(related='payroll_id.state', string="Payroll State", store=False)
+    line_ids  = fields.One2many('llp.payroll.line.addtional','payroll_line_id', string="Additional Lines")
+    
     def action_computebyQUERY(self):
         return
 
@@ -1116,10 +1281,11 @@ class LLPPayrollLine(models.Model):
                     if [struct.rule_id.id,struct.rule_id.name] not in rules:
                         rules.append([
                             struct.rule_id.id,
-                            struct.rule_id.name+' '+struct.rule_id.code, 
-                            bool(struct.rule_id.is_show_sum), 
-                            struct.rule_id.rulefield_type, 
-                            struct.rule_id.ruleview_type
+                            struct.rule_id.name,
+                            bool(struct.rule_id.is_show_sum),
+                            struct.rule_id.rulefield_type,
+                            struct.rule_id.ruleview_type,
+                            struct.rule_id.code,
                         ])
 
         lines.update({
@@ -1134,40 +1300,45 @@ class LLPPayrollLine(models.Model):
             })
         return lines
     
+    @api.model
+    def update_value(self, rule_value_id, value):
+        rule_value = self.env['llp.payroll.rule.value'].browse(rule_value_id)
+        # digit / from_previous_payroll -> тоон 'value' талбарт,
+        # бусад (жишээ нь 'sign') -> текст 'char_value' талбарт хадгална
+        if rule_value.rulefield_type in ('digit', 'from_previous_payroll'):
+            rule_value.write({'value': value, 'is_edited': True})
+        else:
+            rule_value.write({'char_value': value, 'is_edited': True})
+        return True
     # @api.model
     # def update_value(self, rule_value_id, value):
     #     rule_value = self.env['llp.payroll.rule.value'].browse(rule_value_id)
-    #     # digit / from_previous_payroll -> тоон 'value' талбарт,
-    #     # бусад (жишээ нь 'sign') -> текст 'char_value' талбарт хадгална
+    #     current_type = rule_value.payroll_rule_id.rulefield_type  # дүрмийн одоогийн бодит төрөл
+
+    #     vals = {'is_edited': True}
+
+    #     if current_type in ('digit', 'from_previous_payroll'):
+    #         try:
+    #             vals['value'] = float(value or 0.0)
+    #         except (TypeError, ValueError):
+    #             raise UserError(_(
+    #                 "'%s' гэсэн утга буруу байна. '%s' дүрэм зөвхөн тоон утга авдаг."
+    #             ) % (value, rule_value.payroll_rule_id.name))
+    #     else:
+    #         vals['char_value'] = str(value) if value else ''
+
+    #     # rule_value дээрх хуучирсан snapshot-ыг мөн шинэчилж, дараагийн удаа
+    #     # ижил алдаа гарахаас сэргийлнэ
+    #     if rule_value.rulefield_type != current_type:
+    #         vals['rulefield_type'] = current_type
+        
+
+    #     rule_value.write(vals)
     #     if rule_value.rulefield_type in ('digit', 'from_previous_payroll'):
     #         rule_value.write({'value': value, 'is_edited': True})
     #     else:
     #         rule_value.write({'char_value': value, 'is_edited': True})
     #     return True
-    @api.model
-    def update_value(self, rule_value_id, value):
-        rule_value = self.env['llp.payroll.rule.value'].browse(rule_value_id)
-        current_type = rule_value.payroll_rule_id.rulefield_type  # дүрмийн одоогийн бодит төрөл
-
-        vals = {'is_edited': True}
-
-        if current_type in ('digit', 'from_previous_payroll'):
-            try:
-                vals['value'] = float(value or 0.0)
-            except (TypeError, ValueError):
-                raise UserError(_(
-                    "'%s' гэсэн утга буруу байна. '%s' дүрэм зөвхөн тоон утга авдаг."
-                ) % (value, rule_value.payroll_rule_id.name))
-        else:
-            vals['char_value'] = str(value) if value else ''
-
-        # rule_value дээрх хуучирсан snapshot-ыг мөн шинэчилж, дараагийн удаа
-        # ижил алдаа гарахаас сэргийлнэ
-        if rule_value.rulefield_type != current_type:
-            vals['rulefield_type'] = current_type
-
-        rule_value.write(vals)
-        return True
 
 class LLPPayrollRuleValue(models.Model):
     _name = 'llp.payroll.rule.value'
@@ -1269,3 +1440,15 @@ class PayrollPaymentHistory(models.Model):
         readonly=True
     )
     payroll_id = fields.Many2one('llp.payroll', string="Payroll")
+    
+class LLPPayrollLineAddtional(models.Model):
+    _name = 'llp.payroll.line.addtional'
+    _description = "LLP payroll line addtional"
+
+    payroll_line_id = fields.Many2one('llp.payroll.line', string="Payroll Line", ondelete='cascade', index=True)
+    employee_id = fields.Many2one('hr.employee', string="Employee", related="payroll_line_id.employee_id", store=True, index=True)
+    contract_id = fields.Many2one('hr.contract', string="Contract", ondelete='restrict', index=True)
+    contract_start_date = fields.Date(string="Contract Start Date", related="contract_id.date_start", store=True, index=True)
+    contract_end_date = fields.Date(string="Contract End Date", related="contract_id.date_end", store=True, index=True)
+    balance_lines = fields.Many2many('time.balance.line', string="Balance Lines")
+    planing_lines = fields.Many2many('time.planing.lines', string="Planing Lines")
