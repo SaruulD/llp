@@ -679,7 +679,7 @@ class LLPPayroll(models.Model):
             if lines:
                 pay.write({'line_ids': lines})
  
-            # pay.action_computebyQUERY()
+            pay.action_computebyQUERY()
  
         return {'type': 'ir.actions.client', 'tag': 'reload'}
 
