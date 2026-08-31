@@ -1,24 +1,41 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
     <t t-name="llp_payroll.PayrollSheetField">
         <div class="o_payroll_sheet">
+            <div class="o_payroll_search mb-2 d-flex gap-2">
+                <input type="text"
+                    t-att-value="state.searchTerm"
+                    t-on-input="onSearchInput"
+                    placeholder="Ажилтнаар хайх..."
+                    class="form-control form-control-sm"
+                    style="max-width:260px;"/>
+                <input type="text"
+                    t-att-value="state.columnSearchTerm"
+                    t-on-input="onColumnSearchInput"
+                    placeholder="Баганаар хайх..."
+                    class="form-control form-control-sm"
+                    style="max-width:260px;"/>
+            </div>
             <div class="o_payroll_scroll">
                 <table class="o_payroll_table table table-sm">
                     <thead>
                         <tr>
                             <th class="o_pf_col1">№</th>
                             <th class="o_pf_col2">Employee</th>
-                            <t t-foreach="state.rules" t-as="rule" t-key="rule[0]">
+                            <t t-foreach="getFilteredRules()" t-as="rule" t-key="rule[0]">
                                 <th>
                                     <a t-on-click="() => goToRule(rule[0])" href="javascript:void(0)">
                                         <t t-esc="rule[1]"/>
+                                        <t t-if="rule[5]">
+                                            <span style="color:#2765F5;"> <t t-esc="rule[5]"/></span>
+                                        </t>
                                     </a>
                                 </th>
                             </t>
                         </tr>
                     </thead>
                     <tbody>
-                        <t t-foreach="state.employees" t-as="emp" t-key="emp[0]">
+                        <t t-foreach="getFilteredEmployees()" t-as="emp" t-key="emp[0]">
                             <tr>
                                 <td class="o_pf_col1"><t t-esc="emp_index + 1"/></td>
                                 <td class="o_pf_col2">
@@ -26,7 +43,7 @@
                                         <t t-esc="emp[1]"/>
                                     </a>
                                 </td>
-                                <t t-foreach="state.rules" t-as="rule" t-key="emp[0] + '-' + rule[0]">
+                                <t t-foreach="getFilteredRules()" t-as="rule" t-key="emp[0] + '-' + rule[0]">
                                     <td>
                                         <t t-set="v" t-value="state.employee_values?.[emp[0]]?.[rule[0]]"/>
                                         <t t-if="rule[4] === 'edit' and props.record.data.state === 'draft'">
@@ -56,7 +73,7 @@
                                 <strong>Нийт дүн</strong>
                             </td>
 
-                            <t t-foreach="state.rules" t-as="rule" t-key="'sum-' + rule[0]">
+                            <t t-foreach="getFilteredRules()" t-as="rule" t-key="'sum-' + rule[0]">
                                 <td class="oe_payroll_rule">
                                     <t t-if="rule[2]">
                                         <t t-set="total" t-value="Object.values(state.employee_values)

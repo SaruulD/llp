@@ -58,12 +58,18 @@ class PayrollSheetField extends Component {
     this.onValueInput = this.onValueInput.bind(this);
     this.onValueChange = this.onValueChange.bind(this);
     this.onValueKeydown = this.onValueKeydown.bind(this);
+    this.onSearchInput = this.onSearchInput.bind(this);
+    this.getFilteredEmployees = this.getFilteredEmployees.bind(this);
+    this.onColumnSearchInput = this.onColumnSearchInput.bind(this);
+    this.getFilteredRules = this.getFilteredRules.bind(this);
 
     this.state = {
       employees: [],
       rules: [],
       employee_values: {},
       employee_lines: {},
+      searchTerm: "",
+      columnSearchTerm: "",
     };
 
     this.loadData = this.loadData.bind(this);
@@ -87,6 +93,8 @@ class PayrollSheetField extends Component {
     this.state.rules = [];
     this.state.employee_values = {};
     this.state.employee_lines = {};
+    this.state.searchTerm = "";
+    this.state.columnSearchTerm = "";
 
     if (!sheetId) return;
 
@@ -188,6 +196,36 @@ class PayrollSheetField extends Component {
     this.render();
 
     this.orm.call("llp.payroll.line", "update_value", [ruleValueId, value]);
+  }
+
+  // Ажилтны нэрээр хайж, харагдах мөрүүдийг шүүнэ
+  onSearchInput(ev) {
+    this.state.searchTerm = ev.target.value;
+    this.render();
+  }
+
+  getFilteredEmployees() {
+    const term = (this.state.searchTerm || "").trim().toLowerCase();
+    if (!term) return this.state.employees;
+    return this.state.employees.filter((emp) =>
+      (emp[1] || "").toLowerCase().includes(term)
+    );
+  }
+
+  // Дүрмийн (баганын) нэрээр хайж, харагдах баганыг шүүнэ
+  onColumnSearchInput(ev) {
+    this.state.columnSearchTerm = ev.target.value;
+    this.render();
+  }
+
+  getFilteredRules() {
+    const term = (this.state.columnSearchTerm || "").trim().toLowerCase();
+    if (!term) return this.state.rules;
+    return this.state.rules.filter(
+      (rule) =>
+        (rule[1] || "").toLowerCase().includes(term) ||
+        (rule[5] || "").toLowerCase().includes(term)
+    );
   }
 
   goToEmployee(id) {
