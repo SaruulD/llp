@@ -273,5 +273,70 @@
         <field name="domain_force">[(1, '=', 1)]</field>
         <field name="groups" eval="[(4, ref('llp_payroll.group_payroll_accountant'))]" />
     </record>
+    
+    <!-- Цалингийн нягтлан busad moduleruu handah erhiin durem -->
+    <record id="rule_regulation_assigned_company" model="ir.rule">
+        <field name="name">Тушаал - зөвшөөрөгдсөн компани (з)</field>
+        <field name="model_id" ref="llp_regulation.model_regulation" />
+        <field name="domain_force">['|', ('create_user_company_id', '=', False), ('create_user_company_id', 'in',
+            company_ids)]</field>
+        <field name="groups" eval="[(4, ref('llp_payroll.group_payroll_accountant'))]" />
+    </record>
+
+    <record id="rule_hr_employee_assigned_company" model="ir.rule">
+        <field name="name">Хүний нөөц - зөвшөөрөгдсөн компани (з)</field>
+        <field name="model_id" ref="hr.model_hr_employee" />
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in',
+            company_ids)]</field>
+        <field name="groups" eval="[(4, ref('llp_payroll.group_payroll_accountant'))]" />
+    </record>
+
+    <record id="rule_hr_contract_assigned_company" model="ir.rule">
+        <field name="name">Гэрээнүүд - зөвшөөрөгдсөн компани (з)</field>
+        <field name="model_id" ref="hr_contract.model_hr_contract" />
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in',
+            company_ids)]</field>
+        <field name="groups" eval="[(4, ref('llp_payroll.group_payroll_accountant'))]" />
+    </record>
+
+    <record id="rule_hr_department_assigned_company" model="ir.rule">
+        <field name="name">Алба нэгж - зөвшөөрөгдсөн компани (з)</field>
+        <field name="model_id" ref="hr.model_hr_department" />
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in',
+            company_ids)]</field>
+        <field name="groups" eval="[(4, ref('llp_payroll.group_payroll_accountant'))]" />
+    </record>
+
+    <!-- <record id="rule_hr_contract_type_assigned_company" model="ir.rule">
+        <field name="name">Гэрээний төрлүүд - зөвшөөрөгдсөн компани (з)</field>
+        <field name="model_id" ref="hr.model_hr_contract_type" />
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in',
+            company_ids)]</field>
+        <field name="groups" eval="[(4, ref('llp_payroll.group_payroll_accountant'))]" />
+    </record> -->
+
+    <!-- <record id="rule_hr_insurance_type_assigned_company" model="ir.rule">
+        <field name="name">Даатгуулагчийн төрөл - зөвшөөрөгдсөн компани (з)</field>
+        <field name="model_id" ref="llp_hr_insurance_type.model_hr_insurance_type" />
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in',
+            company_ids)]</field>
+        <field name="groups" eval="[(4, ref('llp_payroll.group_payroll_accountant'))]" />
+    </record> -->
+
+    <!-- <record id="rule_hr_resume_line_type_assigned_company" model="ir.rule">
+        <field name="name">Намтарын төрөл - зөвшөөрөгдсөн компани (з)</field>
+        <field name="model_id" ref="hr_skills.model_hr_resume_line_type" />
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in',
+            company_ids)]</field>
+        <field name="groups" eval="[(4, ref('llp_payroll.group_payroll_accountant'))]" />
+    </record> -->
+
+    <record id="rule_time_balance_assigned_company" model="ir.rule">
+        <field name="name">Цагийн баланс - зөвшөөрөгдсөн компани (з)</field>
+        <field name="model_id" ref="llp_hr_timeplan.model_time_balance" />
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in',
+            company_ids)]</field>
+        <field name="groups" eval="[(4, ref('llp_payroll.group_payroll_accountant'))]" />
+    </record>
 
 </odoo>

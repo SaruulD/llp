@@ -9,7 +9,7 @@
     'description': """
     Payroll
     """,
-    'depends': ['hr', 'base', 'mail' , 'llp_hr_timeplan'],
+    'depends': ['hr', 'base', 'mail' , 'llp_hr_timeplan', 'llp_hr', 'llp_regulation', 'llp_hr_insurance_type', 'hr_skills'],
     'data': [
         'security/security.xml',    
         'security/ir.model.access.csv',

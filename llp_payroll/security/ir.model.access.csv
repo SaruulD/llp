@@ -116,3 +116,27 @@ access_llp_payroll_edit_wizard_user,llp.payroll.edit.wizard,model_llp_payroll_ed
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 access_llp_payroll_line_addtional,llp.payroll.line.additional,model_llp_payroll_line_addtional,base.group_user,1,1,1,1
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+access_regulation_payroll_accountant,regulation,llp_regulation.model_regulation,llp_payroll.group_payroll_accountant,1,0,0,0
+access_regulation_type_payroll_accountant,regulation.type,llp_regulation.model_regulation_type,llp_payroll.group_payroll_accountant,1,0,0,0
+access_regulation_line_payroll_accountant,regulation.line,llp_regulation.model_regulation_line,llp_payroll.group_payroll_accountant,1,0,0,0
+
+access_child_information_payroll_accountant,child.information,llp_hr.model_child_information,llp_payroll.group_payroll_accountant,1,0,0,0
+access_hr_salary_level_payroll_accountant,hr.salary.level,llp_hr.model_hr_salary_level,llp_payroll.group_payroll_accountant,1,0,0,0
+access_hr_salary_grade_payroll_accountant,hr.salary.grade,llp_hr.model_hr_salary_grade,llp_payroll.group_payroll_accountant,1,0,0,0
+access_hr_employee_payroll_accountant,hr.employee,hr.model_hr_employee,llp_payroll.group_payroll_accountant,1,0,0,0
+
+access_hr_contract_payroll_accountant,hr.contract,hr_contract.model_hr_contract,llp_payroll.group_payroll_accountant,1,1,0,0
+
+access_hr_department_payroll_accountant,hr.department,hr.model_hr_department,llp_payroll.group_payroll_accountant,1,0,0,0
+
+access_hr_contract_type_payroll_accountant,hr.contract.type,hr.model_hr_contract_type,llp_payroll.group_payroll_accountant,1,0,0,0
+
+access_hr_insurance_type_payroll_accountant,hr.insurance.type,llp_hr_insurance_type.model_hr_insurance_type,llp_payroll.group_payroll_accountant,1,0,0,0
+
+access_hr_resume_line_type_payroll_accountant,hr.resume.line.type,hr_skills.model_hr_resume_line_type,llp_payroll.group_payroll_accountant,1,0,0,0
+
+access_time_balance_payroll_accountant,time.balance,llp_hr_timeplan.model_time_balance,llp_payroll.group_payroll_accountant,1,0,0,0
+
+
+
