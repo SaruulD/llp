@@ -51,4 +51,12 @@
     <menuitem id="llp_payroll_report_config" name="Report Configuration" parent="llp_payroll_configuration" action="action_llp_payroll_report_config"
               groups="llp_payroll.group_payroll_accountant,llp_payroll.group_payroll_admin,llp_payroll.group_payroll_hr_director"
               sequence="4"/>
+
+    <record id="llp_hr_timeplan.time_balance_menu" model="ir.ui.menu">
+        <field name="groups_id" eval="[(4, ref('llp_payroll.group_payroll_accountant'))]"/>
+    </record>
+
+    <record id="llp_hr_timeplan.menu_time_planing_root" model="ir.ui.menu">
+        <field name="groups_id" eval="[(4, ref('llp_payroll.group_payroll_accountant'))]"/>
+    </record>
 </odoo>
