@@ -120,14 +120,13 @@ class LLPPayrollEmployeeVacation(models.Model):
 			today = fields.Date.context_today(vac)
 			prev_month_end = (today.replace(day=1) - timedelta(days=1))
 			emp_domain = [
-				('active', '=', True),
+				('active', '=', False),
 				('department_id', 'in', vac.department_ids.ids),
 				('last_vacation_salary_date', '!=', False),
 			]
 			if vac.company_id:
 				emp_domain.append(('company_id', '=', vac.company_id.id))
 			employees = self.env['hr.employee'].sudo().search(emp_domain)
-
 			# struct_type-с хамааран next_vacation_salary_date-ийн өдрөөр шүүх
 			if vac.struct_type == 'salary_advance':
 				employees = employees.filtered(
