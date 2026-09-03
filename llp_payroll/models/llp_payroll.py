@@ -507,7 +507,7 @@ class LLPPayroll(models.Model):
                 ('state', 'in', ['open','close']),
                 '|',
                     ('date_end', '=', False),
-                    '&', ('date_end', '>=', pay.start_date), ('date_end', '<=', pay.end_date),
+                    ('date_end', '>=', pay.start_date),
             ])
             emp_domain.append(('id', 'in', contracts.employee_id.ids))
 
@@ -996,7 +996,7 @@ class LLPPayroll(models.Model):
                                         ruled['code'], emp['employee']
                                     )
 
-                                elif object_type_base_map.get(ruled['object_type'], ruled['object_type']) == 'attendance':
+                                elif object_type_base_map.get(ruled['object_type'], ruled['object_type']) in ('attendance' , 'vacation' , 'debt'):
                                     _logger.info(
                                         "Payroll: %s object error (хэвийн, харуулахгүй) - rule: %s, employee: %s, error: %s",
                                         object_type_base_map.get(ruled['object_type'], ruled['object_type']),
