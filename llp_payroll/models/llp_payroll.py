@@ -144,7 +144,7 @@ class LLPPayroll(models.Model):
  
  
     def _get_employee_header_html(self, employee):
-        """Ажилтны нэр / хэлтэс / регистрийн дугаар / албан тушаалыг
+        """Ажилтны нэр / Алба / регистрийн дугаар / албан тушаалыг
         xlsx загварын A5:D6 layout-той адил 2 мөр, 4 баганаар харуулна.
         Ашиглалт: report/mail template дотор
         `t-raw="doc._get_employee_header_html(employee)"`.
@@ -157,7 +157,7 @@ class LLPPayroll(models.Model):
                 <tr>
                     <td style="%s" width="20%%">Ажилтны нэр</td>
                     <td style="%s" width="30%%">%s</td>
-                    <td style="%s" width="20%%">Газар, хэлтэс</td>
+                    <td style="%s" width="20%%">Газар, алба , нэгж</td>
                     <td style="%s" width="30%%">%s</td>
                 </tr>
                 <tr>

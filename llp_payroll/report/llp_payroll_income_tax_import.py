@@ -332,7 +332,7 @@ class LLPPayrollIncomeTaxImport(models.TransientModel):
             'valign': 'vcenter'
         })
 
-        headers = [u'Хэлтэс']
+        headers = [u'Алба']
         headers += [
             u'Татвар төлөгчийн дугаар',
             u'Овог',

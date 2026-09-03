@@ -192,7 +192,7 @@ class LLPPayrollInsuranceImport(models.TransientModel):
 
         # ЗАСВАР: department багана одоо ЯМАГТ гарна (department_ids сонгосон эсэхээс үл хамааран),
         # учир нь одоо энэ бол ажилтны бодит хэлтэс, тайланд байх ёстой мэдээлэл
-        headers = [u'Хэлтэс']
+        headers = [u'Алба']
         headers += [
             u'Регистрийн дугаар',
             u'Ургийн овог',
