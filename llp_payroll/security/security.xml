@@ -59,6 +59,13 @@
                                      (4, ref('llp_payroll.group_payroll_exec_director'))]" />
     </record>
 
+    <record id="rule_payroll_payroll_assigned_company_global" model="ir.rule">
+        <field name="name">Цалин - зөвшөөрөгдсөн компани (Global)</field>
+        <field name="model_id" ref="model_llp_payroll" />
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in',
+            company_ids)]</field>
+    </record>
+
     <record id="rule_payroll_payroll_all_company" model="ir.rule">
         <field name="name">Цалин - бүх компани (б)</field>
         <field name="model_id" ref="model_llp_payroll" />
@@ -202,6 +209,13 @@
         <field name="groups" eval="[(4, ref('llp_payroll.group_payroll_accountant'))]" />
     </record>
 
+    <record id="rule_payroll_rule_assigned_company_global" model="ir.rule">
+        <field name="name">Цалингийн дүрэм - зөвшөөрөгдсөн компани (Global)</field>
+        <field name="model_id" ref="model_llp_payroll_rule" />
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in',
+            company_ids)]</field>
+    </record>
+
     <record id="rule_payroll_rule_all_company" model="ir.rule">
         <field name="name">Цалингийн дүрэм - бүх компани (б)</field>
         <field name="model_id" ref="model_llp_payroll_rule" />
@@ -217,6 +231,13 @@
         <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in',
             company_ids)]</field>
         <field name="groups" eval="[(4, ref('llp_payroll.group_payroll_accountant'))]" />
+    </record>
+
+    <record id="rule_payroll_structure_assigned_company_global" model="ir.rule">
+        <field name="name">Цалингийн бүтэц - зөвшөөрөгдсөн компани (Global)</field>
+        <field name="model_id" ref="model_llp_payroll_structure" />
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in',
+            company_ids)]</field>
     </record>
 
     <record id="rule_payroll_structure_all_company" model="ir.rule">
