@@ -60,6 +60,11 @@
                                     <field name="sequence"/>
                                     <field name="exp_sequence" options="{'no_create': True}"/>
                                     <field name="company_id"/>
+                                    <button name="action_open_rule" string="Дүрэм харах"
+                                        type="object"
+                                        icon="fa-external-link"
+                                        invisible="not rule_id"
+                                        readonly="0"/>
                                 </list>
                             </field>
                         </page>

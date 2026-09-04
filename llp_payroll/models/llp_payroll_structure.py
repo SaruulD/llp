@@ -49,3 +49,17 @@ class LLPPayrollStructureLine(models.Model):
 	exp_sequence = fields.Integer(string="Expression Sequence")
 	company_id = fields.Many2one('res.company', string="Company",default=lambda self: self.env.company,)
 
+
+
+	def action_open_rule(self):
+		self.ensure_one()
+		return {
+			'type': 'ir.actions.act_window',
+			'name': self.rule_id.display_name,
+			'res_model': self.rule_id._name,
+			'res_id': self.rule_id.id,
+			'view_mode': 'form',
+			'target': 'current',
+		}
+
+
