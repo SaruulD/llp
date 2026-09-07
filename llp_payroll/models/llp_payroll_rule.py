@@ -12,7 +12,11 @@ class LLPPayrollRule(models.Model):
 
 
 	name = fields.Char(string="Name",tracking=True)
-	parent_id = fields.Many2one('llp.payroll.rule',string="Parent rule",tracking=True)
+	parent_id = fields.Many2one(
+		'llp.payroll.rule',
+		string="Parent rule",
+		tracking=True,
+		domain="[('company_id', '=', company_id)]",)
 	code = fields.Char(string="Code",tracking=True)
 	description = fields.Text(string="Description",tracking=True)	
 	rule_type = fields.Selection([('regular','Regular'),('code','Code')],string="Rule type",tracking=True,default='regular')
