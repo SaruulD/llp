@@ -7,10 +7,11 @@
         <field name="arch" type="xml">
             <search string="Search debt">
                 <field name="code"/>
+                <field name="department_ids"/>
                 <group expand="0" string="Group By">
                     <filter string="Month" name="group_month" context="{'group_by': 'month'}"/>
-                    <filter string="State" name="group_state" context="{'group_by': 'state'}"/>
-                    <filter string="Company" name="group_company" context="{'group_by': 'company_id'}"/>
+                    <!-- <filter string="Company" name="group_company" context="{'group_by': 'company_id'}"/>
+                    <filter string="State" name="group_state" context="{'group_by': 'state'}"/> -->
                 </group>
             </search>
         </field>
@@ -26,6 +27,7 @@
                 <field name="month"/>
                 <field name="department_ids" widget="many2many_tags"/>
                 <field name="struct_type"/>
+                <field name="company_id"/>
                 <field name="state"/>
             </list>
         </field>

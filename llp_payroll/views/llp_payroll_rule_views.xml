@@ -9,11 +9,20 @@
             <search string="Search rule">
                 <field name="name"/>
                 <field name="code"/>
+                <field name="company_id"/>
+                <field name="structure_ids"/>
                 <group expand="0" string="Group By">
                     <filter string="Code" name="code" context="{'group_by': 'code'}"/>
                     <filter string="Parent rule" name="group_parent" context="{'group_by': 'parent_id'}"/>
                     <filter string="Company" name="group_company" context="{'group_by': 'company_id'}"/>
+                    <filter string="Rule view Type" name="group_ruleview_type" context="{'group_by': 'ruleview_type'}"/>
+                    <filter string="Show in Report" name="group_show_in_report" context="{'group_by': 'show_in_report'}"/>
+                    <filter string="Rule Type" name="group_rule_type" context="{'group_by': 'rule_type'}"/>
+                    <filter string="Object Type" name="group_object_type" context="{'group_by': 'object_type'}"/>
+                    <filter string="Rule field Type" name="group_rulefield_type" context="{'group_by': 'rulefield_type'}"/>
                 </group>
+                <filter string="Not in Structure" name="not_in_structure"
+                        domain="[('structure_ids', '=', [])]"/>
             </search>
         </field>
     </record>

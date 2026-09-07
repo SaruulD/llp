@@ -24,15 +24,16 @@
         <field name="arch" type="xml">
             <search string="Search vacation">
                 <field name="department_ids" />
+                <field name="company_id" />
                 <field name="month" />
                 <field name="struct_type" />
                 <group expand="0" string="Group By">
                     <filter string="Month" name="group_month" context="{'group_by': 'month'}" />
-                    <filter string="Department" name="group_department_ids"
+                    <!-- <filter string="Department" name="group_department_ids"
                         context="{'group_by': 'department_ids'}" />
                     <filter string="State" name="group_state" context="{'group_by': 'state'}" />
                     <filter string="Company" name="group_company"
-                        context="{'group_by': 'company_id'}" />
+                        context="{'group_by': 'company_id'}" /> -->
                 </group>
             </search>
         </field>
@@ -48,6 +49,7 @@
                 <field name="month" />
                 <field name="department_ids" widget="many2many_tags" />
                 <field name="struct_type" />
+                <field name="company_id" />
                 <field name="state" />
             </list>
         </field>

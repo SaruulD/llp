@@ -16,6 +16,11 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. module: llp_payroll
+#: model_terms:ir.ui.view,arch_db:llp_payroll.view_llp_payroll_rule_filter
+msgid "Not in Structure"
+msgstr "Бүтцэд ашиглаагүй"
+
+#. module: llp_payroll
 #. odoo-python
 #: code:addons/llp_payroll/wizard/llp_payroll_payment_request.py:0
 msgid "%s сарын сүүл цалин"
@@ -202,13 +207,24 @@ msgid "Comment"
 msgstr "Тэмдэглэл"
 
 #. module: llp_payroll
+#: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll__company_id
+#: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_employee_debt__company_id
+#: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_employee_vacation__company_id
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_income_tax_import__company_id
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_insurance_import__company_id
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_insurance_tax_report__company_id
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_payment_request__company_id
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_report_config__company_id
+#: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_rule__company_id
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_structure__company_id
+#: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_structure_line__company_id
+#: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_unit__company_id
+#: model_terms:ir.ui.view,arch_db:llp_payroll.view_llp_payroll_employee_debt_filter
+#: model_terms:ir.ui.view,arch_db:llp_payroll.view_llp_payroll_employee_vacation_filter
+#: model_terms:ir.ui.view,arch_db:llp_payroll.view_llp_payroll_filter
 #: model_terms:ir.ui.view,arch_db:llp_payroll.view_llp_payroll_report_config_filter
+#: model_terms:ir.ui.view,arch_db:llp_payroll.view_llp_payroll_rule_filter
+#: model_terms:ir.ui.view,arch_db:llp_payroll.view_llp_payroll_rule_form
 msgid "Company"
 msgstr "Компани"
 
@@ -1191,6 +1207,11 @@ msgid "Object type"
 msgstr "Обьектын төрөл"
 
 #. module: llp_payroll
+#: model_terms:ir.ui.view,arch_db:llp_payroll.view_llp_payroll_rule_filter
+msgid "Object Type"
+msgstr "Обьектын төрөл"
+
+#. module: llp_payroll
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_employee_vacation_line__one_day_salary
 msgid "One day salary"
 msgstr "Нэг өдрийн цалин"
@@ -1252,7 +1273,7 @@ msgstr "Ажилтны авлага"
 #. module: llp_payroll
 #: model:ir.actions.act_window,name:llp_payroll.action_llp_payroll_employee_vacation
 msgid "Payroll Employee Vacation"
-msgstr "Ээлжийн амралт бодуулах ажилтан"
+msgstr "Ээлжийн амралт"
 
 #. module: llp_payroll
 #: model_terms:ir.ui.view,arch_db:llp_payroll.view_llp_payroll_edit_wizard_form
@@ -1323,7 +1344,7 @@ msgstr "Ажилтны авлага"
 #. module: llp_payroll
 #: model_terms:ir.ui.view,arch_db:llp_payroll.view_llp_payroll_employee_vacation_list
 msgid "Payroll employee vacation"
-msgstr "Ээлжийн амралт бодуулах ажилтан"
+msgstr "Ээлжийн амралт"
 
 #. module: llp_payroll
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_structure_line__rule_id
@@ -1455,6 +1476,11 @@ msgid "Rule field type"
 msgstr "Дүрмийн талбарын төрөл"
 
 #. module: llp_payroll
+#: model_terms:ir.ui.view,arch_db:llp_payroll.view_llp_payroll_rule_filter
+msgid "Rule field Type"
+msgstr "Дүрмийн талбарын төрөл"
+
+#. module: llp_payroll
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_rule__history_ids
 msgid "Rule histories"
 msgstr "Дүрмийн түүх"
@@ -1469,6 +1495,16 @@ msgstr "Дүрмийн мөрүүд"
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_rule__rule_type
 msgid "Rule type"
 msgstr "Дүрмийн төрөл"
+
+#. module: llp_payroll
+#: model_terms:ir.ui.view,arch_db:llp_payroll.view_llp_payroll_rule_filter
+msgid "Rule Type"
+msgstr "Дүрмийн төрөл"
+
+#. module: llp_payroll
+#: model_terms:ir.ui.view,arch_db:llp_payroll.view_llp_payroll_rule_filter
+msgid "Rule view Type"
+msgstr "Эрхийн тохиргоо"
 
 #. module: llp_payroll
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_rule__ruleview_type
@@ -1578,6 +1614,11 @@ msgstr "Цалин бодолтод харуулах"
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_rule_value__show_in_payroll
 msgid "Show in payroll Active"
 msgstr "Цалин бодолтод харуулах"
+
+#. module: llp_payroll
+#: model_terms:ir.ui.view,arch_db:llp_payroll.view_llp_payroll_rule_filter
+msgid "Show in Report"
+msgstr "Тайланд харуулах эсэх"
 
 #. module: llp_payroll
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_rule__show_in_report
