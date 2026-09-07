@@ -40,7 +40,7 @@ class LLPPayrollStructure(models.Model):
 class LLPPayrollStructureLine(models.Model):
 	_name = 'llp.payroll.structure.line'
 	_description = "LLP payroll structure line"
-	_order = "exp_sequence asc"
+	_order = "sequence asc"
 
 	struct_id = fields.Many2one('llp.payroll.structure',string="Payroll structure", ondelete='cascade', index=True)
 	rule_id = fields.Many2one('llp.payroll.rule',string="Payroll rule",ondelete='restrict', index=True)
