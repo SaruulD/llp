@@ -492,6 +492,7 @@ class LLPPayroll(models.Model):
 
 
     def action_get_data(self):
+        self = self._lock_and_guard()
         for pay in self:
             emp_domain = []
  
@@ -685,6 +686,8 @@ class LLPPayroll(models.Model):
 
     
     def action_compute(self):
+
+        self = self._lock_and_guard()
         for pay in self:
             if not pay.line_ids:
                 raise UserError(_(
@@ -1154,6 +1157,39 @@ class LLPPayroll(models.Model):
                 )
 
             raise UserError(_("Тооцоолол дуусав.\n\n") + '\n\n'.join(message_parts))
+
+
+    def _lock_and_guard(self, expected_states=None, expected_line_state_ids=None, silent=True, lock_timeout_seconds=5):
+        if not self:
+            return self
+
+        self.env.cr.execute("SET LOCAL lock_timeout = '%ss'" % int(lock_timeout_seconds))
+        try:
+            self.env.cr.execute(
+                'SELECT id FROM llp_payroll WHERE id IN %s FOR UPDATE',
+                (tuple(self.ids),)
+            )
+        except Exception as e:
+            if getattr(e, 'pgcode', None) == '55P03':  # lock_not_available
+                raise UserError(_(
+                    'Энэ бичлэгийг өөр цонх/хэрэглэгч яг одоо боловсруулж байна. '
+                    'Түр хугацааны дараа дахин оролдоно уу.'
+                ))
+            raise
+        self.invalidate_recordset()
+
+        for rec in self:
+            if expected_states is not None and rec.state not in expected_states:
+                if silent:
+                    self -= rec
+                    continue
+                raise UserError(_('Энэ хvсэлт өмнө нь боловсруулагдсан байна.'))
+            if expected_line_state_ids is not None and rec.line_state.id not in expected_line_state_ids:
+                if silent:
+                    self -= rec
+                    continue
+                raise UserError(_('Энэ хvсэлт өмнө нь боловсруулагдсан байна.'))
+        return self
         
     def get_from_previous_payroll(self,employee_id,code,start_date, end_date):
         value = 0.0

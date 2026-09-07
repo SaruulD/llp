@@ -48,8 +48,17 @@ class LLPPayrollStructureLine(models.Model):
 	sequence = fields.Integer(string="Sequence")
 	exp_sequence = fields.Integer(string="Expression Sequence")
 	company_id = fields.Many2one('res.company', string="Company",default=lambda self: self.env.company,)
+	line_no = fields.Integer(
+		string="№",
+		compute="_compute_line_no",
+	)
 
-
+	@api.depends('struct_id.line_ids')
+	def _compute_line_no(self):
+		for line in self:
+			lines = line.struct_id.line_ids
+			for index, rec in enumerate(lines, start=1):
+				rec.line_no = index
 
 	def action_open_rule(self):
 		self.ensure_one()

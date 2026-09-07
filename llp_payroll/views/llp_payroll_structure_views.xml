@@ -51,7 +51,8 @@
                     <notebook>
                         <page string="Rule lines">
                             <field name="line_ids" readonly="state == 'done'">
-                                <list string="" editable="bottom">
+                                <list string="" editable="bottom" limit="200">
+                                    <field name="line_no"/>
                                     <field name="rule_id"
                                         required="1"
                                         options="{'no_create': True}"
