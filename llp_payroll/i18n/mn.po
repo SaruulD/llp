@@ -457,7 +457,7 @@ msgstr "Харагдах нэр"
 #: model:ir.model.fields.selection,name:llp_payroll.selection__llp_payroll_employee_vacation__state__done
 #: model:ir.model.fields.selection,name:llp_payroll.selection__llp_payroll_structure__state__done
 msgid "Done"
-msgstr "Баталсан"
+msgstr "Батлагдсан"
 
 #. module: llp_payroll
 #: model:ir.model.fields.selection,name:llp_payroll.selection__llp_payroll__state__draft

@@ -886,13 +886,16 @@ class LLPPayroll(models.Model):
                                         object = {}
                                     elif ruled['object_type'] == 'employee':
                                         object = self.env['hr.employee'].browse(emp['employee'])
-
+                                        
                                     rule_codes = re.findall(r'\b[A-Za-z_][A-Za-z0-9_]*\b', str(python_code))
 
                                     if rule_codes:
-                                        where = "where A.line_id = %s and F2.struct_id = %s " % (
-                                            emp['line_id'], self.struct_id.id
-                                        )
+                                        # ★ llp.payroll.rule дээр code талбар глобал давхардаагүй (code_uniq
+                                        #   constraint) тул structure-ээр шүүх шаардлагагүй. Зөвхөн энэ
+                                        #   ажилтны line_id дээрх rule_value-аас код-оор нь шууд хайна —
+                                        #   ингэснээр лавлаж буй rule өөр structure-д (эсвэл олон structure-д)
+                                        #   ашиглагдсан байсан ч, өөрийн (тухайн line дээрх) утгыг зөв олно.
+                                        where = "where A.line_id = %s " % (emp['line_id'],)
                                         if len(rule_codes) > 1:
                                             where += " and B.code in %s" % (str(tuple(rule_codes)))
                                         else:
@@ -900,10 +903,9 @@ class LLPPayroll(models.Model):
 
                                         query = """
                                             select A.value as value, A.char_value as char_value,
-                                                   B.code as code, B.rulefield_type as rulefield_type
+                                                B.code as code, B.rulefield_type as rulefield_type
                                             from llp_payroll_rule_value A
                                             inner join llp_payroll_rule B ON A.payroll_rule_id = B.id
-                                            inner join llp_payroll_structure_line F2 ON F2.rule_id = B.id
                                         """ + where
 
                                         self.env.cr.execute(query)
