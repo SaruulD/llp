@@ -930,6 +930,11 @@ class LLPPayroll(models.Model):
                                             if rule_codes2:
                                                 for code in rule_codes2:
                                                     python_code = python_code.replace(code, str(0))
+                                        # ★★★ ТҮР ЗУУРЫН DEBUG — асуудал олдсоны дараа устгана
+                                        _logger.error(
+                                            "DEBUG cross-ref - rule: %s, employee: %s, final_python_code: %s",
+                                            ruled['code'], emp['employee'], python_code
+                                        )
 
                                     if ruled['rulefield_type'] == 'from_previous_payroll':
                                         try:
