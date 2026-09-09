@@ -700,6 +700,19 @@ class LLPPayroll(models.Model):
     
  
     def action_computebyQUERY(self):
+        self.env.cr.execute(
+            """
+            UPDATE llp_payroll_rule_value A
+            SET is_edited = false
+            FROM llp_payroll_rule B, llp_payroll_line L
+            WHERE A.payroll_rule_id = B.id
+              AND A.line_id = L.id
+              AND L.payroll_id = %s
+              AND B.ruleview_type = 'view'
+              AND A.is_edited = true
+            """,
+            (self.id,)
+        )
         query = "select C.id as rule_value_id,D.rule_type as rule_type, D.rulefield_type as rulefield_type, D.object_type as object_type, \
                     G.id as employee , D.ruleview_type as ruleview_type, D.code as code, D.name as rule_name, D.regular_number as regular_number, B.id as line_id, D.python_code as python_code, F.exp_sequence as exp_sequence, C.is_edited as is_edited\
                     from llp_payroll A inner join llp_payroll_line B ON A.id= B.payroll_id \
@@ -930,11 +943,6 @@ class LLPPayroll(models.Model):
                                             if rule_codes2:
                                                 for code in rule_codes2:
                                                     python_code = python_code.replace(code, str(0))
-                                        # ★★★ ТҮР ЗУУРЫН DEBUG — асуудал олдсоны дараа устгана
-                                        _logger.error(
-                                            "DEBUG cross-ref - rule: %s, employee: %s, final_python_code: %s",
-                                            ruled['code'], emp['employee'], python_code
-                                        )
 
                                     if ruled['rulefield_type'] == 'from_previous_payroll':
                                         try:
