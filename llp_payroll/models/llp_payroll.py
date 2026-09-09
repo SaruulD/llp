@@ -886,15 +886,9 @@ class LLPPayroll(models.Model):
                                         object = {}
                                     elif ruled['object_type'] == 'employee':
                                         object = self.env['hr.employee'].browse(emp['employee'])
-                                        
-                                    rule_codes = re.findall(r'\b[A-Za-z_][A-Za-z0-9_]*\b', str(python_code))
 
+                                    rule_codes = re.findall(r'\b[A-Za-z_][A-Za-z0-9_]*\b', str(python_code))
                                     if rule_codes:
-                                        # ★ llp.payroll.rule дээр code талбар глобал давхардаагүй (code_uniq
-                                        #   constraint) тул structure-ээр шүүх шаардлагагүй. Зөвхөн энэ
-                                        #   ажилтны line_id дээрх rule_value-аас код-оор нь шууд хайна —
-                                        #   ингэснээр лавлаж буй rule өөр structure-д (эсвэл олон structure-д)
-                                        #   ашиглагдсан байсан ч, өөрийн (тухайн line дээрх) утгыг зөв олно.
                                         where = "where A.line_id = %s " % (emp['line_id'],)
                                         if len(rule_codes) > 1:
                                             where += " and B.code in %s" % (str(tuple(rule_codes)))
@@ -906,13 +900,27 @@ class LLPPayroll(models.Model):
                                                 B.code as code, B.rulefield_type as rulefield_type
                                             from llp_payroll_rule_value A
                                             inner join llp_payroll_rule B ON A.payroll_rule_id = B.id
-                                        """ + where
+                                        """ + where + " order by A.create_date desc, A.id desc"
 
                                         self.env.cr.execute(query)
                                         fetchedAll = self.env.cr.dictfetchall()
 
                                         if fetchedAll:
+                                            # ★ Нэг код (жиш нь MIT) ижил ажилтны line дээр олон rule_value
+                                            #   мөртэй байж болно (structure дотор тэр rule олон удаа
+                                            #   ашиглагдсан тул). Ийм үед НИЙЛБЭРЛЭХГҮЙ, харин
+                                            #   payroll sheet (get_line_values) болон Import wizard-тай
+                                            #   ЯГ АДИЛ зарчмаар — хамгийн сүүлд үүссэн (create_date desc)
+                                            #   мөрийг л авна. ORDER BY-гийн ачаар fetchedAll аль хэдийн
+                                            #   create_date desc дарааллаар ирсэн тул, код тус бүрийн
+                                            #   ЭХНИЙ (= хамгийн сүүлийн) мөрийг л ашиглаад, дараагийн
+                                            #   давхардсан мөрүүдийг алгасна.
+                                            seen_codes = set()
                                             for fetched in sorted(fetchedAll, key=lambda x: len(x['code']), reverse=True):
+                                                if fetched['code'] in seen_codes:
+                                                    continue
+                                                seen_codes.add(fetched['code'])
+
                                                 if fetched['rulefield_type'] == 'sign':
                                                     python_code = python_code.replace(fetched['code'], repr(fetched['char_value'] or ''))
                                                 else:
