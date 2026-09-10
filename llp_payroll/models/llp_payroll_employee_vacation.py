@@ -27,6 +27,15 @@ class HrEmployee(models.Model):
 			else:
 				rec.next_vacation_salary_date = False
 
+	contract_id = fields.Many2one(
+			'hr.contract',
+			string='Current Contract',
+			groups='hr.group_hr_user,llp_regulation.group_regulation_senior_manager,llp_regulation.group_regulation_director,llp_regulation.group_regulation_department_director,llp_payroll.group_payroll_accountant',
+			domain="[('company_id', '=', company_id), ('employee_id', '=', id)]",
+			help='Current contract of the employee',
+			copy=False,
+		)
+
 
 
 class LLPPayrollEmployeeVacation(models.Model):
