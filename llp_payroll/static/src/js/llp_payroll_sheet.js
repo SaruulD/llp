@@ -17,6 +17,13 @@ class PayrollSheetField extends Component {
     this.orm = useService("orm");
     this.action = useService("action");
 
+    // Монгол болон англи (кирилл/латин) үсгэн утгыг зөв дарааллаар
+    // (А-Я, A-Z) харьцуулах collator
+    this.collator = new Intl.Collator(["mn", "en"], {
+      sensitivity: "base",
+      numeric: true,
+    });
+
     // 1234567.5 -> "1'234'567.50" (3 оронгоор бүлэглэж, '-аар тусгаарлана)
 
     this.formatNumber = (val, decimals = 2) => {
@@ -62,6 +69,8 @@ class PayrollSheetField extends Component {
     this.getFilteredEmployees = this.getFilteredEmployees.bind(this);
     this.onColumnSearchInput = this.onColumnSearchInput.bind(this);
     this.getFilteredRules = this.getFilteredRules.bind(this);
+    this.sortByRule = this.sortByRule.bind(this);
+    this.getSortIndicator = this.getSortIndicator.bind(this);
 
     this.state = {
       employees: [],
@@ -70,6 +79,9 @@ class PayrollSheetField extends Component {
       employee_lines: {},
       searchTerm: "",
       columnSearchTerm: "",
+      // Идэвхтэй эрэмбэлэлт хийгдэж буй баганы (rule) id ба чиглэл
+      sortRuleId: null,
+      sortDirection: null, // "asc" | "desc"
     };
 
     this.loadData = this.loadData.bind(this);
@@ -95,6 +107,8 @@ class PayrollSheetField extends Component {
     this.state.employee_lines = {};
     this.state.searchTerm = "";
     this.state.columnSearchTerm = "";
+    this.state.sortRuleId = null;
+    this.state.sortDirection = null;
 
     if (!sheetId) return;
 
@@ -226,6 +240,60 @@ class PayrollSheetField extends Component {
         (rule[1] || "").toLowerCase().includes(term) ||
         (rule[5] || "").toLowerCase().includes(term)
     );
+  }
+
+  // Баганын толгой дээрх эрэмбэлэх товч дарахад дуудагдана.
+  // Тухайн баганаар анх удаа дарвал өсөх дараалал (жижгээс томруу / А-Я, A-Z),
+  // мөн баганаар дахин дарвал буурах дараалал (томоос жижигрүү / Я-А, Z-A) руу сэлгэнэ.
+  sortByRule(ev, rule) {
+    // Баганын толгой дээр дарахад тухайн rule рүү шилждэг goToRule
+    // triggered болохоос сэргийлнэ (товч нь тухайн <th>-ийн дотор байгаа тул)
+    if (ev) {
+      ev.stopPropagation();
+      ev.preventDefault();
+    }
+
+    const ruleId = rule[0];
+    const isNumeric = NUMERIC_TYPES.includes(rule[3]);
+
+    if (this.state.sortRuleId === ruleId) {
+      this.state.sortDirection = this.state.sortDirection === "asc" ? "desc" : "asc";
+    } else {
+      this.state.sortRuleId = ruleId;
+      this.state.sortDirection = "asc";
+    }
+
+    const dir = this.state.sortDirection === "asc" ? 1 : -1;
+
+    this.state.employees = [...this.state.employees].sort((empA, empB) => {
+      const valA = this.state.employee_values?.[empA[0]]?.[ruleId];
+      const valB = this.state.employee_values?.[empB[0]]?.[ruleId];
+
+      if (isNumeric) {
+        const numA = this.toSortableNumber(valA);
+        const numB = this.toSortableNumber(valB);
+        return (numA - numB) * dir;
+      }
+
+      const strA = valA === false || valA === null || valA === undefined ? "" : String(valA);
+      const strB = valB === false || valB === null || valB === undefined ? "" : String(valB);
+      return this.collator.compare(strA, strB) * dir;
+    });
+
+    this.render();
+  }
+
+  // Хоосон/false утгыг 0 гэж үзнэ, эрэмбэлэхэд ашиглана
+  toSortableNumber(val) {
+    if (val === false || val === null || val === undefined || val === "") return 0;
+    const n = Number(val);
+    return isNaN(n) ? 0 : n;
+  }
+
+  // Загварт (template) баганы толгойд ▲/▼ тэмдэг харуулахад ашиглана
+  getSortIndicator(ruleId) {
+    if (this.state.sortRuleId !== ruleId) return "";
+    return this.state.sortDirection === "asc" ? "▲" : "▼";
   }
 
   goToEmployee(id) {

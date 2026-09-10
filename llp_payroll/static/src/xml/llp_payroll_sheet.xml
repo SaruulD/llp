@@ -30,6 +30,11 @@
                                             <span style="color:#2765F5;"> <t t-esc="rule[5]"/></span>
                                         </t>
                                     </a>
+                                    <span t-att-class="state.sortRuleId === rule[0] ? 'o_payroll_sort_btn active' : 'o_payroll_sort_btn'"
+                                        t-on-click="(ev) => sortByRule(ev, rule)"
+                                        title="Эрэмбэлэх">
+                                        <t t-esc="getSortIndicator(rule[0]) || '⇅'"/>
+                                    </span>
                                 </th>
                             </t>
                         </tr>
