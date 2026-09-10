@@ -22,7 +22,7 @@
                     <filter string="Rule field Type" name="group_rulefield_type" context="{'group_by': 'rulefield_type'}"/>
                 </group>
                 <filter string="Not in Structure" name="not_in_structure"
-                        domain="[('structure_ids', '=', [])]"/>
+                        domain="[('structure_ids', '=', False)]"/>
             </search>
         </field>
     </record>
