@@ -201,7 +201,7 @@ class LLPPayrollEditWizard(models.TransientModel):
                 continue
             ident = str(ident).strip()
 
-            emp = self.env['hr.employee'].sudo().search([('identification_id', '=', ident)], limit=1)
+            emp = self.env['hr.employee'].sudo().with_context(active_test=False).search([('identification_id', '=', ident)], limit=1)
             if not emp:
                 continue
 
