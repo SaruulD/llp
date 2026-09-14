@@ -271,10 +271,13 @@
         <field name="model_id" ref="model_llp_payroll_report_config" />
         <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in',
             company_ids)]</field>
-        <field name="groups" eval="[(4, ref('llp_payroll.group_payroll_accountant'))]" />
+        <field name="groups"
+            eval="[(4, ref('llp_payroll.group_payroll_admin')),
+                    (4, ref('llp_payroll.group_payroll_hr_director')),
+                    (4, ref('llp_payroll.group_payroll_accountant'))]" />
     </record>
 
-    <record id="rule_payroll_report_config_all_company" model="ir.rule">
+    <!-- <record id="rule_payroll_report_config_all_company" model="ir.rule">
         <field name="name">Тайлангийн тохиргоо - бүх компани (б)</field>
         <field name="model_id" ref="model_llp_payroll_report_config" />
         <field name="domain_force">[(1, '=', 1)]</field>
@@ -287,7 +290,7 @@
         <field name="model_id" ref="model_llp_payroll_report_config" />
         <field name="domain_force">[(1, '=', 1)]</field>
         <field name="groups" eval="[(4, ref('llp_payroll.group_payroll_accountant'))]" />
-    </record>
+    </record> -->
     <record id="rule_payroll_report_config_all_hr_job" model="ir.rule">
         <field name="name">Цалин: Албан тушаал</field>
         <field name="model_id" ref="hr_recruitment.model_hr_job" />

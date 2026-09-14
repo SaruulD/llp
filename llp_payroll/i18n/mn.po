@@ -749,7 +749,7 @@ msgstr "Импорт"
 #: model:ir.model.fields.selection,name:llp_payroll.selection__llp_payroll_report_config__type__income_tax_import
 #: model:ir.ui.menu,name:llp_payroll.llp_payroll_income_tax_import
 msgid "Income Tax Import"
-msgstr ""
+msgstr "ХХОАТ импорт хийх"
 
 #. module: llp_payroll
 #: model:ir.model.fields.selection,name:llp_payroll.selection__llp_payroll_report_config__type__income_tax_report

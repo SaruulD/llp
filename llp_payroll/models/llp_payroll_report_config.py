@@ -72,9 +72,9 @@ class LLPPayrollReportConfig(models.Model):
 
     @api.depends('type')
     def _compute_name(self):
-        selection_dict = dict(self._fields['type'].selection)
+        selection = dict(self._fields['type']._description_selection(self.env))
         for rec in self:
-            rec.name = selection_dict.get(rec.type) or ''
+            rec.name = selection.get(rec.type) or ''
 
     _sql_constraints = [
         ('unique_type_company', 'unique(type, company_id)', 'Type must be unique per company.'),

@@ -140,16 +140,21 @@ if object:
 			result.append((acc.id, name))
 		return result
 
+	@api.depends('name', 'code')
+	def _compute_display_name(self):
+		for rec in self:
+			rec.display_name = '%s [%s]' % (rec.name, rec.code) if rec.code else (rec.name or '')
+
 	@api.model
 	def name_search(self, name, args=None, operator='ilike', limit=100):
 		args = args or []
 		domain = []
 		if name:
-			domain = ['|',('code', '=ilike', '%' + name),('name', operator, name)]
+			domain = ['|', ('code', '=ilike', '%' + name), ('name', operator, name)]
 			if operator in expression.NEGATIVE_TERM_OPERATORS:
 				domain = ['&'] + domain
-		departs = self.search(domain + args, limit=limit)
-		return departs.name_get()
+		records = self.search(domain + args, limit=limit)
+		return [(rec.id, rec.display_name) for rec in records]
 	
 	def copy(self, default=None):
 		default = default or {}
