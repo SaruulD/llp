@@ -72,54 +72,66 @@ class LLPPayroll(models.Model):
 
     def send_mail_to_employees(self):
         self._send_payroll_rule_mail()
- 
+
     def _send_payroll_rule_mail(self):
         self.ensure_one()
- 
+
         # Тухайн payroll-ийн struct-д хамаарах, send_mail=True рулиудыг
         # structure дэх дараалал (sequence)-аар нь авна
         struct_lines = self.struct_id.line_ids.filtered(
             lambda l: l.rule_id.send_mail
         ).sorted(key=lambda l: l.sequence)
- 
+
         if not struct_lines:
             return
- 
+
+        skipped_employees = []  # private_email байхгүй тул имэйл яваагүй ажилтнууд
+
         for line in self.line_ids:
             employee = line.employee_id
- 
-            if not employee.work_email:
+
+            if not employee.private_email:
+                skipped_employees.append(employee.name or (_('ID %s') % employee.id))
                 continue
- 
+
             values = []
- 
+
             for struct_line in struct_lines:
                 rule = struct_line.rule_id
- 
+
                 rule_value = line.rule_value_ids.filtered(
                     lambda r: r.payroll_rule_id == rule
                 )
- 
+
                 if not rule_value:
                     continue
- 
+
                 # sign төрлийн утга char_value дотор, бусад нь value дотор хадгалагдана
                 if rule_value.rulefield_type == 'sign':
                     val = rule_value.char_value
                 else:
                     val = rule_value.value
- 
+
                 values.append({
                     'name': rule.name,
                     'code': rule.code,
                     'value': val,
                     'need_highlight': rule.need_highlight,
                 })
- 
+
             if not values:
                 continue
- 
+
             self._send_employee_mail(employee, values)
+
+        # Имэйл хаяггүй тул мэйл яваагүй ажилтнуудыг chatter дээр мэдэгдэнэ
+        if skipped_employees:
+            self.message_post(
+                body=_(
+                    "Дараах ажилтнуудад <b>Хувийн И-Майл (private_email)</b> бүртгэгдээгүй "
+                    "тул цалингийн мэдээлэл имэйлээр илгээгдсэнгүй:<br/>%s"
+                ) % '<br/>'.join(skipped_employees)
+            )
  
  
     def _send_employee_mail(self, employee, values):
@@ -138,7 +150,7 @@ class LLPPayroll(models.Model):
             self.id,
             force_send=True,
             email_values={
-                'email_to': employee.work_email,
+                'email_to': employee.private_email,
             },
         )
  
@@ -173,38 +185,33 @@ class LLPPayroll(models.Model):
             label, value, employee.identification_id or '',
             label, value, employee.job_id.name or '',
         )
-  
     def _get_employee_report_html(self, values):
         """`values` жагсаалт (`_send_payroll_rule_mail`-с ирнэ, [{'name','code','value'}, ...])-ыг
-        Код | Нэр | Дүн гэсэн бүрэн хүрээтэй (bordered) хүснэгт болгоно.
-        Захын 2 багана (зүүн/баруун 10%) хүрээгүй, зөвхөн хоосон зай тул
-        доторх хүрээтэй хүснэгт хуудасны голд харагдана. QWeb report/mail
-        template дотор `t-raw="doc._get_employee_report_html(...)"` байдлаар
-        дуудна.
+        № | Нэр | Дүн гэсэн бүрэн хүрээтэй (bordered) хүснэгт болгоно.
         """
         cell = "border: 1px solid black; border-collapse: collapse; padding: 4px 8px; font-size: 11pt; font-family: 'Arial';"
         head = cell + "background-color: #333369; color: white; font-weight: bold; text-align: center;"
- 
+
         inner = """
             <table style="border: 1px solid black; border-collapse: collapse;" width="100%%">
                 <tr>
-                    <td style="%s" width="15%%">Код</td>
-                    <td style="%s" width="55%%">Нэр</td>
+                    <td style="%s" width="10%%">№</td>
+                    <td style="%s" width="60%%">Нэр</td>
                     <td style="%s" width="30%%">Дүн</td>
                 </tr>
         """ % (head, head, head)
- 
+
         highlight = cell + "background-color: #A8ECFF;"  # тодруулах мөрийн өнгө
- 
-        for val in values or []:
+
+        for index, val in enumerate(values or [], start=1):
             amount = val.get('value')
             if isinstance(amount, (int, float)):
                 amount_display = '{:,.2f}'.format(amount)
             else:
                 amount_display = amount or ''
- 
+
             row_style = highlight if val.get('need_highlight') else cell
- 
+
             inner += """
                 <tr>
                     <td style="%s text-align: center;">%s</td>
@@ -212,15 +219,13 @@ class LLPPayroll(models.Model):
                     <td style="%s text-align: right;">%s</td>
                 </tr>
             """ % (
-                row_style, val.get('code') or '',
+                row_style, index,
                 row_style, val.get('name') or '',
                 row_style, amount_display,
             )
- 
+
         inner += "</table>"
- 
-        # Гаднах хүснэгт хүрээгүй (spacer); зүүн/баруун 10% хоосон,
-        # дунд 80%-д дээрх хүрээтэй хүснэгтийг байрлуулна.
+
         return """
             <table width="100%%" style="border-collapse: collapse; margin-top: 8px;">
                 <tr>
@@ -230,7 +235,6 @@ class LLPPayroll(models.Model):
                 </tr>
             </table>
         """ % inner
-
     
     def get_company_logo_mail(self, ids):
         """Мэйлийн body_html-д зориулсан лого.
@@ -319,7 +323,7 @@ class LLPPayroll(models.Model):
     
     def action_send(self):
         if not self.line_ids:
-            raise UserError((u'Ажилтнуудын мэдээлэл алга байна.'))
+            raise UserError(_(u"No employee information found."))
         self.write({'state':'sent'})
         self.create_history('sent')
         
@@ -691,8 +695,8 @@ class LLPPayroll(models.Model):
         for pay in self:
             if not pay.line_ids:
                 raise UserError(_(
-                    'Ажилтны мэдээлэл ачаалагдаагүй байна. '
-                    'Эхлээд "Get Data" товчийг дарна уу.'
+                    'Employee information has not been loaded. '
+                    'Please click the "Get Data" button first.'
                 ))
             pay.action_computebyQUERY()
 
@@ -978,7 +982,7 @@ class LLPPayroll(models.Model):
                                                 iter_value = local_dict.get('result')
                                                 if isinstance(iter_value, (tuple, list)):
                                                     raise UserError(_(
-                                                        "Томьёо tuple/list утга буцаалаа: %r"
+                                                        "The formula returned a tuple/list value: %r"
                                                     ) % (iter_value,))
                                                 value += (iter_value or 0)
                                         elif rule:
@@ -998,7 +1002,7 @@ class LLPPayroll(models.Model):
 
                                         if isinstance(value, (tuple, list)):
                                             raise UserError(_(
-                                                "Томьёо tuple/list утга буцаалаа: %r"
+                                                "The formula returned a tuple/list value: %r"
                                             ) % (value,))
 
                                         if ruled['rulefield_type'] == 'digit':
@@ -1179,7 +1183,7 @@ class LLPPayroll(models.Model):
                     }
                 )
 
-            raise UserError(_("Тооцоолол дуусав.\n\n") + '\n\n'.join(message_parts))
+            raise UserError(_("Calculation complete.\n\n") + '\n\n'.join(message_parts))
 
 
     def _lock_and_guard(self, expected_states=None, expected_line_state_ids=None, silent=True, lock_timeout_seconds=5):
@@ -1195,8 +1199,8 @@ class LLPPayroll(models.Model):
         except Exception as e:
             if getattr(e, 'pgcode', None) == '55P03':  # lock_not_available
                 raise UserError(_(
-                    'Энэ бичлэгийг өөр цонх/хэрэглэгч яг одоо боловсруулж байна. '
-                    'Түр хугацааны дараа дахин оролдоно уу.'
+                    'This record is currently being processed by another window/user. '
+                    'Please try again shortly.'
                 ))
             raise
         self.invalidate_recordset()
@@ -1206,12 +1210,12 @@ class LLPPayroll(models.Model):
                 if silent:
                     self -= rec
                     continue
-                raise UserError(_('Энэ хvсэлт өмнө нь боловсруулагдсан байна.'))
+                raise UserError(_('This request has already been processed.'))
             if expected_line_state_ids is not None and rec.line_state.id not in expected_line_state_ids:
                 if silent:
                     self -= rec
                     continue
-                raise UserError(_('Энэ хvсэлт өмнө нь боловсруулагдсан байна.'))
+                raise UserError(_('This request has already been processed.'))
         return self
         
     def get_from_previous_payroll(self,employee_id,code,start_date, end_date):
