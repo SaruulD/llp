@@ -24,6 +24,7 @@
         'wizard/llp_payroll_payment_request_views.xml',
         'wizard/llp_payroll_account_move_views.xml',
         'wizard/llp_payroll_edit_wizard_views.xml',
+        'wizard/llp_payroll_draft_confirm_views.xml',
         'report/llp_payroll_salary_report_views.xml',
         'report/llp_payroll_bank_report_views.xml',
         'report/llp_payroll_salary_matrix_pdf.xml',

@@ -1253,6 +1253,83 @@ class LLPPayroll(models.Model):
             }
         }
 
+    def action_set_to_draft(self):
+        """'Ноорог болгох' товчны handler."""
+        self.ensure_one()
+        moves = self._get_active_related_moves()
+
+        if moves:
+            return {
+                'type': 'ir.actions.act_window',
+                'name': _('Баталгаажуулах'),
+                'res_model': 'llp.payroll.draft.confirm',
+                'view_mode': 'form',
+                'target': 'new',
+                'context': {
+                    'default_payroll_id': self.id,
+                    'default_move_count': len(moves),
+                },
+            }
+
+        self._revert_debt_vacation_states()
+        self.action_draft()
+        return True
+
+    def _get_active_related_moves(self):
+        """Тухайн payroll-той холбоотой, аль хэдийн cancel болоогүй account.move-үүд."""
+        self.ensure_one()
+        return self.payment_history_ids.mapped('move_id').filtered(
+            lambda m: m and m.state != 'cancel'
+        )
+
+    def _cancel_related_moves(self):
+        """Холбоотой ажил гүйлгээг цуцална (state = cancel)."""
+        self.ensure_one()
+        moves = self._get_active_related_moves()
+        moves.button_cancel()
+
+    def _revert_debt_vacation_states(self):
+        """action_confirm()-ий эсрэг: зөвхөн энэ цалин бодолтын ажилтны
+        мөрийг done_or_not=False болгож, улмаар бүрэн хаагдсан/түгжигдсэн
+        байсан Debt/Vacation-ийг нэг шат бууруулна (closed→done, locked→done).
+        Бусад ажилтны мөрд хамаарахгүй тул header-ийг бүхэлд нь draft болгохгүй."""
+        self.ensure_one()
+        if not self.struct_id:
+            return
+
+        for line in self.line_ids:
+            has_debt_rule = bool(line.rule_value_ids.filtered('is_debt_rule'))
+            has_vacation_rule = bool(line.rule_value_ids.filtered('is_vacation_rule'))
+
+            if not has_debt_rule and not has_vacation_rule:
+                continue
+
+            if has_debt_rule:
+                debt_lines = self.env['llp.payroll.employee.debt.line'].search([
+                    ('employee_id', '=', line.employee_id.id),
+                    ('done_or_not', '=', True),
+                    ('debt_id.struct_type', '=', self.struct_id.struct_type),
+                    ('debt_id.month', '>=', self.start_date),
+                    ('debt_id.month', '<=', self.end_date),
+                ])
+                if debt_lines:
+                    debts = debt_lines.mapped('debt_id')
+                    debt_lines.write({'done_or_not': False})
+                    debts.filtered(lambda d: d.state == 'closed').write({'state': 'done'})
+
+            if has_vacation_rule:
+                vacation_lines = self.env['llp.payroll.employee.vacation.line'].search([
+                    ('employee_id', '=', line.employee_id.id),
+                    ('done_or_not', '=', True),
+                    ('vacation_id.struct_type', '=', self.struct_id.struct_type),
+                    ('vacation_id.month', '>=', self.start_date),
+                    ('vacation_id.month', '<=', self.end_date),
+                ])
+                if vacation_lines:
+                    vacations = vacation_lines.mapped('vacation_id')
+                    vacation_lines.write({'done_or_not': False})
+                    vacations.filtered(lambda v: v.state == 'locked').write({'state': 'done'})
+
 class LLPPayrollLine(models.Model):
     _name = 'llp.payroll.line'
     _description = "LLP payroll line"

@@ -138,5 +138,4 @@ access_hr_resume_line_type_payroll_accountant,hr.resume.line.type,hr_skills.mode
 
 access_time_balance_payroll_accountant,time.balance,llp_hr_timeplan.model_time_balance,llp_payroll.group_payroll_accountant,1,0,0,0
 
-
-
+access_llp_payroll_draft_confirm,llp.payroll.draft.confirm,model_llp_payroll_draft_confirm,base.group_user,1,1,1,1

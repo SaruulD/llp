@@ -12,24 +12,26 @@
         <field name="arch" type="xml">
             <form string="Create payroll account move">
                 <group>
-                    <group>
-                        <field name="department_id"/>
-                        <field name="journal_id"/>
-                    </group>
                     <notebook>
                         <page string="Lines">
                             <field name="line_ids" readonly="1" editable="bottom">
                                 <list>
+                                    <field name="no" string="№"/>
+                                    <field name="department_id" />
                                     <field name="account_id" />
                                     <field name="name" />
                                     <field name="debit" sum="Sum" />
                                     <field name="credit" sum="Sum" />
+                                    <field name="journal_id" />
                                 </list>
                                 <form create="false">
                                     <group>
+                                        <field name="no" string="№"/>
+                                        <field name="department_id" />
                                         <field name="name" />
                                         <field name="debit" sum="Sum" />
                                         <field name="credit" sum="Sum" />
+                                        <field name="journal_id" />
                                     </group>
                                 </form>
                             </field>

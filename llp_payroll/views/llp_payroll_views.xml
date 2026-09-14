@@ -52,6 +52,8 @@
                         string="Create Payment Request" type="object" class="btn-info" />
                     <button name="action_account_move" invisible="state != 'confirmed'"
                         string="Create Account Move" type="object" class="btn-info" />
+                    <button name="action_set_to_draft" invisible="state != 'confirmed'"
+                        string="Set to Draft" type="object" class="btn-info" groups="llp_payroll.group_payroll_accountant"/>
 
                     <!-- WORKFLOW -->
                     <!-- <button name="action_approve" invisible="state != 'sent'" string="Approve"

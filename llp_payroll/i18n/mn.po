@@ -16,6 +16,11 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. module: llp_payroll
+#: model_terms:ir.ui.view,arch_db:llp_payroll.view_llp_payroll_form
+msgid "Set to Draft"
+msgstr "Ноороглох"
+
+#. module: llp_payroll
 #: model_terms:ir.ui.view,arch_db:llp_payroll.view_llp_payroll_rule_filter
 msgid "Not in Structure"
 msgstr "Бүтцэд ашиглаагүй"
