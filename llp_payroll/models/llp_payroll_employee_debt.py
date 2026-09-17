@@ -24,6 +24,8 @@ class LLPPayrollEmployeeDebt(models.Model):
 	], string="State", default='draft', tracking=True)
 	line_ids = fields.One2many('llp.payroll.employee.debt.line','debt_id',string="Lines")
 	company_id = fields.Many2one('res.company', string="Company",default=lambda self: self.env.company,)
+	line_employee_ids = fields.Many2many('hr.employee', 'debt_employee_rel', 'debt_id', 'employee_id', string='Employees')
+
 	@api.model
 	def create(self, vals):
 		seq_code = 'llp.payroll.employee.debt.seq'
@@ -141,6 +143,23 @@ class LLPPayrollEmployeeDebt(models.Model):
 
 		return True
 
+	@api.onchange('company_id', 'department_ids')
+	def _onchange_load_line_employee_ids(self):
+		for rec in self:
+			if not rec.department_ids:
+				rec.line_employee_ids = [(5, 0, 0)]
+				continue
+
+			company = rec.company_id or self.env.company
+
+			employees = self.env['hr.employee'].search([
+				('active', '=', True),
+				('company_id', '=', company.id),
+				('department_id', 'in', rec.department_ids.ids),
+			])
+
+			rec.line_employee_ids = [(6, 0, employees.ids)]
+
 class LLPPayrollEmployeeDebtLine(models.Model):
 	_name ='llp.payroll.employee.debt.line'
 	_inherit = ['mail.thread']
@@ -151,8 +170,9 @@ class LLPPayrollEmployeeDebtLine(models.Model):
 		'hr.employee',
 		string="Employee",
 		required=True,
-		tracking=True
-	)
+		tracking=True,
+		domain="parent.department_ids and [('id', 'in', parent.line_employee_ids)] or []"
+		)
 	department_id = fields.Many2one('hr.department', string="Department", related='employee_id.department_id', store=True, readonly=True)
 	debt_id = fields.Many2one('llp.payroll.employee.debt', string="Debt")
 	currency_id = fields.Many2one(

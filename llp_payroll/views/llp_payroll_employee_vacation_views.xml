@@ -97,11 +97,11 @@
                                     <field name="employee_id" options="{'no_create': True}"
                                         required="1" />
                                     <field name="department_id" readonly="1" />
-                                    <field name="total_salary" />
-                                    <field name="total_worked_day" />
-                                    <field name="one_day_salary" />
-                                    <field name="total_vacation_day" />
-                                    <field name="total_vacation_amount" />
+                                    <field name="total_salary" sum="SUM"/>
+                                    <field name="total_worked_day" sum="SUM"/>
+                                    <field name="one_day_salary" sum="SUM"/>
+                                    <field name="total_vacation_day" sum="SUM"/>
+                                    <field name="total_vacation_amount" sum="SUM"/>
                                 </list>
                                 <form>
                                     <group>
@@ -119,7 +119,7 @@
                                             <field name="total_vacation_day" />
                                             <field name="one_day_salary" />
                                             <field name="total_vacation_amount" />
-                                            <field name="done_or_not" readonly="1" />
+                                            <field name="done_or_not" readonly="1" invisible="1"/>
                                         </group>
                                     </group>
                                     <notebook>

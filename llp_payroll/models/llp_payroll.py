@@ -8,6 +8,7 @@ _logger = logging.getLogger(__name__)
 from operator import itemgetter
 from odoo.tools.safe_eval import safe_eval # type: ignore
 import base64
+from markupsafe import Markup 
 
 
 class _SummedRecordset:
@@ -412,6 +413,19 @@ class LLPPayroll(models.Model):
                                 employees = vacation.line_ids.mapped('employee_id')
                                 if vacation.month:
                                     employees.write({'last_vacation_salary_date': vacation.month})
+
+                                    log_message = Markup(_(
+                                    "<b style=\"color:#17a2b8\">%(number)s</b> дугаартай эхлэх огноо: "
+                                    "<b style=\"color:#17a2b8\">%(start_date)s</b> - дуусах огноо: "
+                                    "<b style=\"color:#17a2b8\">%(end_date)s</b>-той цалин бодолтоос"
+                                    "<b> Өмнөх ээлжийн амралтын мөнгө бодогдсон огноо, Дараагийн ээлжийн амралтын мөнгө бодох огноо</b> шинэчлэв "
+                                )) % {
+                                    'number': payroll.name,
+                                    'start_date': payroll.start_date,
+                                    'end_date': payroll.end_date,
+                                }
+                                for employee in employees:
+                                    employee.message_post(body=log_message)
 
 
 

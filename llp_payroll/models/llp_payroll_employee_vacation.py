@@ -135,7 +135,7 @@ class LLPPayrollEmployeeVacation(models.Model):
 			if vac.company_id:
 				emp_domain.append(('company_id', '=', vac.company_id.id))
 			employees = self.env['hr.employee'].sudo().with_context(active_test=False).search(emp_domain)
-   # struct_type-с хамааран next_vacation_salary_date-ийн өдрөөр шүүх
+	# struct_type-с хамааран next_vacation_salary_date-ийн өдрөөр шүүх
 			if vac.struct_type == 'salary_advance':
 				employees = employees.filtered(
 					lambda e: e.next_vacation_salary_date
@@ -182,17 +182,30 @@ class LLPPayrollEmployeeVacation(models.Model):
 			if not rule_ids:
 				continue
 
-			emp_start_map = {}
-			earliest_start = None
-			for emp in employees:
-				d = emp.last_vacation_salary_date
-				start = d.replace(day=1)
-				emp_start_map[emp.id] = start
-				if earliest_start is None or start < earliest_start:
-					earliest_start = start
+			vac_month_start = vac.month.replace(day=1)
 
-			if earliest_start and earliest_start > prev_month_end:
+			emp_start_map = {}
+			bounded_starts = []
+			has_unbounded_employee = False
+			for emp_id, line in line_by_emp.items():
+				d = line.employee_id.last_vacation_salary_date
+				if d:
+					start = d.replace(day=1)
+					emp_start_map[emp_id] = start
+					bounded_starts.append(start)
+				else:
+					# Сонгосон ажилтны Өмнөх ээлжийн амралтын мөнгө бодогдсон
+					# огноо хоосон бол vacation-ий сонгосон (vac.month) сараас
+					# өмнөх бодогдсон бүх цалин бодолтыг (доод хязгааргүйгээр) татна.
+					emp_start_map[emp_id] = None
+					has_unbounded_employee = True
+
+			earliest_start = min(bounded_starts) if bounded_starts else None
+
+			if earliest_start and earliest_start > prev_month_end and not has_unbounded_employee:
 				continue
+
+			query_start_date = date(1900, 1, 1) if has_unbounded_employee else earliest_start
 			m2m_field = self.env['llp.payroll']._fields['department_id']
 			rel_table = m2m_field.relation
 			rel_col1 = m2m_field.column1
@@ -226,7 +239,7 @@ class LLPPayrollEmployeeVacation(models.Model):
 			self.env.cr.execute(query, (
 				vac.department_ids.ids,
 				prev_month_end,
-				earliest_start,
+				query_start_date,
 				rule_ids,
 			))
 			rows = self.env.cr.fetchall()
@@ -239,15 +252,23 @@ class LLPPayrollEmployeeVacation(models.Model):
 			create_vals = []
 
 			for emp_id, line in line_by_emp.items():
-				emp_start = emp_start_map.get(emp_id)
-				if not emp_start:
+				if emp_id not in emp_start_map:
 					continue
+				emp_start = emp_start_map[emp_id]
 
 				for mon, sal, wd in by_emp.get(emp_id, []):
-					if mon < emp_start:
-						continue
-					if mon > prev_month_end.replace(day=1):
-						continue
+					if emp_start:
+						# Одоогийн чадамж: last_vacation_salary_date-тай ажилтны хувьд
+						# ямар ч өөрчлөлтгүй хэвээрээ ажиллана.
+						if mon < emp_start:
+							continue
+						if mon > prev_month_end.replace(day=1):
+							continue
+					else:
+						# Шинэ шаардлага: last_vacation_salary_date хоосон бол
+						# vacation-ий сонгосон (vac.month) сараас өмнөх бүх сарыг авна.
+						if mon >= vac_month_start:
+							continue
 
 					create_vals.append({
 						'line_id': line.id,
