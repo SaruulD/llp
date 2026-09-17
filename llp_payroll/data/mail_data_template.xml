@@ -83,7 +83,6 @@
                 <t t-raw="object._get_employee_header_html(employee)"/>
                 <t t-raw="object._get_employee_report_html(object.env.context.get('employee_values', []))"/>
 
-                <p>Хүндэтгэсэн,<br/>Цалингийн баг</p>
             </div>
         </field>
         <field name="auto_delete" eval="True"/>

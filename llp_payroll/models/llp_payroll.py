@@ -152,6 +152,16 @@ class LLPPayroll(models.Model):
             force_send=True,
             email_values={
                 'email_to': employee.private_email,
+                # Subject-ийг ажилтан бүрээр ялгаатай болгож байна: анхны
+                # template.subject нь зөвхөн object.name (payroll)-оос
+                # тогтдог тул хэд хэдэн ажилтан ижил private_email хуваалцаж
+                # байгаа тохиолдолд бүх мэйл яг ижил Subject-тэй болж,
+                # имэйл клиент (Gmail гэх мэт) тэднийг нэг thread рүү
+                # нэгтгээд зөвхөн сүүлчийн ажилтных л харагддаг байсан.
+                'subject': _('Цалингийн хуудас - %(payroll)s - %(employee)s') % {
+                    'payroll': self.name,
+                    'employee': employee.name,  
+                },
             },
         )
  
