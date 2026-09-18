@@ -137,18 +137,18 @@ class LLPPayroll(models.Model):
         body_parts = []
         if sent_employees:
             body_parts.append(_(
-                "Дараах ажилтнуудад цалингийн мэдээлэл имэйлээр амжилттай илгээгдлээ:<br/>%s"
-            ) % '<br/>'.join(sent_employees))
+                "Дараах ажилтнуудад цалингийн мэдээлэл имэйлээр амжилттай илгээгдлээ:%s"
+            ) % ','.join(sent_employees))
         if skipped_employees:
             body_parts.append(_(
                 "Дараах ажилтнуудад <b>Хувийн И-Майл (private_email)</b> бүртгэгдээгүй "
-                "тул цалингийн мэдээлэл имэйлээр илгээгдсэнгүй:<br/>%s"
-            ) % '<br/>'.join(skipped_employees))
+                "тул цалингийн мэдээлэл имэйлээр илгээгдсэнгүй:%s"
+            ) % ','.join(skipped_employees))
         if no_value_employees:
             body_parts.append(_(
                 "Дараах ажилтнуудад имэйлээр илгээх тохирох цалингийн дүн олдоогүй "
-                "тул имэйл илгээгдсэнгүй:<br/>%s"
-            ) % '<br/>'.join(no_value_employees))
+                "тул имэйл илгээгдсэнгүй:%s"
+            ) % ','.join(no_value_employees))
 
         if body_parts:
             self.message_post(body='<br/><br/>'.join(body_parts))
