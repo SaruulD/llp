@@ -86,13 +86,16 @@ class LLPPayroll(models.Model):
         if not struct_lines:
             return
 
-        skipped_employees = []  # private_email байхгүй тул имэйл яваагүй ажилтнууд
+        sent_employees = []      # имэйл амжилттай илгээгдсэн ажилтнууд
+        skipped_employees = []   # private_email байхгүй тул имэйл яваагүй ажилтнууд
+        no_value_employees = []  # send_mail=True рультэй тохирох дүн олдоогүй тул имэйл яваагүй ажилтнууд
 
         for line in self.line_ids:
             employee = line.employee_id
+            employee_label = employee.name or (_('ID %s') % employee.id)
 
             if not employee.private_email:
-                skipped_employees.append(employee.name or (_('ID %s') % employee.id))
+                skipped_employees.append(employee_label)
                 continue
 
             values = []
@@ -121,18 +124,31 @@ class LLPPayroll(models.Model):
                 })
 
             if not values:
+                no_value_employees.append(employee_label)
                 continue
 
             self._send_employee_mail(employee, values)
+            sent_employees.append(employee_label)
 
-        # Имэйл хаяггүй тул мэйл яваагүй ажилтнуудыг chatter дээр мэдэгдэнэ
+        # Ажилтан бүрээр имэйл явсан эсэхийг chatter дээр тэмдэглэнэ
+        body_parts = []
+        if sent_employees:
+            body_parts.append(_(
+                "Дараах ажилтнуудад цалингийн мэдээлэл имэйлээр амжилттай илгээгдлээ:<br/>%s"
+            ) % '<br/>'.join(sent_employees))
         if skipped_employees:
-            self.message_post(
-                body=_(
-                    "Дараах ажилтнуудад <b>Хувийн И-Майл (private_email)</b> бүртгэгдээгүй "
-                    "тул цалингийн мэдээлэл имэйлээр илгээгдсэнгүй:<br/>%s"
-                ) % '<br/>'.join(skipped_employees)
-            )
+            body_parts.append(_(
+                "Дараах ажилтнуудад <b>Хувийн И-Майл (private_email)</b> бүртгэгдээгүй "
+                "тул цалингийн мэдээлэл имэйлээр илгээгдсэнгүй:<br/>%s"
+            ) % '<br/>'.join(skipped_employees))
+        if no_value_employees:
+            body_parts.append(_(
+                "Дараах ажилтнуудад имэйлээр илгээх тохирох цалингийн дүн олдоогүй "
+                "тул имэйл илгээгдсэнгүй:<br/>%s"
+            ) % '<br/>'.join(no_value_employees))
+
+        if body_parts:
+            self.message_post(body='<br/><br/>'.join(body_parts))
  
  
     def _send_employee_mail(self, employee, values):

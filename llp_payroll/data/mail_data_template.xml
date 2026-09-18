@@ -6,7 +6,7 @@
          report_name/report_file: <module>.<template_id>
          ========================================================== -->
     <record id="llp_payroll_employee_report" model="ir.actions.report">
-        <field name="name">Цалингийн хуудас</field>
+        <field name="name">Salary Slip</field>
         <field name="model">llp.payroll</field>
         <field name="report_type">qweb-pdf</field>
         <field name="report_name">llp_payroll.llp_payroll_employee_report_template</field>
@@ -71,7 +71,7 @@
                     t-value="object.env['hr.employee'].browse(object.env.context.get('employee_id'))" />
 
                 <div style="text-align: center; margin-bottom: 10px;">
-                    <t t-out="object.get_company_logo_mail(object.ids)" />
+                    <t t-raw="object.get_company_logo_mail(object.ids)" />
                 </div>
 
                 <p style="text-align: center;">
