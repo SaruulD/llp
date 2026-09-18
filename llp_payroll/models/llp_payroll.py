@@ -130,7 +130,10 @@ class LLPPayroll(models.Model):
             self._send_employee_mail(employee, values)
             sent_employees.append(employee_label)
 
-        # Ажилтан бүрээр имэйл явсан эсэхийг chatter дээр тэмдэглэнэ
+        # Ажилтан бүрээр имэйл явсан эсэхийг chatter дээр тэмдэглэнэ.
+        # Имэйлийн агуулга (body) энд ОРОХГvй - зөвхөн нэр/шалтгаан.
+        # Имэйл бvр (_send_employee_mail) model/res_id-гvй явдаг тул
+        # тэдгээрийн бvтэн body chatter-т автоматаар давхар бичигдэхгvй.
         body_parts = []
         if sent_employees:
             body_parts.append(_(
@@ -168,6 +171,12 @@ class LLPPayroll(models.Model):
             force_send=True,
             email_values={
                 'email_to': employee.private_email,
+                # model/res_id-г санаатайгаар хоослож байна: эс тэгвэл
+                # илгээсэн имэйл бvрийн БvТЭН body (задаргаа) энэ payroll
+                # бичлэгийн chatter/log-т өөрөө автоматаар давхар харагдана.
+                # Зөвхөн дээрх нэгтгэсэн (нэр+шалтгаан) мэдэгдэл л chatter-т vлдэнэ.
+                'model': False,
+                'res_id': False,
                 # Subject-ийг ажилтан бүрээр ялгаатай болгож байна: анхны
                 # template.subject нь зөвхөн object.name (payroll)-оос
                 # тогтдог тул хэд хэдэн ажилтан ижил private_email хуваалцаж
