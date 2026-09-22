@@ -9,11 +9,17 @@
             <search string="Search payroll">
                 <field name="name" />
                 <field name="department_id" />
+                <filter string="Salary Advance" name="salary_advance"
+                    domain="[('struct_id.struct_type', '=', 'salary_advance')]" />
+                <filter string="Salary Late" name="salary_late"
+                    domain="[('struct_id.struct_type', '=', 'salary_late')]" />
                 <group expand="0" string="Group By">
                     <filter string="Name" name="name" context="{'group_by': 'name'}" />
                     <filter string="Department" name="department_id"
                         context="{'group_by': 'department_id'}" />
                     <filter string="Company" name="company_id" context="{'group_by': 'company_id'}" />
+                    <filter string="Struct" name="struct_id" context="{'group_by': 'struct_id'}" />
+                    <filter string="Month" name="month" context="{'group_by':'start_date:month'}" />
                 </group>
             </search>
         </field>

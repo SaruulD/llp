@@ -47,7 +47,7 @@ class LLPPayrollStructureLine(models.Model):
 	rule_code = fields.Char(related='rule_id.code', string="Rule Code", readonly=True)
 	sequence = fields.Integer(string="Sequence")
 	exp_sequence = fields.Integer(string="Expression Sequence")
-	company_id = fields.Many2one('res.company', string="Company",default=lambda self: self.env.company,)
+	company_id = fields.Many2one('res.company', string="Company", related='rule_id.company_id', store=True, readonly=True)
 	line_no = fields.Integer(
 		string="№",
 		compute="_compute_line_no",
