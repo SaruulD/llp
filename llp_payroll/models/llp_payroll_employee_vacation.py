@@ -135,21 +135,31 @@ class LLPPayrollEmployeeVacation(models.Model):
 			if vac.company_id:
 				emp_domain.append(('company_id', '=', vac.company_id.id))
 			employees = self.env['hr.employee'].sudo().with_context(active_test=False).search(emp_domain)
-	# struct_type-с хамааран next_vacation_salary_date-ийн өдрөөр шүүх
-			if vac.struct_type == 'salary_advance':
-				employees = employees.filtered(
-					lambda e: e.next_vacation_salary_date
-					and e.next_vacation_salary_date.year == vac.month.year
-					and e.next_vacation_salary_date.month == vac.month.month
-					and 1 <= e.next_vacation_salary_date.day <= 15
-				)
-			elif vac.struct_type == 'salary_late':
-				employees = employees.filtered(
-					lambda e: e.next_vacation_salary_date
-					and e.next_vacation_salary_date.year == vac.month.year
-					and e.next_vacation_salary_date.month == vac.month.month
-					and e.next_vacation_salary_date.day >= 16
-				)
+
+			existing_emp_lines = vac.line_ids.filtered('employee_id')
+
+			if existing_emp_lines:
+				# Line дээр ажилтан гараар аль хэдийн сонгогдсон байгаа тул
+				# struct_type-с хамаарсан автомат ажилтан татах, шүүх хэсгийг алгасна.
+				employees = self.env['hr.employee']
+			else:
+				# struct_type-с хамааран next_vacation_salary_date-ийн өдрөөр шүүх
+				if vac.struct_type == 'salary_advance':
+					employees = employees.filtered(
+						lambda e: e.next_vacation_salary_date
+						and e.next_vacation_salary_date.year == vac.month.year
+						and e.next_vacation_salary_date.month == vac.month.month
+						and 1 <= e.next_vacation_salary_date.day <= 15
+					)
+				elif vac.struct_type == 'salary_late':
+					employees = employees.filtered(
+						lambda e: e.next_vacation_salary_date
+						and e.next_vacation_salary_date.year == vac.month.year
+						and e.next_vacation_salary_date.month == vac.month.month
+						and e.next_vacation_salary_date.day >= 16
+					)
+				else:
+					return
 
 			line_by_emp = {l.employee_id.id: l for l in vac.line_ids if l.employee_id}
 			for emp in employees:
