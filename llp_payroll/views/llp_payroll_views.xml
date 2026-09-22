@@ -135,11 +135,14 @@
                             <field name="line_ids" widget="payroll_sheet" readonly="1" />
                         </page>
                         <page string="Employee">
-                            <field name="line_ids" readonly="state != 'draft'">
+                            <button name="send_mail_to_selected_employees" string="Send Email to Selected"
+                                type="object" class="btn-info" invisible="state != 'confirmed'" />
+                            <field name="line_ids" readonly="state not in ('draft', 'confirmed')">
                                 <list>
                                     <field name="number" readonly="1" />
                                     <field name="employee_id" options="{'no_create': True}"
                                         required="1" />
+                                    <field name="send_mail_ok" widget="boolean_toggle" />
                                     <field name="payroll_state" column_invisible="1" />
                                     <field name="line_ids" readonly="1">
                                         <list>
@@ -170,6 +173,7 @@
                                     <field name="employee_id" />
                                     <field name="employee_id" options="{'no_create': True}"
                                         required="1" />
+                                    <field name="send_mail_ok" />
                                     <field name="payroll_state" column_invisible="1" />
                                     <field name="line_ids" readonly="1">
                                         <list>

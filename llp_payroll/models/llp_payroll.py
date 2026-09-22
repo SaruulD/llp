@@ -72,9 +72,23 @@ class LLPPayroll(models.Model):
     
 
     def send_mail_to_employees(self):
-        self._send_payroll_rule_mail()
+        """Header-ийн "Send Email" товч: өмнөх зарчмаараа бvх ажилтанд
+        (line_ids) илгээнэ, send_mail_ok чагтаар шvvхгvй."""
+        self._send_payroll_rule_mail(self.line_ids)
 
-    def _send_payroll_rule_mail(self):
+    def send_mail_to_selected_employees(self):
+        """"Employee" табан дээрх, тусдаа "Send Email to Selected" товч:
+        зөвхөн send_mail_ok чагтыг тэмдэглэсэн ажилтнуудад л илгээнэ."""
+        mail_lines = self.line_ids.filtered(lambda l: l.send_mail_ok)
+        if not mail_lines:
+            raise UserError(_(
+                'Имэйл илгээх ажилтан сонгогдоогvй байна. "Employee" табан '
+                'дээрх жагсаалтаас дор хаяж нэг ажилтны "Send Email" '
+                'чагтыг тэмдэглэнэ vv.'
+            ))
+        self._send_payroll_rule_mail(mail_lines)
+
+    def _send_payroll_rule_mail(self, mail_lines):
         self.ensure_one()
 
         # Тухайн payroll-ийн struct-д хамаарах, send_mail=True рулиудыг
@@ -90,7 +104,7 @@ class LLPPayroll(models.Model):
         skipped_employees = []   # private_email байхгүй тул имэйл яваагүй ажилтнууд
         no_value_employees = []  # send_mail=True рультэй тохирох дүн олдоогүй тул имэйл яваагүй ажилтнууд
 
-        for line in self.line_ids:
+        for line in mail_lines:
             employee = line.employee_id
             employee_label = employee.name or (_('ID %s') % employee.id)
 
@@ -1395,6 +1409,9 @@ class LLPPayrollLine(models.Model):
     number = fields.Integer(string='№')
     payroll_state = fields.Selection(related='payroll_id.state', string="Payroll State", store=False)
     line_ids  = fields.One2many('llp.payroll.line.addtional','payroll_line_id', string="Additional Lines")
+    send_mail_ok = fields.Boolean(string="Send Email", default=False,
+        help="Цалингийн мэдээллийг имэйлээр илгээхдээ зөвхөн энэ чагтыг "
+             "тэмдэглэсэн ажилтнуудад илгээнэ.")
     
     def action_computebyQUERY(self):
         return
