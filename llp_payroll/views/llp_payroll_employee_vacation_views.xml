@@ -108,7 +108,7 @@
                                         <group>
                                             <field name="employee_id" options="{'no_create': True}"
                                                 required="1"
-                                                domain="[('department_id', 'in', parent.department_ids), '|', ('contract_id.date_end', '=', False), ('contract_id.date_end', '&lt;=', parent.month)]"
+                                                domain="[('department_id', 'in', parent.department_ids)]"
                                                 context="{'active_test': False}" />
                                             <field name="department_id" readonly="1" />
                                             <field name="month" readonly="1" />
