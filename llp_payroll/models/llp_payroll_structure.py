@@ -53,6 +53,23 @@ class LLPPayrollStructureLine(models.Model):
 		compute="_compute_line_no",
 	)
 
+	@api.constrains('rule_id', 'struct_id')
+	def _check_rule_code_unique_in_struct(self):
+		"""Дүрмийн код зөвхөн компани дотор давхардахгүй тул (DB даяар биш), нэг бүтцэд
+		өөр компанийн ижил кодтой хоёр өөр дүрэм орвол цалин бодох (томьёоны кодыг утгаар
+		солих, кодоор бүлэглэх) нь мөргөлдөнө. Ийм бүтэц үүсэхээс сэргийлнэ."""
+		for line in self:
+			code = line.rule_id.code
+			if not code or not line.struct_id:
+				continue
+			clash = line.struct_id.line_ids.filtered(
+				lambda l: l.id != line.id and l.rule_id != line.rule_id and l.rule_id.code == code)
+			if clash:
+				raise UserError(_(
+					'Цалингийн бүтцэд "%(code)s" кодтой хоёр өөр дүрэм (%(a)s, %(b)s) байж болохгүй. '
+					'Бүтэц нь нэг компанийн дүрмүүдээс тогтох ёстой.',
+					code=code, a=line.rule_id.display_name, b=clash[:1].rule_id.display_name))
+
 	@api.depends('struct_id.line_ids')
 	def _compute_line_no(self):
 		for line in self:

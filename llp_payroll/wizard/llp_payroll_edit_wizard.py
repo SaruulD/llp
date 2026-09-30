@@ -180,8 +180,17 @@ class LLPPayrollEditWizard(models.TransientModel):
             raise UserError(_("No rule codes found in header row."))
 
         rule_codes = list(set(col_rule_code.values()))
-        rules = self.env['llp.payroll.rule'].sudo().search([('code', 'in', rule_codes)])
-        rule_by_code = {r.code: r for r in rules}
+        # Код нь зөвхөн компани дотор давхардахгүй тул өөр компанийн ижил кодтой дүрмийг
+        # авахгүйн тулд цалингийн (payroll) компаниар шүүнэ. Компанигүй (хоосон) дүрэм ч зөвшөөрөгдөнө.
+        payroll_company = self.payroll_id.company_id
+        rules = self.env['llp.payroll.rule'].sudo().search([
+            ('code', 'in', rule_codes),
+            '|', ('company_id', '=', payroll_company.id), ('company_id', '=', False),
+        ])
+        # Нэг код хоёр дүрэмд таарвал тухайн компанийн дүрмийг давуу авна.
+        rule_by_code = {}
+        for r in rules.sorted(lambda rule: 0 if rule.company_id == payroll_company else 1, reverse=True):
+            rule_by_code[r.code] = r
 
         missing = [c for c in rule_codes if c not in rule_by_code]
         if missing:

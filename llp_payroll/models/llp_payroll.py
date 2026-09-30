@@ -1291,7 +1291,8 @@ class LLPPayroll(models.Model):
         left join llp_payroll_rule D ON D.id = C.payroll_rule_id \
         left join llp_payroll_structure E ON E.id= A.struct_id \
         where A.state in ('confirmed') and E.struct_type ='salary_advance' and B.employee_id = %s and D.code ='%s' \
-        and A.start_date between '%s' and '%s' and A.end_date between '%s' and '%s' "%(employee_id,code,start_date, end_date,start_date, end_date)
+        and A.company_id = %s \
+        and A.start_date between '%s' and '%s' and A.end_date between '%s' and '%s' "%(employee_id,code,self.company_id.id,start_date, end_date,start_date, end_date)
 
         self.env.cr.execute(query)
         fetch = self.env.cr.fetchone()

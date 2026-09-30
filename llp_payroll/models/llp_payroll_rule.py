@@ -69,11 +69,38 @@ class LLPPayrollRule(models.Model):
 		for rec in self:
 			rec.structure_ids = rec.structure_line_ids.mapped('struct_id')
 	
+	# Код нь БҮХ DB-д биш, КОМПАНИ ДОТОР давхардахгүй байна (өөр компани ижил кодтой дүрэмтэй
+	# байж болно). Хуучин unique(code) хязгаарлалтыг (code_uniq) init()-д устгана.
+	# company_id хоосон (NULL) дүрмүүдийг PostgreSQL unique хязгаарлалт давхардуулж
+	# зөвшөөрдөг тул тэдгээрийг доорх @api.constrains шалгана.
 	_sql_constraints = [
-		('code_uniq', 'unique(code)',
-		("There is already a rule defined on this model\n"
-		"You cannot define another: please edit the existing one or change this one."))
+		('code_company_uniq', 'unique(code, company_id)',
+		 'Энэ компанид ийм кодтой цалингийн дүрэм аль хэдийн байна. Кодыг өөрчилнө үү.'),
 	]
+
+	def init(self):
+		self.env.cr.execute("""
+			ALTER TABLE llp_payroll_rule
+			DROP CONSTRAINT IF EXISTS llp_payroll_rule_code_uniq
+		""")
+		super().init()
+
+	@api.constrains('code', 'company_id')
+	def _check_code_unique_in_company(self):
+		for rec in self:
+			if not rec.code:
+				continue
+			duplicate = self.with_context(active_test=False).search([
+				('id', '!=', rec.id),
+				('code', '=', rec.code),
+				('company_id', '=', rec.company_id.id or False),
+			], limit=1)
+			if duplicate:
+				raise UserError(_(
+					'"%(company)s" компанид "%(code)s" кодтой цалингийн дүрэм аль хэдийн байна '
+					'(%(name)s). Кодыг өөрчилнө үү.',
+					company=rec.company_id.display_name or _('Компанигүй'),
+					code=rec.code, name=duplicate.name or duplicate.display_name))
 	def _get_object_type_base_map(self):
 			"""object_type-ийн утга бүрийг action_computebyQUERY() доторх аль
 			үндсэн ангилалд (contract/vacation/debt/attendance/kpi/employee)
