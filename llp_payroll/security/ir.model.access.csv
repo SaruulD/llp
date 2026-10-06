@@ -1,7 +1,7 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_llp_payroll_accountant,llp.payroll,model_llp_payroll,llp_payroll.group_payroll_accountant,1,1,1,1
 access_llp_payroll_admin,llp.payroll,model_llp_payroll,llp_payroll.group_payroll_admin,1,1,1,1
-access_llp_payroll_exec_director,llp.payroll,model_llp_payroll,llp_payroll.group_payroll_exec_director,1,0,0,0
+access_llp_payroll_exec_director,llp.payroll,model_llp_payroll,llp_payroll.group_payroll_exec_director,1,1,0,0
 access_llp_payroll_hr_director,llp.payroll,model_llp_payroll,llp_payroll.group_payroll_hr_director,1,0,0,0
 access_llp_payroll_group_ceo,llp.payroll,model_llp_payroll,llp_payroll.group_payroll_group_ceo,1,0,0,0
 
