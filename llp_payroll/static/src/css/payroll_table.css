@@ -1,9 +1,12 @@
 .o_form_view .o_group .o_group_col,
-.o_form_view .o_inner_group,
+.o_form_view .o_inner_group {
+  min-width: 0 !important;
+  /* ← this stops the 3720px expansion (width-ийг энд бүү тавь: бүх маягтын col-lg-6 баганыг эвддэг) */
+}
+
 .o_field_widget.o_field_payroll_sheet,
 .o_payroll_sheet {
   min-width: 0 !important;
-  /* ← this stops the 3720px expansion */
   width: 100%;
 }
 
