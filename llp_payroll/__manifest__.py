@@ -36,7 +36,7 @@
     ],
     'installable': True,
     'application': True,
-    'version': '18.1.0',
+    'version': '18.1.1',
     'license': 'LGPL-3',
     'assets' : {
         'web.assets_backend': [

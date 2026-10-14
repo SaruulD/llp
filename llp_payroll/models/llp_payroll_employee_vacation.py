@@ -106,6 +106,19 @@ class LLPPayrollEmployeeVacation(models.Model):
 		# shaltgaan oruulah
 		self.write({'state':'draft'})
 		self.create_history('draft')
+
+	def action_set_draft(self):
+		"""Батлагдсан (done) ээлжийн амралтыг Цалин нягтлан ноорог руу буцаана.
+		Цалин бодолтод ашиглагдаж эхэлсэн (done_or_not) мөртэй бол буцаахгүй."""
+		if not self.env.user.has_group('llp_payroll.group_payroll_accountant'):
+			raise UserError(_("Зөвхөн Цалин нягтлан эрхтэй хэрэглэгч батлагдсан ээлжийн амралтыг ноорог болгоно."))
+		for rec in self:
+			if rec.state != 'done':
+				raise UserError(_("Зөвхөн батлагдсан төлөвтэй ээлжийн амралтыг ноорог болгоно."))
+			if any(rec.line_ids.mapped('done_or_not')):
+				raise UserError(_("%s ээлжийн амралтын мөр цалин бодолтод ашиглагдсан тул ноорог болгох боломжгүй.") % rec.name)
+			rec.write({'state': 'draft'})
+			rec.create_history('draft')
 	
 
 	def create_history(self,state, note = ""):

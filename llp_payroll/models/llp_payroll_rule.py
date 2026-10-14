@@ -132,16 +132,16 @@ class LLPPayrollRule(models.Model):
 			'part_time_work_additional_salary': (
 """result = 0
 if object:
-    if object.part_time_work_start_date or object.part_time_work_end_date:
-        if object.part_time_work_start_date >= payroll_start_date and object.part_time_work_start_date <= payroll_end_date or payroll_start_date <= object.part_time_work_end_date and payroll_end_date >= object.part_time_work_end_date or object.part_time_work_start_date <= payroll_start_date and payroll_end_date <= object.part_time_work_end_date:
-            result = object.part_time_work_additional_salary"""
+    for part_time_work in object.part_time_work_ids:
+        if part_time_work.start_date <= payroll_end_date and (not part_time_work.end_date or part_time_work.end_date >= payroll_start_date):
+            result += part_time_work.additional_salary"""
 			),
 			'part_time_work_additional_salary_percent': (
 """result = 0
 if object:
-    if object.part_time_work_start_date or object.part_time_work_end_date:
-        if object.part_time_work_start_date >= payroll_start_date and object.part_time_work_start_date <= payroll_end_date or payroll_start_date <= object.part_time_work_end_date and payroll_end_date >= object.part_time_work_end_date or object.part_time_work_start_date <= payroll_start_date and payroll_end_date <= object.part_time_work_end_date:
-            result = object.part_time_work_additional_salary_percent"""
+    for part_time_work in object.part_time_work_ids:
+        if part_time_work.start_date <= payroll_end_date and (not part_time_work.end_date or part_time_work.end_date >= payroll_start_date):
+            result += part_time_work.additional_salary_percent"""
 			),
 		}
 	

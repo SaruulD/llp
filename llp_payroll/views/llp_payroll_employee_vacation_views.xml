@@ -72,6 +72,10 @@
                         type="object" class="btn-primary" />
                     <button name="action_return" invisible="state != 'pending'" string="Return"
                         type="object" class="btn-secondary" />
+                    <button name="action_set_draft" invisible="state != 'done'" string="Ноорог болгох"
+                        type="object" class="btn-secondary"
+                        groups="llp_payroll.group_payroll_accountant"
+                        confirm="Батлагдсан ээлжийн амралтыг ноорог төлөвт оруулах уу?" />
                     <field name="state" widget="statusbar"
                         statusbar_visible="draft,pending,done,locked" />
                 </header>
