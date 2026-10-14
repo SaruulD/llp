@@ -59,4 +59,11 @@
     <record id="llp_hr_timeplan.menu_time_planing_root" model="ir.ui.menu">
         <field name="groups_id" eval="[(3, ref('llp_payroll.group_payroll_accountant'))]"/>
     </record>
+
+    <!-- Гэрээнүүд (hr_contract.action_hr_contract) цэсэд цалингийн нягтлан эрхийг нэмнэ.
+         llp_hr_contract энэ цэсийг идэвхгүй болгодог тул llp_hr_contract-аас хойш ачаалж дахин идэвхжүүлнэ. -->
+    <record id="hr_contract.menu_hr_employee_contracts" model="ir.ui.menu">
+        <field name="active" eval="True"/>
+        <field name="groups_id" eval="[(4, ref('llp_payroll.group_payroll_accountant'))]"/>
+    </record>
 </odoo>
