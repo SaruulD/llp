@@ -215,10 +215,11 @@ class LLPPayrollIncomeTaxImport(models.TransientModel):
                 LEFT JOIN llp_payroll_line B ON B.payroll_id = A.id
                 LEFT JOIN hr_employee EMP ON EMP.id = B.employee_id
                 LEFT JOIN hr_department HD ON HD.id = EMP.department_id
-                LEFT JOIN (
+                LEFT JOIN LATERAL (
                     SELECT *
                     FROM llp_payroll_report_config
                     WHERE type = 'income_tax_import'
+                    AND company_id = A.company_id
                     ORDER BY id
                     LIMIT 1
                 ) C ON TRUE

@@ -216,10 +216,11 @@ class LLPPayrollInsuranceTaxReport(models.TransientModel):
                 CASE WHEN L.rulefield_type = 'digit' THEN COALESCE(LV.value, 0)::text ELSE COALESCE(LV.char_value, '') END AS is_limit_max
             FROM llp_payroll A
                 LEFT JOIN llp_payroll_line B ON B.payroll_id = A.id
-                LEFT JOIN (
+                LEFT JOIN LATERAL (
                     SELECT *
                     FROM llp_payroll_report_config
                     WHERE type = 'insurance_tax_report'
+                    AND company_id = A.company_id
                     ORDER BY id
                     LIMIT 1
                 ) C ON TRUE
