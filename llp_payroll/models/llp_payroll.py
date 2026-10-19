@@ -171,12 +171,7 @@ class LLPPayroll(models.Model):
     def _send_employee_mail(self, employee, values):
         self.ensure_one()
  
-        # PDF/attachment үүсгэхгүй, задаргааг зөвхөн мэйлийн body дотор
-        # (mail_template_payroll-ийн body_html) шууд харуулна. employee_id /
-        # employee_values-ийг context-оор дамжуулснаар body_html доторх
-        # doc._get_employee_header_html(...) / doc._get_employee_report_html(...)
-        # тухайн ажилтны өөрийнх нь мэдээллийг зурна.
-        template = self.env.ref('llp_payroll.mail_template_payroll')  # module нэрээ тохируулна
+        template = self.env.ref('llp_payroll.mail_template_payroll') 
         template.with_context(
             employee_id=employee.id,
             employee_values=values,
@@ -184,6 +179,7 @@ class LLPPayroll(models.Model):
             self.id,
             force_send=True,
             email_values={
+                'auto_delete': True,
                 'email_to': employee.private_email,
                 # model/res_id-г санаатайгаар хоослож байна: эс тэгвэл
                 # илгээсэн имэйл бvрийн БvТЭН body (задаргаа) энэ payroll
@@ -1035,6 +1031,7 @@ class LLPPayroll(models.Model):
                                                 local_dict = {
                                                     'rule': rule,
                                                     'object': contract_obj,
+                                                    'payroll': self,
                                                     'planing_lines': planing_lines_rs,
                                                     'payroll_start_date': self.start_date,
                                                     'payroll_end_date': self.end_date,
@@ -1052,6 +1049,7 @@ class LLPPayroll(models.Model):
                                             local_dict = {
                                                 'rule': rule,
                                                 'object': object,
+                                                'payroll': self,
                                                 'planing_lines': self.env['time.planing.lines'],
                                                 'payroll_start_date': self.start_date,
                                                 'payroll_end_date': self.end_date,
