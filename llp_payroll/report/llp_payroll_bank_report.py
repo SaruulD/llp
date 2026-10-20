@@ -40,8 +40,6 @@ class LLPPayrollBankReport(models.TransientModel):
             SELECT
                 C.name AS struct_name,
                 A.id AS payroll_id,
-                H.id AS department_id,
-                H.complete_name AS department_name,
                 B.employee_id AS employee_id,
                 G.firstname AS firstname,
                 G.lastname AS lastname,
@@ -50,7 +48,6 @@ class LLPPayrollBankReport(models.TransientModel):
                 COALESCE(F.value, 0) AS value,
                 G.res_bank_account_number AS account_number,
                 J.name AS bank
-
             FROM llp_payroll A
                 LEFT JOIN llp_payroll_line B ON B.payroll_id = A.id
                 LEFT JOIN llp_payroll_structure C ON C.id = A.struct_id
@@ -60,8 +57,6 @@ class LLPPayrollBankReport(models.TransientModel):
                 LEFT JOIN llp_payroll_rule_value F
                     ON F.payroll_rule_id = E.id AND B.id = F.line_id
                 LEFT JOIN hr_employee G ON G.id = B.employee_id
-                LEFT JOIN {rel_table} REL ON REL.{rel_col1} = A.id
-                LEFT JOIN hr_department H ON H.id = REL.{rel_col2}
                 LEFT JOIN res_bank J ON J.id = G.res_bank_id
             WHERE A.state = 'confirmed'
             AND A.start_date = %s
@@ -71,10 +66,12 @@ class LLPPayrollBankReport(models.TransientModel):
         params = [self.start_date, self.end_date, self.struct_id.id]
 
         if self.department_ids:
-            query += " AND H.id IN %s"
+            query += """
+                AND G.department_id IN %s
+            """
             params.append(tuple(self.department_ids.ids))
 
-        query += " ORDER BY J.name, G.lastname, G.firstname"
+        query += """ORDER BY J.name, G.lastname, G.firstname"""
 
         self.env.cr.execute(query, tuple(params))
         cols = [d[0] for d in self.env.cr.description]
