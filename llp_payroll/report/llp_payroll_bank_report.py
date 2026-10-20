@@ -48,8 +48,9 @@ class LLPPayrollBankReport(models.TransientModel):
                 E.id AS rule_id,
                 E.name AS rule_name,
                 COALESCE(F.value, 0) AS value,
-                I.acc_number AS account_number,
+                G.res_bank_account_number AS account_number,
                 J.name AS bank
+
             FROM llp_payroll A
                 LEFT JOIN llp_payroll_line B ON B.payroll_id = A.id
                 LEFT JOIN llp_payroll_structure C ON C.id = A.struct_id
@@ -61,8 +62,7 @@ class LLPPayrollBankReport(models.TransientModel):
                 LEFT JOIN hr_employee G ON G.id = B.employee_id
                 LEFT JOIN {rel_table} REL ON REL.{rel_col1} = A.id
                 LEFT JOIN hr_department H ON H.id = REL.{rel_col2}
-                LEFT JOIN res_partner_bank I ON I.id = G.bank_account_id
-                LEFT JOIN res_bank J ON J.id = I.bank_id
+                LEFT JOIN res_bank J ON J.id = G.res_bank_id
             WHERE A.state = 'confirmed'
             AND A.start_date = %s
             AND A.end_date   = %s
