@@ -8,7 +8,10 @@
         <field name="arch" type="xml">
             <search string="Search payroll">
                 <field name="name" />
+                <field name="company_id" />
                 <field name="department_id" />
+                <field name="employee_ids" />
+                <field name="struct_id" />
                 <filter string="Salary Advance" name="salary_advance"
                     domain="[('struct_id.struct_type', '=', 'salary_advance')]" />
                 <filter string="Salary Late" name="salary_late"
@@ -17,6 +20,7 @@
                     <filter string="Name" name="name" context="{'group_by': 'name'}" />
                     <filter string="Department" name="department_id"
                         context="{'group_by': 'department_id'}" />
+                    <filter string="State" name="state" context="{'group_by': 'state'}" />
                     <filter string="Company" name="company_id" context="{'group_by': 'company_id'}" />
                     <filter string="Struct" name="struct_id" context="{'group_by': 'struct_id'}" />
                     <filter string="Month" name="month" context="{'group_by':'start_date:month'}" />

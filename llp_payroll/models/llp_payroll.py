@@ -57,6 +57,8 @@ class LLPPayroll(models.Model):
         domain="['|', ('company_id', '=', company_id), ('company_id', '=', False)]")
     struct_id = fields.Many2one('llp.payroll.structure',string="Stucture", domain="[('state','=','done')]",tracking=True)
     line_ids = fields.One2many('llp.payroll.line','payroll_id',string="Lines")
+    employee_ids = fields.Many2many('hr.employee', string="Employees",
+        compute='_compute_employee_ids', search='_search_employee_ids')
     state = fields.Selection([
         ('draft','Draft'),
         ('sent','Sent'),
@@ -69,7 +71,15 @@ class LLPPayroll(models.Model):
     history_ids = fields.One2many('request.history','payroll_id',string="State History")
     payment_history_ids = fields.One2many('payroll.payment.history', 'payroll_id', string="Payment history")
 
-    
+    @api.depends('line_ids.employee_id')
+    def _compute_employee_ids(self):
+        for rec in self:
+            rec.employee_ids = rec.line_ids.employee_id
+
+    def _search_employee_ids(self, operator, value):
+        # Search view-д ажилтны нэрээр хайхад цалингийн мөрийн ажилтнаар шүүнэ.
+        return [('line_ids.employee_id', operator, value)]
+
 
     def send_mail_to_employees(self):
         """Header-ийн "Send Email" товч: өмнөх зарчмаараа бvх ажилтанд
