@@ -18,7 +18,11 @@ class LLPPayrollReportConfig(models.Model):
         ('insurance_tax_import','Insurance Tax Import'),
         # ('income_tax_report','Income Tax Report'),
         ('income_tax_import','Income Tax Import')],string="Type",tracking=True,default='insurance_tax_import')
-    
+    struct_id = fields.Many2one(
+        'llp.payroll.structure', string="Цалингийн бүтэц", tracking=True,
+        domain="[('struct_type', '=', 'salary_late'), ('company_id', '=', company_id)]",
+    )
+
     civil_number = fields.Many2one('llp.payroll.rule', string='Иргэний дугаар', tracking=True)
     register_number = fields.Many2one('llp.payroll.rule', string='Регистрийн дугаар', tracking=True)
     family_name = fields.Many2one('llp.payroll.rule', string='Ургийн овог', tracking=True)
@@ -77,5 +81,18 @@ class LLPPayrollReportConfig(models.Model):
             rec.name = selection.get(rec.type) or ''
 
     _sql_constraints = [
-        ('unique_type_company', 'unique(type, company_id)', 'Type must be unique per company.'),
+        ('unique_type_company', 'unique(type, company_id, struct_id)',
+         'Тайлангийн тохиргоо хийгдсэн тул өмнөх үүссэн тохиргоог шалгана уу.'),
     ]
+
+    @api.constrains('type', 'company_id', 'struct_id')
+    def _check_unique_without_struct(self):
+        for rec in self.filtered(lambda r: not r.struct_id):
+            duplicate = self.search_count([
+                ('id', '!=', rec.id),
+                ('type', '=', rec.type),
+                ('company_id', '=', rec.company_id.id),
+                ('struct_id', '=', False),
+            ])
+            if duplicate:
+                raise UserError(_('Тайлангийн тохиргоо хийгдсэн тул өмнөх үүссэн тохиргоог шалгана уу.'))

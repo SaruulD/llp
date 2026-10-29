@@ -28,6 +28,14 @@ class LLPPayrollIncomeTaxImport(models.TransientModel):
     INSURANCE_RATE_INDEX = 7      # 'ЭМД, НДШ Хувь' -> дундажаар бодно
     DISCOUNT_MONTHLY_INDEX = 17   # 'Хуулийн 23.1-т заасан хөнгөлөлт сард ногдох' -> хайлт (lookup)
     DISCOUNT_TOTAL_INDEX = 18     # 'Хуулийн 23.1-т заасан хөнгөлөлт нийт' -> нийлбэрээр, мөн lookup-д ашиглана
+    TAXABLE_INCOME_INDEX = 10     # 'Хуулийн 7.1-д заасан орлогод татвар ногдуулах орлого (4-6-7)' -> нийлбэр дээр шатлалаар татвар бодно
+    TAX_BRACKET_INDEX = 14        # 'Шатлал' -> 7.1-ийн орлогын нийлбэрээс (татвар бодохоос өмнөх) шатлалыг тодорхойлно
+
+    TAX_BRACKETS = [
+        (120000000, 0.10),
+        (180000000, 0.15),
+        (None, 0.20),
+    ]
 
     # Зурган дээрх "нийт" -> "сард ногдох" харгалзаа
     DISCOUNT_MONTHLY_MAP = {
@@ -47,6 +55,33 @@ class LLPPayrollIncomeTaxImport(models.TransientModel):
         if value is None:
             return None
         return round(float(value), 2)
+
+    @classmethod
+    def _progressive_tax(cls, amount):
+        """Татвар ногдох орлогоос шатлалаар татвар бодох.
+        Жишээ: 200 сая -> 120с*10% + 60с*15% + 20с*20% = 25 сая
+        """
+        tax = 0.0
+        lower = 0.0
+        for upper, rate in cls.TAX_BRACKETS:
+            if amount <= lower:
+                break
+            top = amount if upper is None else min(amount, upper)
+            tax += (top - lower) * rate
+            if upper is None:
+                break
+            lower = upper
+        return tax
+
+    @classmethod
+    def _tax_bracket(cls, amount):
+        """Татвар ногдох орлого аль шатлалд орохыг 1-ээс эхэлсэн дугаараар буцаана.
+        Жишээ: 132 сая -> 2
+        """
+        for number, (upper, rate) in enumerate(cls.TAX_BRACKETS, start=1):
+            if upper is None or amount <= upper:
+                return number
+        return len(cls.TAX_BRACKETS)
 
     def _aggregate_rows(self, raw_rows):
         """
@@ -79,6 +114,11 @@ class LLPPayrollIncomeTaxImport(models.TransientModel):
                 self._norm(r[raw_offset + self.DISCOUNT_TOTAL_INDEX * 2])
                 for r in rows_for_emp
             ]
+
+            taxable_income_sum = sum(
+                float(v) for v in (r[raw_offset + self.TAXABLE_INCOME_INDEX * 2] for r in rows_for_emp)
+                if v is not None
+            )
 
             flat = [dept_name]
             for i in range(field_count):
@@ -114,6 +154,10 @@ class LLPPayrollIncomeTaxImport(models.TransientModel):
                     # эсвэл текст утга бол эхний хоосон биш утгыг авна
                     if has_num:
                         total = sum(float(v) for v in num_values if v is not None)
+                        if i == self.TAXABLE_INCOME_INDEX:
+                            total = self._progressive_tax(total)
+                        elif i == self.TAX_BRACKET_INDEX:
+                            total = self._tax_bracket(taxable_income_sum)
                         flat.append(total)
                         flat.append(None)
                     else:
@@ -215,12 +259,15 @@ class LLPPayrollIncomeTaxImport(models.TransientModel):
                 LEFT JOIN llp_payroll_line B ON B.payroll_id = A.id
                 LEFT JOIN hr_employee EMP ON EMP.id = B.employee_id
                 LEFT JOIN hr_department HD ON HD.id = EMP.department_id
+                -- Цалин бодолтын бүтцэд тохирох тохиргоог авна,
+                -- байхгүй бол бүтэц хоосон тохиргоог авна
                 LEFT JOIN LATERAL (
                     SELECT *
                     FROM llp_payroll_report_config
                     WHERE type = 'income_tax_import'
                     AND company_id = A.company_id
-                    ORDER BY id
+                    AND (struct_id = A.struct_id OR struct_id IS NULL)
+                    ORDER BY (struct_id IS NULL), id
                     LIMIT 1
                 ) C ON TRUE
                 LEFT JOIN llp_payroll_rule RA ON RA.id = C.taxpayer_number
