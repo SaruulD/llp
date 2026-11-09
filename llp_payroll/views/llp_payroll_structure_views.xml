@@ -62,7 +62,7 @@
                                     <field name="exp_sequence" options="{'no_create': True}"/>
                                     <field name="company_id"/>
                                     <field name="rule_send_mail" column_invisible="1"/>
-                                    <field name="mail_sequence" readonly="not rule_send_mail" force_save="1"/>
+                                    <field name="mail_sequence" invisible="not rule_send_mail"/>
                                     <button name="action_open_rule" string="Дүрэм харах"
                                         type="object"
                                         icon="fa-external-link"
