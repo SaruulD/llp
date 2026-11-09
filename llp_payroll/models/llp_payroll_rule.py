@@ -231,7 +231,13 @@ if object:
 					history.write({'end_date':today})
 					
 			history_model.create(histories)
-		return super(LLPPayrollRule, self).write(vals)
+		res = super(LLPPayrollRule, self).write(vals)
+		# Имэйл илгээх чагтыг авбал бүтцүүд дээрх имэйлийн дарааллыг 0 болгоно
+		if 'send_mail' in vals and not vals['send_mail']:
+			self.env['llp.payroll.structure.line'].search([
+				('rule_id', 'in', self.ids), ('mail_sequence', '!=', 0),
+			]).write({'mail_sequence': 0})
+		return res
 
 class LLPPayrollRuleHistory(models.Model):
 	_name = 'llp.payroll.rule.history'

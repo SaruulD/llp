@@ -48,6 +48,11 @@ class LLPPayrollStructureLine(models.Model):
 	sequence = fields.Integer(string="Sequence")
 	exp_sequence = fields.Integer(string="Expression Sequence")
 	company_id = fields.Many2one('res.company', string="Company", related='rule_id.company_id', store=True, readonly=True)
+	# Цалингийн мэдээллийн имэйл дээр дүрмүүд энэ дарааллаар харагдана
+	# (sequence нь бодолтын дараалал тул имэйлийн дарааллыг тусад нь тохируулна).
+	# 0 бол имэйлээр илгээхгүй; "Send E-Mail" чагтгүй дүрэм дээр үргэлж 0 байна.
+	mail_sequence = fields.Integer(string="Email Sequence", default=0)
+	rule_send_mail = fields.Boolean(related='rule_id.send_mail', string="Rule Send E-Mail")
 	line_no = fields.Integer(
 		string="№",
 		compute="_compute_line_no",
@@ -69,6 +74,24 @@ class LLPPayrollStructureLine(models.Model):
 					'Цалингийн бүтцэд "%(code)s" кодтой хоёр өөр дүрэм (%(a)s, %(b)s) байж болохгүй. '
 					'Бүтэц нь нэг компанийн дүрмүүдээс тогтох ёстой.',
 					code=code, a=line.rule_id.display_name, b=clash[:1].rule_id.display_name))
+
+	@api.model_create_multi
+	def create(self, vals_list):
+		lines = super().create(vals_list)
+		lines._reset_mail_sequence_without_send_mail()
+		return lines
+
+	def write(self, vals):
+		res = super().write(vals)
+		if 'mail_sequence' in vals or 'rule_id' in vals:
+			self._reset_mail_sequence_without_send_mail()
+		return res
+
+	def _reset_mail_sequence_without_send_mail(self):
+		# Имэйл илгээх чагтгүй дүрмийн имэйлийн дараалал үргэлж 0 байна
+		lines = self.filtered(lambda l: l.mail_sequence and not l.rule_id.send_mail)
+		if lines:
+			lines.write({'mail_sequence': 0})
 
 	@api.depends('struct_id.line_ids')
 	def _compute_line_no(self):

@@ -3062,3 +3062,13 @@ msgstr ""
 #: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_report_config__base_and_additional_salary
 msgid "Үндсэн ба нэмэгдэл цалин"
 msgstr ""
+
+#. module: llp_payroll
+#: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_structure_line__mail_sequence
+msgid "Email Sequence"
+msgstr "Имэйл илгээх дараалал"
+
+#. module: llp_payroll
+#: model:ir.model.fields,field_description:llp_payroll.field_llp_payroll_structure_line__rule_send_mail
+msgid "Rule Send E-Mail"
+msgstr "Дүрэм имэйлээр илгээх"

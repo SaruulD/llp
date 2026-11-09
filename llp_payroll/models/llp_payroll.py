@@ -101,11 +101,11 @@ class LLPPayroll(models.Model):
     def _send_payroll_rule_mail(self, mail_lines):
         self.ensure_one()
 
-        # Тухайн payroll-ийн struct-д хамаарах, send_mail=True рулиудыг
-        # structure дэх дараалал (sequence)-аар нь авна
+        # Тухайн payroll-ийн struct-д хамаарах, send_mail=True бөгөөд имэйл
+        # илгээх дараалал (mail_sequence) нь 0-ээс их рулиудыг тэр дарааллаар авна
         struct_lines = self.struct_id.line_ids.filtered(
-            lambda l: l.rule_id.send_mail
-        ).sorted(key=lambda l: l.sequence)
+            lambda l: l.rule_id.send_mail and l.mail_sequence > 0
+        ).sorted(key=lambda l: (l.mail_sequence, l.sequence))
 
         if not struct_lines:
             return
