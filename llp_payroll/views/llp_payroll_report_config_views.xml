@@ -44,22 +44,22 @@
                     </h1>
                     <group>
                         <group>
-                            <field name="struct_id" invisible="type != 'income_tax_import'" options="{'no_create': True}"/>
+                            <field name="struct_id" invisible="type not in ['income_tax_import', 'insurance_tax_import']" options="{'no_create': True}"/>
                         </group>
                     </group>
 
                     <group>
                         <group>
                             <!-- <field name="civil_number" invisible="type not in ['insurance_tax_import', 'insurance_tax_report']"/> -->
-                            <field name="register_number" invisible="type != 'insurance_tax_import'" domain="[('company_id', '=', company_id)]"/>
-                            <field name="family_name" invisible="type != 'insurance_tax_import'" domain="[('company_id', '=', company_id)]"/>
+                            <field name="register_number" invisible="type != 'insurance_tax_import'" domain="[('company_id', '=', company_id)] + ([('structure_ids', 'in', [struct_id])] if struct_id else [])"/>
+                            <field name="family_name" invisible="type != 'insurance_tax_import'" domain="[('company_id', '=', company_id)] + ([('structure_ids', 'in', [struct_id])] if struct_id else [])"/>
                             <field name="taxpayer_number" invisible="type != 'income_tax_import'" domain="[('company_id', '=', company_id)] + ([('structure_ids', 'in', [struct_id])] if struct_id else [])"/>
                             <field name="last_name" invisible="type not in ['insurance_tax_import', 'income_tax_import']" domain="[('company_id', '=', company_id)] + ([('structure_ids', 'in', [struct_id])] if struct_id else [])"/>
                             <field name="first_name" invisible="type not in ['insurance_tax_import', 'income_tax_import']" domain="[('company_id', '=', company_id)] + ([('structure_ids', 'in', [struct_id])] if struct_id else [])"/>
-                            <field name="insurance_type" invisible="type != 'insurance_tax_import'" domain="[('company_id', '=', company_id)]"/>
-                            <field name="career_classification" invisible="type != 'insurance_tax_import'" domain="[('company_id', '=', company_id)]"/>
-                            <field name="wages_and_equivalent_income" invisible="type != 'insurance_tax_import'" domain="[('company_id', '=', company_id)]"/>
-                            <field name="base_and_additional_salary" invisible="type != 'insurance_tax_import'" domain="[('company_id', '=', company_id)]"/>
+                            <field name="insurance_type" invisible="type != 'insurance_tax_import'" domain="[('company_id', '=', company_id)] + ([('structure_ids', 'in', [struct_id])] if struct_id else [])"/>
+                            <field name="career_classification" invisible="type != 'insurance_tax_import'" domain="[('company_id', '=', company_id)] + ([('structure_ids', 'in', [struct_id])] if struct_id else [])"/>
+                            <field name="wages_and_equivalent_income" invisible="type != 'insurance_tax_import'" domain="[('company_id', '=', company_id)] + ([('structure_ids', 'in', [struct_id])] if struct_id else [])"/>
+                            <field name="base_and_additional_salary" invisible="type != 'insurance_tax_import'" domain="[('company_id', '=', company_id)] + ([('structure_ids', 'in', [struct_id])] if struct_id else [])"/>
 
                             <field name="income_7_1_1" invisible="type != 'income_tax_import'" domain="[('company_id', '=', company_id)] + ([('structure_ids', 'in', [struct_id])] if struct_id else [])"/>
                             <field name="income_7_1_2_7" invisible="type != 'income_tax_import'" domain="[('company_id', '=', company_id)] + ([('structure_ids', 'in', [struct_id])] if struct_id else [])"/>
@@ -77,13 +77,13 @@
                             <!-- <field name="is_limit_max" invisible="type != 'insurance_tax_report'"/> -->
                         </group>
                         <group>
-                            <field name="bonus_salary" invisible="type != 'insurance_tax_import'" domain="[('company_id', '=', company_id)]"/>
-                            <field name="other_additional_salary" invisible="type != 'insurance_tax_import'" domain="[('company_id', '=', company_id)]"/>
-                            <field name="food_transportation_cost" invisible="type != 'insurance_tax_import'" domain="[('company_id', '=', company_id)]"/>
-                            <field name="firewood_discount" invisible="type != 'insurance_tax_import'" domain="[('company_id', '=', company_id)]"/>
-                            <field name="citizenship" invisible="type != 'insurance_tax_import'" domain="[('company_id', '=', company_id)]"/>
-                            <field name="cellphone" invisible="type != 'insurance_tax_import'" domain="[('company_id', '=', company_id)]"/>
-                            <field name="email" invisible="type != 'insurance_tax_import'" domain="[('company_id', '=', company_id)]"/>
+                            <field name="bonus_salary" invisible="type != 'insurance_tax_import'" domain="[('company_id', '=', company_id)] + ([('structure_ids', 'in', [struct_id])] if struct_id else [])"/>
+                            <field name="other_additional_salary" invisible="type != 'insurance_tax_import'" domain="[('company_id', '=', company_id)] + ([('structure_ids', 'in', [struct_id])] if struct_id else [])"/>
+                            <field name="food_transportation_cost" invisible="type != 'insurance_tax_import'" domain="[('company_id', '=', company_id)] + ([('structure_ids', 'in', [struct_id])] if struct_id else [])"/>
+                            <field name="firewood_discount" invisible="type != 'insurance_tax_import'" domain="[('company_id', '=', company_id)] + ([('structure_ids', 'in', [struct_id])] if struct_id else [])"/>
+                            <field name="citizenship" invisible="type != 'insurance_tax_import'" domain="[('company_id', '=', company_id)] + ([('structure_ids', 'in', [struct_id])] if struct_id else [])"/>
+                            <field name="cellphone" invisible="type != 'insurance_tax_import'" domain="[('company_id', '=', company_id)] + ([('structure_ids', 'in', [struct_id])] if struct_id else [])"/>
+                            <field name="email" invisible="type != 'insurance_tax_import'" domain="[('company_id', '=', company_id)] + ([('structure_ids', 'in', [struct_id])] if struct_id else [])"/>
 
                             <field name="total_taxable_income" invisible="type != 'income_tax_import'" domain="[('company_id', '=', company_id)] + ([('structure_ids', 'in', [struct_id])] if struct_id else [])"/>
                             <field name="tax_bracket" invisible="type != 'income_tax_import'" domain="[('company_id', '=', company_id)] + ([('structure_ids', 'in', [struct_id])] if struct_id else [])"/>

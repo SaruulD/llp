@@ -93,12 +93,15 @@ class LLPPayrollInsuranceImport(models.TransientModel):
                 LEFT JOIN llp_payroll_line B ON B.payroll_id = A.id
                 LEFT JOIN hr_employee EMP ON EMP.id = B.employee_id
                 LEFT JOIN hr_department HD ON HD.id = EMP.department_id
+                -- Цалин бодолтын бүтцэд тохирох тохиргоог авна,
+                -- байхгүй бол бүтэц хоосон тохиргоог авна
                 LEFT JOIN LATERAL (
                     SELECT *
                     FROM llp_payroll_report_config
                     WHERE type = 'insurance_tax_import'
                     AND company_id = A.company_id
-                    ORDER BY id
+                    AND (struct_id = A.struct_id OR struct_id IS NULL)
+                    ORDER BY (struct_id IS NULL), id
                     LIMIT 1
                 ) C ON TRUE
                 LEFT JOIN llp_payroll_rule E ON E.id = C.register_number
